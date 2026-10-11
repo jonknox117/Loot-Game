@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "stage": "spec-only",
+  "status": "not-rendered",
+  "readme": "assets/master-render-spec.md",
+  "resolution": {
+    "source": [
+      2400,
+      1200
+    ],
+    "inspect": [
+      1600,
+      800
+    ],
+    "inventory": [
+      800,
+      400
+    ],
+    "reel": [
+      400,
+      200
+    ]
+  },
+  "renderer": {
+    "gameType": "2d-static-renders",
+    "sourceMayUseOffline3D": true,
+    "camera": "near-side-orthographic",
+    "azimuthDegreesMax": 8,
+    "elevationDegreesMax": 5,
+    "facing": "tip-right",
+    "lightingKelvinRange": [
+      5000,
+      5500
+    ],
+    "lightDirection": "top-left",
+    "background": "transparent",
+    "colorSpace": "sRGB"
+  },
+  "masks": [
+    "paint-main",
+    "paint-secondary",
+    "metal-exposed",
+    "polymer-or-wood",
+    "hardware",
+    "edge-highlight",
+    "ao-shadow",
+    "decal-safe"
+  ],
+  "accept": {
+    "photoOrLicensedSourceRequired": true,
+    "allowGameExtractedModelsWithoutRights": false,
+    "verify160pxWithoutLabel": true,
+    "alphaHaloAllowed": false,
+    "approved": false,
+    "reelInspectFinishExactMatch": true
+  },
+  "models": [
+    {
+      "id": "glock-18",
+      "weapon": "Glock-18",
+      "category": "pistol",
+      "widthRange": [
+        0.76,
+        0.82
+      ],
+      "identity": [
+        "squared short slide",
+        "front and rear sights",
+        "angled polymer grip",
+        "trigger guard",
+        "magazine bottom"
+      ],
+      "materialGroups": [
+        "slide",
+        "frame",
+        "grip",
+        "hardware"
+      ],
+      "master": "assets/source/glock-18/neutral-master.blend",
+      "license": "assets/source/glock-18/provenance.json",
+      "outputs": {
+        "inspect": "assets/renders/masters/glock-18-neutral-1600.webp",
+        "inventory": "assets/renders/masters/glock-18-neutral-800.webp",
+        "reel": "assets/renders/masters/glock-18-neutral-400.webp"
+      },
+      "assetStatus": "not-created",
+      "approved": false
+    },
+    {
+      "id": "ak-47",
+      "weapon": "AK-47",
+      "category": "rifle",
+      "widthRange": [
+        0.86,
+        0.9
+      ],
+      "identity": [
+        "curved magazine",
+        "gas tube",
+        "front sight",
+        "receiver",
+        "stock",
+        "long barrel"
+      ],
+      "materialGroups": [
+        "receiver",
+        "stock",
+        "handguard",
+        "magazine",
+        "hardware"
+      ],
+      "master": "assets/source/ak-47/neutral-master.blend",
+      "license": "assets/source/ak-47/provenance.json",
+      "outputs": {
+        "inspect": "assets/renders/masters/ak-47-neutral-1600.webp",
+        "inventory": "assets/renders/masters/ak-47-neutral-800.webp",
+        "reel": "assets/renders/masters/ak-47-neutral-400.webp"
+      },
+      "assetStatus": "not-created",
+      "approved": false
+    },
+    {
+      "id": "awp",
+      "weapon": "AWP",
+      "category": "sniper",
+      "widthRange": [
+        0.86,
+        0.9
+      ],
+      "identity": [
+        "long barrel",
+        "optic and mount",
+        "bolt-action profile",
+        "heavy stock",
+        "cheek rest"
+      ],
+      "materialGroups": [
+        "stock",
+        "barrel",
+        "scope-housing",
+        "scope-glass",
+        "hardware"
+      ],
+      "master": "assets/source/awp/neutral-master.blend",
+      "license": "assets/source/awp/provenance.json",
+      "outputs": {
+        "inspect": "assets/renders/masters/awp-neutral-1600.webp",
+        "inventory": "assets/renders/masters/awp-neutral-800.webp",
+        "reel": "assets/renders/masters/awp-neutral-400.webp"
+      },
+      "assetStatus": "not-created",
+      "approved": false
+    },
+    {
+      "id": "m4a4",
+      "weapon": "M4A4",
+      "category": "rifle",
+      "widthRange": [
+        0.86,
+        0.9
+      ],
+      "identity": [
+        "straight magazine",
+        "handguard rails",
+        "AR-pattern receiver",
+        "rear stock",
+        "iron sight"
+      ],
+      "materialGroups": [
+        "receiver",
+        "handguard",
+        "grip",
+        "stock",
+        "magazine",
+        "hardware"
+      ],
+      "master": "assets/source/m4a4/neutral-master.blend",
+      "license": "assets/source/m4a4/provenance.json",
+      "outputs": {
+        "inspect": "assets/renders/masters/m4a4-neutral-1600.webp",
+        "inventory": "assets/renders/masters/m4a4-neutral-800.webp",
+        "reel": "assets/renders/masters/m4a4-neutral-400.webp"
+      },
+      "assetStatus": "not-created",
+      "approved": false
+    },
+    {
+      "id": "karambit",
+      "weapon": "Karambit",
+      "category": "knife",
+      "widthRange": [
+        0.64,
+        0.76
+      ],
+      "identity": [
+        "strong hooked blade",
+        "open finger ring",
+        "textured curved handle",
+        "distinct edge"
+      ],
+      "materialGroups": [
+        "blade-flat",
+        "blade-edge",
+        "handle",
+        "ring",
+        "hardware"
+      ],
+      "master": "assets/source/karambit/neutral-master.blend",
+      "license": "assets/source/karambit/provenance.json",
+      "outputs": {
+        "inspect": "assets/renders/masters/karambit-neutral-1600.webp",
+        "inventory": "assets/renders/masters/karambit-neutral-800.webp",
+        "reel": "assets/renders/masters/karambit-neutral-400.webp"
+      },
+      "assetStatus": "not-created",
+      "approved": false
+    }
+  ]
+}
