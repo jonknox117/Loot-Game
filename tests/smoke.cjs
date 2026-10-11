@@ -54,6 +54,44 @@ const fs = require('fs');
     assert(await page.locator('.item').count() === 0, 'Sold item must not reappear after reload');
     assert(errors.length === 0, 'Browser console errors: ' + errors.join('; '));
 
+
+    // Test the new save management and durable marketplace listings.
+    await page.getByRole('button', { name: 'Earn', exact: true }).click();
+    while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, '')) < 25){
+      await page.getByRole('button', { name: /Earn 1 coin/ }).click();
+    }
+    await page.getByRole('button', { name: 'Cases', exact: true }).click();
+    await page.getByRole('button', { name: 'Purchase case' }).click();
+    await page.getByRole('button', { name: 'List for sale' }).click();
+    await page.locator('#listPrice').fill('22');
+    await page.getByRole('button', { name: 'List for sale' }).click();
+    assert(await page.getByText('My Market Listings').count() === 1, 'Listing must show in marketplace');
+    assert((await page.locator('.listing-line').count())===1,'Listed case must be escrowed');
+    await page.reload({ waitUntil: 'load' });
+    await waitForVisible('.listing-line');
+    assert(await page.locator('.listing-line').count()===1, 'Listings survive reload');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByRole('button', { name: 'Inventory', exact: true }).click();
+    assert(await page.locator('.item').count()===1, 'Cancel must return item to inventory');
+
+    await page.getByRole('button', { name: 'Saves', exact: true }).click();
+    await waitForVisible('text=My Save');
+    assert(await page.getByText('Autosave active on this device.').count()===1, 'Autosave explanation missing');
+    const saveBefore=await page.evaluate(() => JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(saveBefore.items.length===1 && saveBefore.ledger.length>=6,'Save must include inventory and history');
+    const downloadEvent=page.waitForEvent('download');
+    await page.getByRole('button', { name: /Download save backup/ }).click();
+    const download=await downloadEvent;
+    assert(download.suggestedFilename().endsWith('.json'),'Backup should download as JSON');
+
+    // Corrupted primary recovers from the previous valid local snapshot.
+    await page.evaluate(() => localStorage.setItem('loothub-arsenal-alpha-v1','{broken-json'));
+    await page.reload({waitUntil:'load'});
+    await waitForVisible('text=My Save');
+    const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(restored.items.length===1,'Backup must restore inventory after primary corruption');
+    assert(errors.length===0, 'Browser JavaScript errors: '+errors.join('; '));
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
