@@ -1,7 +1,7 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null;
-function canMutate(){if(!saveConflict&&!recoveryRequired)return true;alert(saveConflict?'Another tab has newer progress. Reload LootHub before making changes.':'Saved data needs recovery. Open Saves and restore or import a backup before playing.');return false;}
+function canMutate(){if(!saveConflict&&!recoveryRequired&&!saveFailure)return true;alert(saveConflict?'Another tab has newer progress. Reload LootHub before making changes.':recoveryRequired?'Saved data needs recovery. Open Saves and restore or import a backup before playing.':'Saving is unavailable. Export your progress from Saves and reload before further transactions.');return false;}
 function reloadLatestProgress(){location.reload();}
 function isValidSave(data) {
   return !!(data && typeof data==='object' && !Array.isArray(data) &&
