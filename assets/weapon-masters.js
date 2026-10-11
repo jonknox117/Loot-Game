@@ -63,7 +63,7 @@ function render(item){
  const colors=['#adb8c3','#4fca85','#7aaef9','#c694fc','#f0c36f'];
  const rarityColor=colors[tier];
  const label=model+' | '+finish;
- const SVG='<svg class="arsenal-master" role="img" aria-label="Stylized '+escape(label)+' collectible" viewBox="0 0 640 270" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+
+ const SVG='<svg id="'+id+'" class="arsenal-master" role="img" aria-label="Stylized '+escape(label)+' collectible" viewBox="0 0 640 270" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+
  '<defs>'+
  '<linearGradient id="'+body+'" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#92a4b7"/><stop offset=".29" stop-color="#455569"/><stop offset=".68" stop-color="#202f40"/><stop offset="1" stop-color="#75899b"/></linearGradient>'+
  '<linearGradient id="'+polymer+'" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#35465c"/><stop offset=".5" stop-color="#19293a"/><stop offset="1" stop-color="#111e2d"/></linearGradient>'+
@@ -74,21 +74,21 @@ function render(item){
  '<filter id="'+id+'shadow" x="-15%" y="-25%" width="130%" height="155%"><feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#01060d" flood-opacity=".57"/></filter>'+
  '</defs>'+
  '<style>'+
- '.arsenal-master .metal{fill:url(#'+body+');stroke:#111b28;stroke-width:3;stroke-linejoin:round}'+
- '.arsenal-master .metalLight{fill:url(#'+bolt+');stroke:#263445;stroke-width:2.3;stroke-linejoin:round}'+
- '.arsenal-master .metalDark{fill:#1b2837;stroke:#556a7c;stroke-width:2}'+
- '.arsenal-master .polymer{fill:url(#'+polymer+');stroke:#526479;stroke-width:2.8;stroke-linejoin:round}'+
- '.arsenal-master .wood{fill:url(#'+wood+');stroke:#3e3c38;stroke-width:3;stroke-linejoin:round}'+
- '.arsenal-master .grip{fill:#1c293a;stroke:#637187;stroke-width:2;stroke-linejoin:round}'+
- '.arsenal-master .frame{fill:#142233;stroke:#72849a;stroke-width:2.5;stroke-linejoin:round}'+
- '.arsenal-master .finish{fill:url(#'+fog+');stroke:'+palette[1]+';stroke-width:1.7;stroke-opacity=".75";stroke-linejoin:round}'+
- '.arsenal-master .hardware{fill:#9eb3c6;stroke:#2a3949;stroke-width:2}'+
- '.arsenal-master .rail{fill:#26384b;stroke:#9bb1c6;stroke-width:1}'+
- '.arsenal-master .scribe{fill:none;stroke:#91a1b2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}'+
- '.arsenal-master .scope{fill:#172637;stroke:#7a93a9;stroke-width:2.3}'+
- '.arsenal-master .optic{fill:#235e77;stroke:#92b2d0;stroke-width:1.5}'+
- '.arsenal-master .ring{fill:#3b495b;stroke:#bdc9d7;stroke-width:6}'+
- '.arsenal-master .background{fill:#101b2a;stroke:#78899b;stroke-width:2}'+
+ '#'+id+' .metal{fill:url(#'+body+');stroke:#111b28;stroke-width:3;stroke-linejoin:round}'+
+ '#'+id+' .metalLight{fill:url(#'+bolt+');stroke:#263445;stroke-width:2.3;stroke-linejoin:round}'+
+ '#'+id+' .metalDark{fill:#1b2837;stroke:#556a7c;stroke-width:2}'+
+ '#'+id+' .polymer{fill:url(#'+polymer+');stroke:#526479;stroke-width:2.8;stroke-linejoin:round}'+
+ '#'+id+' .wood{fill:url(#'+wood+');stroke:#3e3c38;stroke-width:3;stroke-linejoin:round}'+
+ '#'+id+' .grip{fill:#1c293a;stroke:#637187;stroke-width:2;stroke-linejoin:round}'+
+ '#'+id+' .frame{fill:#142233;stroke:#72849a;stroke-width:2.5;stroke-linejoin:round}'+
+ '#'+id+' .finish{fill:url(#'+fog+');stroke:'+palette[1]+';stroke-width:1.7;stroke-opacity=".75";stroke-linejoin:round}'+
+ '#'+id+' .hardware{fill:#9eb3c6;stroke:#2a3949;stroke-width:2}'+
+ '#'+id+' .rail{fill:#26384b;stroke:#9bb1c6;stroke-width:1}'+
+ '#'+id+' .scribe{fill:none;stroke:#91a1b2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}'+
+ '#'+id+' .scope{fill:#172637;stroke:#7a93a9;stroke-width:2.3}'+
+ '#'+id+' .optic{fill:#235e77;stroke:#92b2d0;stroke-width:1.5}'+
+ '#'+id+' .ring{fill:#3b495b;stroke:#bdc9d7;stroke-width:6}'+
+ '#'+id+' .background{fill:#101b2a;stroke:#78899b;stroke-width:2}'+
  '</style>'+
  '<g transform="translate(0 0)" filter="url(#'+id+'shadow)">'+models[model]()+'</g>'+
  '</svg>';
