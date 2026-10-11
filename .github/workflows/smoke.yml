@@ -26,5 +26,7 @@ jobs:
         if: always()
         with:
           name: loothub-mobile-smoke
-          path: tests/mobile-smoke.png
+          path: |
+            tests/mobile-smoke.png
+            tests/reel-colors.png
           if-no-files-found: ignore
