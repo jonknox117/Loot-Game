@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.2
+# LootHub — Arsenal Alpha 0.3.1
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -12,7 +12,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Instant dealer sale, direct negotiation, and player-owned marketplace listings with an NPC buyer simulation and 5% listing-sale fee.
 - Player listings are kept separate from inventory and remain listed on reload; elapsed time is processed on return.
 - Portfolio and transaction journal.
-- Responsive dark website interface with crisp, original vector item silhouettes.
+- Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards. The current artwork is still vector placeholders.
 
 ## Saving progress
 
@@ -28,7 +28,15 @@ The Saves tab provides:
 
 ## Developer checks
 
-`node tests/smoke.cjs` runs Playwright Chromium mobile-viewport tests. GitHub Actions is configured to run the smoke test for pushes to main. The test covers earning, purchase, inventory persistence, opening, selling, market listings, export, backup recovery, and JavaScript errors. A successful Vercel deployment only means the files built successfully; it does not itself prove the interactive browser test passed.
+- `node tests/core.cjs` is a deterministic Node.js regression suite covering legacy save migration, interrupted openings, listing escrow, backup recovery, unsafe corruption, concurrent browser tabs, and `assets/manifest.json` parity. Vercel's `buildCommand` runs this suite before deployment.
+- `node tests/smoke.cjs` runs a Playwright Chromium mobile-viewport UI smoke test. GitHub Actions is configured to run the Node suite, then this browser test, on pushes to `main`.
+- A **READY** Vercel deployment is evidence of a successful deployment/build, not proof of browser-level usability. The Playwright job still needs an independently verified passing result.
+
+## Patch 0.3 milestones
+
+- **0.3.0 Foundation:** save integrity guard, recovery instead of destructive save reset, stale multi-tab protection, deterministic regressions, and 19-item approved-artwork production manifest.
+- **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
+- **0.3.2+ Planned:** source-quality weapon master images, original skin artwork, better inspection and case-opening sequences.
 
 ## Known limitations
 
@@ -40,7 +48,8 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Add authenticated database-backed cloud saves and server-authoritative transaction records.
-2. Refine cinematic openings, item art and inspect screens.
-3. Improve market simulation, prices, liquidity and negotiated offers.
-4. Run and verify mobile end-to-end browser CI and audit persistence and economy edge cases.
+1. Produce and integrate approved, consistent original weapon artwork using `assets/manifest.json`; leave SVG fallbacks in place for incomplete entries.
+2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
+3. Refine cinematic openings and inspect screens.
+4. Improve market simulation, prices, liquidity and negotiated offers.
+5. Run and verify mobile end-to-end browser CI and audit persistence and economy edge cases.
