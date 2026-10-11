@@ -38,7 +38,45 @@ const fs = require('fs');
 
     await page.getByRole('button', { name: 'Inspect / trade' }).click();
     await page.getByRole('button', { name: 'Open case' }).click();
+    // Regression: every reel card must use the same per-item finish shader
+    // as the inspect screen, not a CSS rule leaking from its neighbors.
+    const expectedReward=await page.evaluate(() => JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x => x.kind==='skin'));
+    const reelColors=await page.evaluate(() => [...document.querySelectorAll('#track .tile')].map(tile=>{
+      const art=tile.querySelector('.weapon-master');
+      const svg=tile.querySelector('svg.arsenal-master');
+      const colored=svg?.querySelector('.finish');
+      const gradient=svg?.querySelector('linearGradient[id$="f"]');
+      return {
+        index:Number(tile.dataset.reelIndex),
+        weapon:art?.dataset.weaponModel,finish:art?.dataset.finish,
+        rootId:svg?.id,
+        computedFill:colored?getComputedStyle(colored).fill:'',
+        stops:[...(gradient?.querySelectorAll('stop')||[])].map(x=>x.getAttribute('stop-color'))
+      };
+    }));
+    assert(reelColors.length===48,'Reel must have 48 illustrated tiles');
+    assert(reelColors.every(x=>x.rootId&&x.stops.length===3&&x.computedFill.includes('#'+x.rootId+'f')),
+      'Reel SVG finish styles are leaking between weapons');
+    assert(new Set(reelColors.map(x=>x.rootId)).size===48,'Every reel art instance needs its own paint scope');
+    assert(new Set(reelColors.map(x=>x.stops.join(','))).size>1,
+      'Different weapon finishes unexpectedly share one palette');
+    const winningTile=reelColors.find(x=>x.index===42);
+    assert(winningTile?.weapon===expectedReward.weapon && winningTile?.finish===expectedReward.skin,
+      'Winning reel card does not use the saved item and finish');
+    await page.screenshot({path:path.resolve(__dirname,'reel-colors.png')});
     await page.getByRole('button', { name: 'Skip animation' }).click();
+    const resultColors=await page.evaluate(()=>{
+      const art=document.querySelector('.reveal-art .weapon-master');
+      const svg=art?.querySelector('svg.arsenal-master');
+      return {
+        weapon:art?.dataset.weaponModel,finish:art?.dataset.finish,
+        stops:[...(svg?.querySelectorAll('linearGradient[id$="f"] stop')||[])].map(x=>x.getAttribute('stop-color'))
+      };
+    });
+    assert(resultColors.weapon===winningTile.weapon && resultColors.finish===winningTile.finish,
+      'Final reward artwork is not the same weapon and finish shown in the reel');
+    assert(JSON.stringify(resultColors.stops)===JSON.stringify(winningTile.stops),
+      'Final reward changes its paint colors after the reel stops');
     await waitForVisible('text=Estimated market value');
     await page.getByRole('button', { name: 'Inspect / sell' }).click();
     assert(await page.getByRole('button', { name: /Instant sell/ }).isVisible(), 'Opened skin must be sellable');
