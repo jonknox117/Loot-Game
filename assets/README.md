@@ -26,3 +26,10 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - The current 19 finishes have preliminary color palettes and procedural surface marks, **not** final individual painted finish assets. Final artwork should retain the same silhouette geometry and use the manifest's future exported image paths.
 - The case image remains its own vector illustration; this patch focuses on weapons.
 - The gameplay save structure, drop chances, economy calculations and item instance IDs are unchanged.
+
+## Patch 0.3.3A — Clean 2D master specifications
+
+- [Five-master production standards](master-render-spec.md): model recognition, studio camera, transparency, layer masks, preview sizes, source provenance, skin composition and acceptance tests.
+- [Machine-readable targets](master-render-spec.json): first five weapon models and required outputs with **status: not-rendered**.
+- New master production uses 2:1 exports at 1600x800 / 800x400 / 400x200, superseding the older provisional 1600x850 / 640x340 / 320x170 targets for **future assets**. No existing output has been removed.
+- The in-game renderer is unchanged until approved, actually existing replacement images are integrated. No high-fidelity master art is implied by this specification.
