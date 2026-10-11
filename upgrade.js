@@ -270,6 +270,11 @@ function enhancedPortfolio(){
   '</div><p class="muted tiny">All recorded events remain in the local save and exported backup; the journal displays the most recent 50.</p></section>';
 }
 function visualArt(item) {
+  // Arsenal vector master: per-model silhouette and consistent aspect ratio.
+  // Sealed cases and any unmapped/imported legacy items retain the existing SVG fallback.
+  if(item&&item.kind==='skin'&&typeof window!=='undefined'&&window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)){
+    try { return window.ArsenalMasters.render(item); } catch(_) { /* intentionally fall back */ }
+  }
   const rarityIdx=item.kind==='case'?2:(item.tier||0);
   const color=['#9ca6b6','#55c983','#63a9ff','#c28bf9','#eac46d'][rarityIdx];
   const seed=String(item.id||item.kind+'-'+(item.weapon||'')+'-'+(item.skin||'')+'-'+(item.tier||0));
