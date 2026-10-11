@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.1
+# LootHub — Arsenal Alpha 0.3.2
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -12,7 +12,8 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Instant dealer sale, direct negotiation, and player-owned marketplace listings with an NPC buyer simulation and 5% listing-sale fee.
 - Player listings are kept separate from inventory and remain listed on reload; elapsed time is processed on return.
 - Portfolio and transaction journal.
-- Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards. The current artwork is still vector placeholders.
+- Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
+- **17 original model-specific vector weapon masters**, used across case contents, collection cards, inventory, opening reels and item inspection, with preliminary finish color treatments.
 
 ## Saving progress
 
@@ -36,11 +37,12 @@ The Saves tab provides:
 
 - **0.3.0 Foundation:** save integrity guard, recovery instead of destructive save reset, stale multi-tab protection, deterministic regressions, and 19-item approved-artwork production manifest.
 - **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
-- **0.3.2+ Planned:** source-quality weapon master images, original skin artwork, better inspection and case-opening sequences.
+- **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
+- **0.3.3+ Planned:** original finish textures and high-quality illustrated skin artwork, then improved inventory, inspection and case-opening sequences.
 
 ## Known limitations
 
-- The current weapons are original **SVG illustration placeholders**, not final textured high-resolution rendered skins.
+- Weapon models now use original **model-specific SVG foundation artwork**, not final textured high-resolution rendered skins. Detailed per-finish artwork is still planned.
 - Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
 - NPC buyers are simplified, not a deep supply/demand economy.
 - Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
@@ -48,7 +50,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Produce and integrate approved, consistent original weapon artwork using `assets/manifest.json`; leave SVG fallbacks in place for incomplete entries.
+1. Produce and integrate approved, detailed original skin finish artwork using `assets/manifest.json` and the 17 existing model-specific SVG masters as silhouette/layout references; retain SVG fallback for incomplete entries.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
