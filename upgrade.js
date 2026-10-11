@@ -1,17 +1,17 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
-let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null;
+let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null, lastPersistedSnapshot=null, saveRevisionSequence=0;
 function isSaveCurrent(){
   if(saveConflict||recoveryRequired||saveFailure)return false;
   try{
     const raw=localStorage.getItem('loothub-arsenal-alpha-v1');
     if(raw===null){
-      if(lastPersistedRevision===null)return true;
+      if(lastPersistedSnapshot===null)return true;
       saveConflict=true;
     }else{
       const disk=JSON.parse(raw);
       if(!isValidSave(disk))recoveryRequired=true;
-      else if((typeof disk.revision==='string'?disk.revision:null)!==lastPersistedRevision)saveConflict=true;
+      else if(raw!==lastPersistedSnapshot)saveConflict=true;
     }
   }catch(_){recoveryRequired=true}
   if(saveConflict||recoveryRequired)updateSaveIndicator();
@@ -42,7 +42,7 @@ function loadGame(key) {
   }
   // A corrupt primary is restored only from a validated previous save.
   if(!isPrimary && isBackup){
-    try{localStorage.setItem(key,JSON.stringify(data));}catch(_){saveFailure=true}
+    try{raw=JSON.stringify(data);localStorage.setItem(key,raw);}catch(_){saveFailure=true}
   }
   if(!Array.isArray(data.listings))data.listings=[];
   if(!Array.isArray(data.ledger))data.ledger=[];
@@ -51,6 +51,7 @@ function loadGame(key) {
   if(!Number.isFinite(data.lastMarketCheck))data.lastMarketCheck=Date.now();
   if(!data.preferences||typeof data.preferences!=='object')data.preferences={fastOpen:false};
   lastPersistedRevision=typeof data.revision==='string'?data.revision:null;
+  lastPersistedSnapshot=raw;
   return data;
 }
 function updateSaveIndicator(){
@@ -69,23 +70,24 @@ function persistGame(data,activeTab){
     if(raw!==null){
       try{previous=JSON.parse(raw)}catch(_){recoveryRequired=true;throw Error('Primary save became unreadable')}
       if(!isValidSave(previous)){recoveryRequired=true;throw Error('Primary save became invalid')}
-      if(typeof previous.revision==='string' && previous.revision!==lastPersistedRevision){
+      if(raw!==lastPersistedSnapshot){
         saveConflict=true;throw Error('A second tab changed this save')
       }
-      if(typeof previous.revision!=='string'&&lastPersistedRevision!==null){
-        saveConflict=true;throw Error('Save revision changed outside this tab')
-      }
+    }else if(lastPersistedSnapshot!==null){
+      saveConflict=true;throw Error('This save was removed outside the active tab')
     }
     data.tab=activeTab;
     data.savedAt=Date.now();
     data.version=3;
-    const nextRevision=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+    const nextRevision=(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+(++saveRevisionSequence).toString(36);
     data.revision=nextRevision;
     // A failed backup write must not prevent the current save from succeeding.
     if(raw!==null&&isValidSave(previous)){
       try{localStorage.setItem(BACKUP_KEY,raw)}catch(_){}
     }
-    localStorage.setItem('loothub-arsenal-alpha-v1',JSON.stringify(data));
+    const encoded=JSON.stringify(data);
+    localStorage.setItem('loothub-arsenal-alpha-v1',encoded);
+    lastPersistedSnapshot=encoded;
     lastPersistedRevision=nextRevision;
     saveFailure=false;
   }catch(_){saveFailure=true}
