@@ -1,44 +1,76 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
-let saveFailure=false;
+let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null;
+function canMutate(){if(!saveConflict&&!recoveryRequired)return true;alert(saveConflict?'Another tab has newer progress. Reload LootHub before making changes.':'Saved data needs recovery. Open Saves and restore or import a backup before playing.');return false;}
+function reloadLatestProgress(){location.reload();}
 function isValidSave(data) {
   return !!(data && typeof data==='object' && !Array.isArray(data) &&
     Number.isSafeInteger(data.coins) && data.coins>=0 &&
     Array.isArray(data.items) && Array.isArray(data.history));
 }
 function loadGame(key) {
-  let primary=null, backup=null;
-  try { primary=JSON.parse(localStorage.getItem(key)||'null'); } catch (_) {}
-  try { backup=JSON.parse(localStorage.getItem(BACKUP_KEY)||'null'); } catch (_) {}
-  let data=isValidSave(primary)?primary:isValidSave(backup)?backup:null;
-  if (!data) return null;
-  if (data===backup) {
-    try { localStorage.setItem(key,JSON.stringify(data)); } catch (_) {}
+  let primary=null,backup=null,raw=null;
+  try { raw=localStorage.getItem(key); if(raw!==null)primary=JSON.parse(raw); }catch(_){}
+  try { const b=localStorage.getItem(BACKUP_KEY); if(b!==null)backup=JSON.parse(b); }catch(_){}
+  const isPrimary=isValidSave(primary),isBackup=isValidSave(backup);
+  const data=isPrimary?primary:isBackup?backup:null;
+  if(!data){
+    if(raw!==null)recoveryRequired=true;
+    return null;
   }
-  if (!Array.isArray(data.listings)) data.listings=[];
-  if (!Array.isArray(data.ledger)) data.ledger=[];
-  if (!data.offers || typeof data.offers!=='object') data.offers={};
-  if (!Number.isSafeInteger(data.serial)) data.serial=0;
-  if (!Number.isFinite(data.lastMarketCheck)) data.lastMarketCheck=Date.now();
-  if (!data.preferences || typeof data.preferences!=='object') data.preferences={fastOpen:false};
+  // A corrupt primary is restored only from a validated previous save.
+  if(!isPrimary && isBackup){
+    try{localStorage.setItem(key,JSON.stringify(data));}catch(_){saveFailure=true}
+  }
+  if(!Array.isArray(data.listings))data.listings=[];
+  if(!Array.isArray(data.ledger))data.ledger=[];
+  if(!data.offers||typeof data.offers!=='object'||Array.isArray(data.offers))data.offers={};
+  if(!Number.isSafeInteger(data.serial))data.serial=0;
+  if(!Number.isFinite(data.lastMarketCheck))data.lastMarketCheck=Date.now();
+  if(!data.preferences||typeof data.preferences!=='object')data.preferences={fastOpen:false};
+  lastPersistedRevision=typeof data.revision==='string'?data.revision:null;
   return data;
 }
-function persistGame(data, activeTab) {
-  data.tab=activeTab;
-  data.savedAt=Date.now();
-  data.version=2;
-  try {
-    const previous=localStorage.getItem('loothub-arsenal-alpha-v1');
-    if (previous && isValidSave(JSON.parse(previous))) localStorage.setItem(BACKUP_KEY,previous);
-    localStorage.setItem('loothub-arsenal-alpha-v1',JSON.stringify(data));
-    saveFailure=false;
-  } catch (_) { saveFailure=true; }
+function updateSaveIndicator(){
   const node=document.getElementById('saveStatus');
-  if (node) {
-    node.textContent=saveFailure?'Save unavailable — export now':'● Saved on this device';
-    node.className='save-status'+(saveFailure?' save-error':'');
-  }
+  if(!node)return;
+  node.textContent=recoveryRequired?'Recovery required — open Saves':
+    saveConflict?'Newer progress in another tab — reload':
+    saveFailure?'Save unavailable — export now':'● Saved on this device';
+  node.className='save-status'+(saveFailure||recoveryRequired||saveConflict?' save-error':'');
 }
+function persistGame(data,activeTab){
+  if(recoveryRequired||saveConflict){saveFailure=true;updateSaveIndicator();return false}
+  try{
+    const raw=localStorage.getItem('loothub-arsenal-alpha-v1');
+    let previous=null;
+    if(raw!==null){
+      try{previous=JSON.parse(raw)}catch(_){recoveryRequired=true;throw Error('Primary save became unreadable')}
+      if(!isValidSave(previous)){recoveryRequired=true;throw Error('Primary save became invalid')}
+      if(typeof previous.revision==='string' && previous.revision!==lastPersistedRevision){
+        saveConflict=true;throw Error('A second tab changed this save')
+      }
+      if(typeof previous.revision!=='string'&&lastPersistedRevision!==null){
+        saveConflict=true;throw Error('Save revision changed outside this tab')
+      }
+    }
+    data.tab=activeTab;
+    data.savedAt=Date.now();
+    data.version=3;
+    const nextRevision=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+    data.revision=nextRevision;
+    // A failed backup write must not prevent the current save from succeeding.
+    if(raw!==null&&isValidSave(previous)){
+      try{localStorage.setItem(BACKUP_KEY,raw)}catch(_){}
+    }
+    localStorage.setItem('loothub-arsenal-alpha-v1',JSON.stringify(data));
+    lastPersistedRevision=nextRevision;
+    saveFailure=false;
+  }catch(_){saveFailure=true}
+  updateSaveIndicator();
+  return !saveFailure;
+}
+
 function recordActivity(data,text) {
   if(!Array.isArray(data.ledger))data.ledger=[];
   const now=Date.now();
@@ -104,7 +136,7 @@ function saveHub(){
   const count=s.items.length;
   const listed=(s.listings||[]).length;
   const ledger=(s.ledger||[]).length;
-  return '<section class="panel"><div class="section-eyebrow">PROGRESS PROTECTION</div><h2>My Save</h2>'+
+  return '<section class="panel"><div class="section-eyebrow">PROGRESS PROTECTION</div><h2>My Save</h2>'+ (recoveryRequired?'<div class="notice"><b>Save recovery required.</b><p>Your existing save was unreadable. It has not been overwritten. Restore a previous snapshot or import your exported save before continuing.</p></div>':saveConflict?'<div class="notice"><b>Another tab updated this game.</b><p>This tab is not allowed to overwrite newer progress.</p><button onclick="reloadLatestProgress()">Reload latest save</button></div>':'')+
   '<div class="notice"><b>Autosave active on this device.</b><p class="muted tiny">Wallet, inventory, opened items, floats, listings, transactions, negotiations, reputation, and settings save automatically. Your existing save is retained when the game updates.</p></div>'+
   '<div class="stat"><span class="muted">Last saved</span><b>'+new Date(s.savedAt||Date.now()).toLocaleString()+'</b></div>'+
   '<div class="stat"><span class="muted">Items carried</span><b>'+count+'</b></div>'+
@@ -123,7 +155,7 @@ function listingChance(ratio) {
   return 0;
 }
 function marketTick() {
-  if(!s || !Array.isArray(s.listings))return;
+  if(recoveryRequired||saveConflict||!s || !Array.isArray(s.listings))return;
   const now=Date.now();
   let changed=false;
   for(const listing of [...s.listings]) {
@@ -149,6 +181,7 @@ function marketTick() {
   if(changed)save();
 }
 function submitListing(k) {
+  if(!canMutate())return;
   const item=s.items.find(v=>v.id===k),input=document.getElementById('listPrice');
   if(!item||!input)return;
   const ask=Number(input.value);
@@ -175,6 +208,7 @@ function listItem(k) {
   '<div class="row"><button class="primary" onclick="submitListing(\''+escapeHTML(k)+'\')">List for sale</button><button onclick="inspect(\''+escapeHTML(k)+'\')">Back</button></div>');
 }
 function cancelListing(k) {
+  if(!canMutate())return;
   const listing=(s.listings||[]).find(v=>v.id===k);
   if(!listing)return;
   s.listings=s.listings.filter(v=>v.id!==k);
