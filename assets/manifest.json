@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "assetStatus": "art-pipeline-prepared",
-  "notes": "These paths are future deliverables. The current game renders SVG fallbacks; none of the uncreated files are requested from the browser.",
+  "assetStatus": "model-specific-vector-masters-live",
+  "notes": "Patch 0.3.2 integrates 17 distinct source SVG model masters via assets/weapon-masters.js. Final finish illustrations and bitmap export files remain planned; SVG masters are usable now and load without network image requests.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -46,12 +46,15 @@
       "finish": "Slate Grid",
       "tier": 0,
       "rarity": "Common",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/glock-18--slate-grid.png",
       "inspection": "assets/renders/glock-18--slate-grid-1600.webp",
       "inventory": "assets/renders/glock-18--slate-grid-640.webp",
       "thumbnail": "assets/renders/glock-18--slate-grid-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "glock-18",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "usp-s--dustline",
@@ -59,12 +62,15 @@
       "finish": "Dustline",
       "tier": 0,
       "rarity": "Common",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/usp-s--dustline.png",
       "inspection": "assets/renders/usp-s--dustline-1600.webp",
       "inventory": "assets/renders/usp-s--dustline-640.webp",
       "thumbnail": "assets/renders/usp-s--dustline-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "usp-s",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "mp5--metro-fade",
@@ -72,12 +78,15 @@
       "finish": "Metro Fade",
       "tier": 0,
       "rarity": "Common",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/mp5--metro-fade.png",
       "inspection": "assets/renders/mp5--metro-fade-1600.webp",
       "inventory": "assets/renders/mp5--metro-fade-640.webp",
       "thumbnail": "assets/renders/mp5--metro-fade-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "mp5",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "p250--tarmac",
@@ -85,12 +94,15 @@
       "finish": "Tarmac",
       "tier": 0,
       "rarity": "Common",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/p250--tarmac.png",
       "inspection": "assets/renders/p250--tarmac-1600.webp",
       "inventory": "assets/renders/p250--tarmac-640.webp",
       "thumbnail": "assets/renders/p250--tarmac-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "p250",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "nova--ash-veil",
@@ -98,12 +110,15 @@
       "finish": "Ash Veil",
       "tier": 0,
       "rarity": "Common",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/nova--ash-veil.png",
       "inspection": "assets/renders/nova--ash-veil-1600.webp",
       "inventory": "assets/renders/nova--ash-veil-640.webp",
       "thumbnail": "assets/renders/nova--ash-veil-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "nova",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "ump-45--signal-green",
@@ -111,12 +126,15 @@
       "finish": "Signal Green",
       "tier": 1,
       "rarity": "Uncommon",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/ump-45--signal-green.png",
       "inspection": "assets/renders/ump-45--signal-green-1600.webp",
       "inventory": "assets/renders/ump-45--signal-green-640.webp",
       "thumbnail": "assets/renders/ump-45--signal-green-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "ump-45",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "famas--polar-relay",
@@ -124,12 +142,15 @@
       "finish": "Polar Relay",
       "tier": 1,
       "rarity": "Uncommon",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/famas--polar-relay.png",
       "inspection": "assets/renders/famas--polar-relay-1600.webp",
       "inventory": "assets/renders/famas--polar-relay-640.webp",
       "thumbnail": "assets/renders/famas--polar-relay-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "famas",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "mac-10--circuit-blue",
@@ -137,12 +158,15 @@
       "finish": "Circuit Blue",
       "tier": 1,
       "rarity": "Uncommon",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/mac-10--circuit-blue.png",
       "inspection": "assets/renders/mac-10--circuit-blue-1600.webp",
       "inventory": "assets/renders/mac-10--circuit-blue-640.webp",
       "thumbnail": "assets/renders/mac-10--circuit-blue-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "mac-10",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "five-seven--copper-web",
@@ -150,12 +174,15 @@
       "finish": "Copper Web",
       "tier": 1,
       "rarity": "Uncommon",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/five-seven--copper-web.png",
       "inspection": "assets/renders/five-seven--copper-web-1600.webp",
       "inventory": "assets/renders/five-seven--copper-web-640.webp",
       "thumbnail": "assets/renders/five-seven--copper-web-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "five-seven",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "m4a4--voltage-bloom",
@@ -163,12 +190,15 @@
       "finish": "Voltage Bloom",
       "tier": 2,
       "rarity": "Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/m4a4--voltage-bloom.png",
       "inspection": "assets/renders/m4a4--voltage-bloom-1600.webp",
       "inventory": "assets/renders/m4a4--voltage-bloom-640.webp",
       "thumbnail": "assets/renders/m4a4--voltage-bloom-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "m4a4",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "ak-47--ghostline",
@@ -176,12 +206,15 @@
       "finish": "Ghostline",
       "tier": 2,
       "rarity": "Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/ak-47--ghostline.png",
       "inspection": "assets/renders/ak-47--ghostline-1600.webp",
       "inventory": "assets/renders/ak-47--ghostline-640.webp",
       "thumbnail": "assets/renders/ak-47--ghostline-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "ak-47",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "awp--night-watch",
@@ -189,12 +222,15 @@
       "finish": "Night Watch",
       "tier": 2,
       "rarity": "Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/awp--night-watch.png",
       "inspection": "assets/renders/awp--night-watch-1600.webp",
       "inventory": "assets/renders/awp--night-watch-640.webp",
       "thumbnail": "assets/renders/awp--night-watch-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "awp",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "desert-eagle--solar-ash",
@@ -202,12 +238,15 @@
       "finish": "Solar Ash",
       "tier": 2,
       "rarity": "Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/desert-eagle--solar-ash.png",
       "inspection": "assets/renders/desert-eagle--solar-ash-1600.webp",
       "inventory": "assets/renders/desert-eagle--solar-ash-640.webp",
       "thumbnail": "assets/renders/desert-eagle--solar-ash-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "desert-eagle",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "ak-47--crimson-circuit",
@@ -215,12 +254,15 @@
       "finish": "Crimson Circuit",
       "tier": 3,
       "rarity": "Super Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/ak-47--crimson-circuit.png",
       "inspection": "assets/renders/ak-47--crimson-circuit-1600.webp",
       "inventory": "assets/renders/ak-47--crimson-circuit-640.webp",
       "thumbnail": "assets/renders/ak-47--crimson-circuit-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "ak-47",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "awp--eclipse",
@@ -228,12 +270,15 @@
       "finish": "Eclipse",
       "tier": 3,
       "rarity": "Super Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/awp--eclipse.png",
       "inspection": "assets/renders/awp--eclipse-1600.webp",
       "inventory": "assets/renders/awp--eclipse-640.webp",
       "thumbnail": "assets/renders/awp--eclipse-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "awp",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "m4a1-s--prism-burn",
@@ -241,12 +286,15 @@
       "finish": "Prism Burn",
       "tier": 3,
       "rarity": "Super Rare",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/m4a1-s--prism-burn.png",
       "inspection": "assets/renders/m4a1-s--prism-burn-1600.webp",
       "inventory": "assets/renders/m4a1-s--prism-burn-640.webp",
       "thumbnail": "assets/renders/m4a1-s--prism-burn-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "m4a1-s",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "karambit--golden-talon",
@@ -254,12 +302,15 @@
       "finish": "Golden Talon",
       "tier": 4,
       "rarity": "Legendary",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/karambit--golden-talon.png",
       "inspection": "assets/renders/karambit--golden-talon-1600.webp",
       "inventory": "assets/renders/karambit--golden-talon-640.webp",
       "thumbnail": "assets/renders/karambit--golden-talon-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "karambit",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "butterfly-knife--spectrum",
@@ -267,12 +318,15 @@
       "finish": "Spectrum",
       "tier": 4,
       "rarity": "Legendary",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/butterfly-knife--spectrum.png",
       "inspection": "assets/renders/butterfly-knife--spectrum-1600.webp",
       "inventory": "assets/renders/butterfly-knife--spectrum-640.webp",
       "thumbnail": "assets/renders/butterfly-knife--spectrum-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "butterfly-knife",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     },
     {
       "id": "bayonet--black-ember",
@@ -280,12 +334,44 @@
       "finish": "Black Ember",
       "tier": 4,
       "rarity": "Legendary",
-      "status": "planned",
+      "status": "vector-foundation-live; finish-art-not-yet-approved",
       "master": "assets/source/bayonet--black-ember.png",
       "inspection": "assets/renders/bayonet--black-ember-1600.webp",
       "inventory": "assets/renders/bayonet--black-ember-640.webp",
       "thumbnail": "assets/renders/bayonet--black-ember-320.webp",
-      "approved": false
+      "approved": false,
+      "vectorModel": "bayonet",
+      "vectorSource": "assets/weapon-masters.js",
+      "vectorStatus": "implemented"
     }
-  ]
+  ],
+  "vectorFoundation": {
+    "source": "assets/weapon-masters.js",
+    "format": "inline-svg",
+    "modelCount": 17,
+    "modelNames": [
+      "AK-47",
+      "AWP",
+      "Bayonet",
+      "Butterfly Knife",
+      "Desert Eagle",
+      "FAMAS",
+      "Five-SeveN",
+      "Glock-18",
+      "Karambit",
+      "M4A1-S",
+      "M4A4",
+      "MAC-10",
+      "MP5",
+      "Nova",
+      "P250",
+      "UMP-45",
+      "USP-S"
+    ],
+    "approvedFor": "silhouette and art-direction foundation",
+    "finishDetail": "temporary procedural palette and pattern surfaces until patch 0.3.3",
+    "viewBox": "0 0 640 270",
+    "usesSourceImageFallback": true,
+    "status": "integrated"
+  }
 }
