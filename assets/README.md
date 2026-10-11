@@ -1,13 +1,13 @@
 # Arsenal visual asset pipeline (Patch 0.3.0)
 
-This directory establishes the source-of-truth manifest for the 19 existing Arsenal finishes. **This patch does not yet supply or load any new bitmap images.** The SVG illustrations remain the intentional fallback.
+This directory establishes the source-of-truth manifest for 19 existing Arsenal finishes. **Patch 0.3.2 now loads 17 distinct vector weapon masters** from `assets/weapon-masters.js`, using the same 640 × 270 framing. Every weapon model has dedicated silhouette geometry. These vector masters are visible in item cards, inventory, case contents, opening reels, and inspection. Finished, individually approved high-resolution skin illustrations are still planned for 0.3.3; they do not exist yet.
 
 ## Approval process
-1. Create a consistent approved weapon master for each model. Artwork must use a fixed side-profile/three-quarter presentation, weapon facing right.
+1. The 17 model-specific SVG masters now establish consistent composition, silhouette and aspect ratio. They are clean vector foundations rather than finished textured artwork.
 2. Produce unique *original* finish artwork for each entry in `manifest.json`. Keep the weapon geometry and framing intact. High-rarity items receive stronger finishing detail, not different scale.
-3. Review each full-resolution output for weapon identity, silhouette, texture alignment, shadows, transparent edges, readability and distortion before marking `approved:true`.
+3. Review each subsequent full-resolution finish output for weapon identity, silhouette, texture alignment, shadows, transparent edges, readability and distortion before marking `approved:true`.
 4. Preserve 1600px inspection exports and create separate 640px card and 320px grid derivatives. Never upscale thumbnails for detail screens.
-5. Add assets only after their files exist and validate that every approved file is loadable. Missing/unapproved assets fall back to existing SVG graphics.
+5. Add external bitmap assets only after their files exist and validate that every approved file is loadable. Missing/unapproved skins continue using model-specific inline SVG masters. Imported legacy items outside the known model set retain the generic SVG fallback.
 6. In future UI patches, load assets through a common manifest-based resolver, with each item slug mapping to exactly one set of image resolutions. Degrade gracefully on slow mobile connections.
 
 ## Fixed standards
@@ -18,3 +18,11 @@ This directory establishes the source-of-truth manifest for the 19 existing Arse
 - Each case, weapon and skin is distinct: no single generic firearm image used for all.
 - End-to-end visual test should compare 390px mobile viewport and 1280px desktop.
 - Never put losslessly sourced art into inline base64 application code.
+
+## Patch 0.3.2 implementation notes
+
+- The renderer is registered as `window.ArsenalMasters`. Each model has a dedicated composition with distinguishing receiver, stock, magazine, barrel, sights or blade geometry, as appropriate.
+- `ArsenalMasters.render({kind:'skin',weapon,skin,tier})` returns an accessible 640 × 270 inline SVG. Each render uses a unique paint identifier to avoid gradient collisions across inventory grids.
+- The current 19 finishes have preliminary color palettes and procedural surface marks, **not** final individual painted finish assets. Final artwork should retain the same silhouette geometry and use the manifest's future exported image paths.
+- The case image remains its own vector illustration; this patch focuses on weapons.
+- The gameplay save structure, drop chances, economy calculations and item instance IDs are unchanged.
