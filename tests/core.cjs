@@ -85,6 +85,50 @@ test('All Arsenal models have distinct, accessible vector artwork',()=>{
     assert.equal(entry.approved,false,'Final skin artwork must not be falsely marked complete');
   }
 });
+
+test('Reel weapon paints use isolated SVG styles instead of globally shared accents',()=>{
+  const g=boot();
+  const a=g.run("visualArt({kind:'skin',weapon:'AK-47',skin:'Ghostline',tier:2})");
+  const b=g.run("visualArt({kind:'skin',weapon:'AK-47',skin:'Crimson Circuit',tier:3})");
+  const idA=a.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
+  const idB=b.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
+  assert(idA&&idB&&idA!==idB,'Two cards must never share the same SVG root ID');
+  for(const [svg,id] of [[a,idA],[b,idB]]){
+    assert(svg.includes('#'+id+' .finish{fill:url(#'+id+'f)'),
+      'This item must use its own finish gradient');
+    assert(svg.includes('#'+id+' .metal{fill:url(#'+id+'m)'),
+      'This item must use its own metallic shader');
+    assert(!svg.includes('.arsenal-master .finish{'),
+      'Global finish CSS leaks the last rendered skin across all reel cards');
+    const styles=svg.match(/<style>([\s\S]+?)<\/style>/)?.[1];
+    assert(styles,'SVG style block missing');
+    const selectors=[...styles.matchAll(/(?:^|\})\s*([^{}]+)\{/g)].map(m=>m[1].trim());
+    assert(selectors.length>=10,'Expected model component CSS');
+    assert(selectors.every(selector=>selector.startsWith('#'+id+' ')),
+      'All SVG CSS rules must be scoped to their own root, not apply to neighboring items');
+  }
+  assert.notEqual(
+    a.match(/<linearGradient id="[^"]+f"[^>]*><stop stop-color="([^"]+)"/)?.[1],
+    b.match(/<linearGradient id="[^"]+f"[^>]*><stop stop-color="([^"]+)"/)?.[1],
+    'Different finishes should retain their own palettes');
+});
+test('Opening winner reel tile uses the identical saved item as final reward',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy();openCase(s.items[0].id)');
+  const won=g.state().items[0];
+  assert.equal(won.kind,'skin');
+  const modal=g.byId('overlay').innerHTML;
+  const tile42=modal.split('data-reel-index="42"')[1]?.split('data-reel-index="43"')[0];
+  assert(tile42,'Winning tile missing from reel');
+  assert(tile42.includes('data-weapon-model="'+won.weapon+'"'),'Winning weapon model mismatch');
+  assert(tile42.includes('data-finish="'+won.skin+'"'),'Winning skin finish mismatch');
+  assert(tile42.includes('viewBox="0 0 640 270"'),'Winning tile must use final weapon master renderer');
+  g.run('finishOpening()');
+  const reveal=g.byId('overlay').innerHTML;
+  assert(reveal.includes('data-weapon-model="'+won.weapon+'"'),'Final reward changed model');
+  assert(reveal.includes('data-finish="'+won.skin+'"'),'Final reward changed finish');
+  assert.equal(g.state().items[0].id,won.id,'Winning item identity must remain unchanged');
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
