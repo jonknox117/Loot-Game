@@ -7,9 +7,11 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
+const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
+assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
-const script=upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -55,6 +57,32 @@ test('Asset manifest exactly maps all catalog items',()=>{
     assert(item,'Missing '+weapon+' '+finish);
     assert.equal(item.tier,tier);
     assert.equal(item.approved,false);
+  }
+});
+test('All Arsenal models have distinct, accessible vector artwork',()=>{
+  const g=boot();
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const models=JSON.parse(g.run('JSON.stringify(window.ArsenalMasters.modelNames)'));
+  assert.equal(models.length,17);
+  assert.equal(manifest.vectorFoundation.modelCount,17);
+  const catalog=JSON.parse(g.run('JSON.stringify(catalog.map(a=>[a[0],a[1],a[2]]))'));
+  const uniqueShapes=new Set();
+  for(const [weapon,skin,tier] of catalog){
+    const data={kind:'skin',weapon,skin,tier};
+    const html=g.run('visualArt('+JSON.stringify(data)+')');
+    assert(html.includes('class="arsenal-master"')||html.includes('class="arsenal-master" role='),'Missing SVG master '+weapon);
+    assert(html.includes('viewBox="0 0 640 270"'),'Unexpected artwork scale '+weapon);
+    assert(html.includes('data-weapon-model="'+weapon+'"'),'Incorrect weapon asset '+weapon);
+    assert(html.includes('aria-label='),'Missing accessible weapon title '+weapon);
+    const geometricBody=html.match(/<g transform="translate\(0 0\)"[^>]*>([\s\S]*?)<\/g>/);
+    assert(geometricBody,'Missing art components for '+weapon);
+    uniqueShapes.add(geometricBody[1]);
+  }
+  assert.equal(uniqueShapes.size,17,'All weapon model silhouettes must be distinct');
+  for(const entry of manifest.items) {
+    assert.equal(entry.vectorStatus,'implemented');
+    assert.equal(entry.vectorSource,'assets/weapon-masters.js');
+    assert.equal(entry.approved,false,'Final skin artwork must not be falsely marked complete');
   }
 });
 test('Brand-new profile starts at zero and persists baseline',()=>{
