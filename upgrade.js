@@ -214,6 +214,9 @@ function enhancedPortfolio(){
 function visualArt(item) {
   const rarityIdx=item.kind==='case'?2:(item.tier||0);
   const color=['#9ca6b6','#55c983','#63a9ff','#c28bf9','#eac46d'][rarityIdx];
+  const seed=String(item.id||item.kind+'-'+(item.weapon||'')+'-'+(item.skin||'')+'-'+(item.tier||0));
+  const artHash=Array.from(seed).reduce((h,ch)=>Math.imul(h,33)^ch.charCodeAt(0),5381)>>>0;
+  const metalId='m'+artHash.toString(36),bladeId='b'+artHash.toString(36);
   const w=String(item.weapon||'');
   const knife=/Knife|Karambit|Bayonet/.test(w);
   const sniper=/AWP/.test(w);
@@ -227,16 +230,16 @@ function visualArt(item) {
       '<rect x="158" y="83" width="45" height="23" rx="4" fill="'+color+'"/>'+
       '<rect x="95" y="61" width="16" height="83" rx="4" fill="#1c2836"/><rect x="250" y="61" width="16" height="83" rx="4" fill="#1c2836"/>';
   } else if(knife) {
-    shape='<path d="M76 121L220 50 285 30 265 68 142 135Z" fill="url(#blade)" stroke="'+color+'" stroke-width="3"/>'+
+    shape='<path d="M76 121L220 50 285 30 265 68 142 135Z" fill="url(#'+bladeId+')" stroke="'+color+'" stroke-width="3"/>'+
       '<path d="M87 122l-34 20-12-16 35-28" fill="#26354b" stroke="'+color+'" stroke-width="4"/>'+
       '<circle cx="82" cy="117" r="7" fill="#f7cd7d"/>';
   } else if(pistol) {
-    shape='<path d="M72 73h192l15 22-16 15h-88l-14 67h-49l-4-70H72z" fill="url(#metal)" stroke="'+color+'" stroke-width="3"/>'+
+    shape='<path d="M72 73h192l15 22-16 15h-88l-14 67h-49l-4-70H72z" fill="url(#'+metalId+')" stroke="'+color+'" stroke-width="3"/>'+
       '<path d="M80 70h171v18H80z" fill="#475a71"/>'+
       '<path d="M168 110l-14 37h-16l-1-37" fill="#101b2a" stroke="#586c80" stroke-width="3"/>'+
       '<path d="M115 143l12 29h30" stroke="#344b63" stroke-width="5"/>';
   } else {
-    shape='<path d="M31 92h48l21-26h129l18 14 70 4v17l-70 10h-64l-27 16-13 43h-33l-8-43-34 10-10-21H31z" fill="url(#metal)" stroke="'+color+'" stroke-width="3"/>'+
+    shape='<path d="M31 92h48l21-26h129l18 14 70 4v17l-70 10h-64l-27 16-13 43h-33l-8-43-34 10-10-21H31z" fill="url(#'+metalId+')" stroke="'+color+'" stroke-width="3"/>'+
       '<path d="M30 94l-10-20H9v44h22" fill="#26364d" stroke="#60758b" stroke-width="3"/>'+
       '<path d="M228 85h112v10H228z" fill="#61758d"/>'+
       '<path d="M100 67h128v7H100z" fill="'+color+'" opacity=".7"/>'+
@@ -246,8 +249,8 @@ function visualArt(item) {
       '<path d="M103 53h26v12h-26z" fill="#1b2938" stroke="'+color+'" stroke-width="2"/>');
   }
   return '<div class="art weapon-art"><svg viewBox="0 0 360 190" role="img" aria-label="Stylized collectible '+(item.kind==='case'?'case':'weapon')+' artwork">'+
-    '<defs><linearGradient id="metal" x2="1" y2="1"><stop stop-color="'+color+'"/><stop offset=".28" stop-color="#3b516b"/><stop offset=".75" stop-color="#18273a"/><stop offset="1" stop-color="'+color+'"/></linearGradient>'+
-    '<linearGradient id="blade" x2="1" y2="1"><stop stop-color="#ecf0f7"/><stop offset=".55" stop-color="'+color+'"/><stop offset="1" stop-color="#253d56"/></linearGradient></defs>'+
+    '<defs><linearGradient id="'+metalId+'" x2="1" y2="1"><stop stop-color="'+color+'"/><stop offset=".28" stop-color="#3b516b"/><stop offset=".75" stop-color="#18273a"/><stop offset="1" stop-color="'+color+'"/></linearGradient>'+
+    '<linearGradient id="'+bladeId+'" x2="1" y2="1"><stop stop-color="#ecf0f7"/><stop offset=".55" stop-color="'+color+'"/><stop offset="1" stop-color="#253d56"/></linearGradient></defs>'+
     '<ellipse cx="180" cy="160" rx="150" ry="13" fill="'+color+'" opacity=".07"/>'+shape+
     '</svg></div>';
 }
