@@ -1,0 +1,62 @@
+const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs');
+
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const url = 'file://' + path.resolve(__dirname, '../index.html');
+
+  const assert = (condition, message) => { if (!condition) throw Error(message); };
+  const waitForVisible = async (selector) => page.locator(selector).waitFor({ state: 'visible', timeout: 10000 });
+  try {
+    await page.goto(url, { waitUntil: 'load' });
+    await waitForVisible('.brand');
+    assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
+
+    await page.getByRole('button', { name: 'Earn', exact: true }).click();
+    await waitForVisible('text=MicroTasks');
+    for (let i = 0; i < 25; i++) {
+      await page.getByRole('button', { name: /Earn 1 coin/ }).click();
+    }
+    assert((await page.locator('#wallet').textContent()).includes('25'), 'Earning must credit 25 coins');
+
+    await page.getByRole('button', { name: 'Cases', exact: true }).click();
+    await page.getByRole('button', { name: 'Purchase case' }).click();
+    await waitForVisible('text=Sealed Arsenal Case');
+    assert((await page.locator('#wallet').textContent()).includes('0'), 'Case purchase must debit wallet');
+
+    await page.getByRole('button', { name: 'Keep item' }).click();
+    await page.getByRole('button', { name: 'Inventory', exact: true }).click();
+    await waitForVisible('.item');
+    assert(await page.locator('.item').count() === 1, 'Purchase must create one owned sealed case');
+
+    await page.reload({ waitUntil: 'load' });
+    assert(await page.locator('.item').count() === 1, 'Case ownership must survive page reload');
+
+    await page.getByRole('button', { name: 'Inspect / trade' }).click();
+    await page.getByRole('button', { name: 'Open case' }).click();
+    await page.getByRole('button', { name: 'Skip animation' }).click();
+    await waitForVisible('text=Estimated market value');
+    await page.getByRole('button', { name: 'Inspect / sell' }).click();
+    assert(await page.getByRole('button', { name: /Instant sell/ }).isVisible(), 'Opened skin must be sellable');
+
+    await page.getByRole('button', { name: /Instant sell/ }).click();
+    assert(await page.locator('.item').count() === 0, 'Sold item must leave inventory');
+    const cash = Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, ''));
+    assert(cash > 0, 'Sale must credit wallet');
+
+    await page.reload({ waitUntil: 'load' });
+    const after = Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, ''));
+    assert(after === cash, 'Wallet must persist after reload');
+    assert(await page.locator('.item').count() === 0, 'Sold item must not reappear after reload');
+    assert(errors.length === 0, 'Browser console errors: ' + errors.join('; '));
+
+    await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
+    console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
+  } finally {
+    await browser.close();
+  }
+})().catch(err => { console.error('FAIL:', err.stack || err); process.exit(1); });
