@@ -313,3 +313,63 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 @media(prefers-reduced-motion: reduce) {
   *,*::before,*::after { animation-duration: .01ms!important; transition-duration: .01ms!important; scroll-behavior:auto!important; }
 }
+
+
+/* Patch 0.3.2 — unified 640×270 model-master presentation. */
+.weapon-master {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 51% 45%, color-mix(in srgb,var(--weapon-finish) 12%,transparent) 0%,transparent 65%),
+    radial-gradient(ellipse at 47% 68%,#2b3c54 0%,#172335 54%,#111a28 95%);
+  isolation: isolate;
+}
+.weapon-master:after {
+  content:"";
+  position:absolute;
+  inset:auto 12% 9px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--weapon-rarity),transparent);
+  opacity:.58;
+}
+.weapon-master svg.arsenal-master {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  overflow:visible;
+  filter:drop-shadow(0 3px 3px rgba(1,4,8,.17));
+}
+.item .weapon-master {
+  height:115px;
+  border:1px solid rgba(148,169,199,.10);
+  border-bottom:2px solid var(--weapon-rarity);
+}
+.tile .weapon-master {
+  width:100%;
+  height:81px;
+  margin:0 auto 3px;
+  border:0;
+  border-radius:6px;
+}
+.reveal-art .weapon-master {
+  min-height:195px;
+  height:clamp(185px,30vw,270px);
+  border-radius:11px;
+  border:1px solid color-mix(in srgb,var(--weapon-rarity) 40%,transparent);
+  background:
+    radial-gradient(ellipse at 51% 43%,color-mix(in srgb,var(--weapon-finish) 16%,transparent),transparent 62%),
+    linear-gradient(120deg,#202e42,#0c1521);
+}
+@media(max-width:700px) {
+  .item .weapon-master {height:84px;}
+  .tile .weapon-master {height:76px;}
+  .reveal-art .weapon-master {height:185px;min-height:0;}
+}
+@media(max-width:360px) {
+  .item .weapon-master {height:74px;}
+}
+
