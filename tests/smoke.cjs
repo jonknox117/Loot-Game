@@ -414,6 +414,60 @@ const fs = require('fs');
     },listed.item.id);
     assert(restoredItem&&restoredItem.base===listed.item.base,'Cancellation must return the original inventory item');
     assert(errors.length===0,'Mobile trading tools caused a browser exception: '+errors.join('; '));
+
+    // 0.5.3 — confirm the actual canvas overlay renders over transparent masters.
+    // The source WebP remains present/unchanged beneath the procedural surface.
+    await page.evaluate(()=>{
+      s.items.push({id:'wear-visual-proof',kind:'weapon',weapon:'MP5',tier:0,base:8,wearGrade:4});
+      s.items.push({id:'wear-pristine-proof',kind:'weapon',weapon:'MP5',tier:0,base:8,wearGrade:0});
+      s.items.push({id:'wear-skin-proof',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,wearGrade:3});
+      save();
+      inspect('wear-visual-proof');
+    });
+    await page.locator('.dialog .wear-overlay').waitFor({state:'attached',timeout:15000});
+    const firstWear=await page.evaluate(()=>{
+      const canvas=document.querySelector('.dialog canvas.wear-overlay');
+      const original=document.querySelector('.dialog .master-raster > img');
+      const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+      let touched=0,checksum=2166136261;
+      for(let i=3;i<data.length;i+=4){
+        if(data[i])touched++;
+        if(i%31===3)checksum=Math.imul(checksum^data[i],16777619)>>>0;
+      }
+      return {touched,checksum,width:canvas.width,height:canvas.height,
+        cornerAlpha:[data[3],data[(canvas.width-1)*4+3]],
+        source:original.currentSrc,grade:canvas.parentElement.dataset.wearGrade};
+    });
+    assert(firstWear.touched>100,'Battle-Scarred overlay must render visible marks on the MP5');
+    assert(firstWear.width>200&&firstWear.height>100,'Wear texture should be sharp on retina iPhone');
+    assert(firstWear.cornerAlpha.every(alpha=>alpha===0),
+      'Transparent weapon background must not receive wear pixels');
+    assert(firstWear.grade==='4','Canvas must be associated with the correct permanent wear grade');
+    await page.reload({waitUntil:'load'});
+    await page.evaluate(()=>inspect('wear-visual-proof'));
+    await page.locator('.dialog .wear-overlay').waitFor({state:'attached',timeout:15000});
+    const secondWear=await page.evaluate(()=>{
+      const canvas=document.querySelector('.dialog canvas.wear-overlay');
+      const data=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+      let checksum=2166136261;
+      for(let i=3;i<data.length;i+=4)if(i%31===3)checksum=Math.imul(checksum^data[i],16777619)>>>0;
+      return {checksum,width:canvas.width,height:canvas.height,
+        source:document.querySelector('.dialog .master-raster > img').currentSrc};
+    });
+    assert(secondWear.checksum===firstWear.checksum&&secondWear.width===firstWear.width,
+      'The same collectible must keep an identical scratch pattern after reloading');
+    assert(secondWear.source===firstWear.source,'Wear must not replace or re-encode the source art');
+    await page.evaluate(()=>inspect('wear-pristine-proof'));
+    assert(await page.locator('.dialog .wear-overlay').count()===0,
+      'Pristine condition must not draw any overlay');
+    const pristineSource=await page.locator('.dialog .master-raster > img').evaluate(img=>img.currentSrc);
+    assert(pristineSource===firstWear.source,'Pristine and worn examples must use the same weapon master');
+    await page.evaluate(()=>inspect('wear-skin-proof'));
+    await page.locator('.dialog .wear-overlay').waitFor({state:'attached',timeout:15000});
+    assert(await page.locator('.dialog .approved-skin .wear-overlay').count()===1,
+      'Approved skin assets must use the same mask-based wear engine');
+    await page.evaluate(()=>closeDialog());
+    assert(errors.length===0,'Procedural wear generated browser exceptions: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
