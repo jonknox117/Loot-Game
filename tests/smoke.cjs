@@ -14,6 +14,37 @@ const fs = require('fs');
   try {
     await page.goto(url, { waitUntil: 'load' });
     await waitForVisible('.brand');
+    // Owner-supplied skins must load full-resolution transparent art in real Chromium, not just in the manifest.
+    const skinsRendered=await page.evaluate(async()=>{
+      const defs=[
+        ['Tactical Machete','Predator',2,260],
+        ['Desert Eagle','Blossom',3,950],
+        ['Karambit','Kryptonite',4,3800],
+        ['SPAS-12','Blood Thirsty',3,1100],
+        ['AWP','Crimson Delight',4,4200]
+      ];
+      const results=[];
+      for(const [weapon,skin,tier,base] of defs){
+        const wrapper=document.createElement('div');
+        wrapper.innerHTML=visualArt({id:'smoke-'+skin,kind:'skin',weapon,skin,tier,base,wearGrade:0},'inspect');
+        const render=wrapper.querySelector('.approved-skin'),img=render?.querySelector('img');
+        if(!img){results.push({weapon,skin,ok:false,reason:'missing img'});continue}
+        try{
+          await img.decode();
+          const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;
+          const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+          const alpha=ctx.getImageData(0,0,1,1).data[3];
+          const neutral=visualArt({kind:'weapon',weapon,tier,base},'inspect');
+          results.push({weapon,skin,ok:img.naturalWidth>=1500&&alpha===0&&
+            render.dataset.finish===skin&&render.dataset.wearGrade==='0'&&
+            !neutral.includes('data-finish='),size:img.naturalWidth,alpha});
+        }catch(err){results.push({weapon,skin,ok:false,reason:String(err)})}
+      }
+      return results;
+    });
+    assert(skinsRendered.length===5&&skinsRendered.every(x=>x.ok),
+      'Owner-approved cosmetics must all load as 1600px transparent, separate inspection art: '+JSON.stringify(skinsRendered));
+
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
 
     // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
