@@ -739,12 +739,7 @@ function enhancedMarket(){
       '<button onclick="'+marketAction('cancelListing',l.id)+'">Cancel</button></div></div>'+
       '</div>';
   }).join('');
-  const ownable=s.items.filter(v=>window.LootHubMarketCore.eligible(v));
-  const sellShelf=ownable.slice(0,6).map(item=>
-    '<div class="item">'+visualArt(item)+
-    '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
-    '<p class="muted">Market '+money(marketEstimate(item))+' coins</p>'+
-    '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
+  const ownable=window.LootHubTradingTools.filterOwned(s,marketOwnedView);
   const traderDirectory=s.market.traders.filter(x=>x.role==='buyer').map(t=>{
     const traits=window.LootHubTraders.summary(t);
     return '<div class="market-trader-profile"><b>'+escapeHTML(t.name)+'</b>'+
@@ -755,7 +750,7 @@ function enhancedMarket(){
   }).join('');
   const view=npcMarketView;
   const select=(a,b)=>a===b?' selected':'';
-  const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
+  const count=npcMatches().length;
   const offline=s.market.lastOfflineReport;
   const offlineText=offline&&typeof offline==='object'&&Number.isFinite(offline.at)?
     '<section class="panel offline-report"><div class="section-eyebrow">WHILE YOU WERE AWAY</div>'+
@@ -767,7 +762,12 @@ function enhancedMarket(){
      ['New NPC listings',offline.restocked]].map(([label,n])=>
       '<div class="stat"><span>'+label+'</span><b>'+n+'</b></div>').join('')+'</div>'+
     '<p class="muted tiny">Offline catch-up is capped at 8 hours per return. Skipped time cannot be replayed by refreshing.</p></section>':'';
-  return offlineText+marketPulse()+'<section class="panel npc-market-section">'+
+  const shortcuts='<nav class="market-shortcuts" aria-label="Market sections">'+
+    [['market-browse','Browse market'],['market-listings','My listings'],
+     ['market-offers','Offers & history'],['market-sell','Sell inventory']]
+      .map(([id,label])=>'<button onclick="'+marketAction('jumpMarketSection',id)+'">'+label+'</button>').join('')+
+    '</nav>';
+  return shortcuts+offlineText+marketPulse()+'<section class="panel npc-market-section" id="market-browse">'+
     '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
     '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
       count+' listings</span></div>'+
@@ -784,22 +784,36 @@ function enhancedMarket(){
       '<label>Sort by<select id="npcSortFilter" class="field" onchange="updateNpcMarketFilter(\'sort\',this.value)">'+
       [['price-asc','Price: Low → High'],['price-desc','Price: High → Low'],['value-desc','Highest estimated value'],['newest','Newest first']].map(x=>
         '<option value="'+x[0]+'"'+select(x[0],view.sort)+'>'+x[1]+'</option>').join('')+
-      '</select></label></div>'+
+      '</select></label>'+
+    '<label>Deals<select id="npcAffordability" class="field" onchange="updateNpcMarketFilter(\'affordability\',this.value)">'+
+      [['all','All prices'],['affordable','I can afford'],['under-market','At or below market']]
+      .map(x=>'<option value="'+x[0]+'"'+select(x[0],view.affordability)+'>'+x[1]+'</option>').join('')+
+    '</select></label></div>'+
+    '<button class="market-reset" onclick="resetNpcMarketFilters()">Reset filters</button>'+
     '<div class="npc-market-grid" id="npcMarketResults">'+renderNpcMarketResults()+'</div>'+
     '<p class="muted tiny">NPC stock refreshes gradually. Each listing supports a saved negotiation with up to three offers. No real players are connected.</p>'+
     '</section>'+
-    '<section class="panel"><div class="row space"><h2>My Market Listings <span class="muted">('+
+    '<section class="panel" id="market-listings"><div class="row space"><h2>My Market Listings <span class="muted">('+
       (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
     (listingItems||'<p class="muted">No active listings. Choose an owned item below to set your price.</p>')+
     '<p class="muted tiny">Your listings stay in escrow. Simulated buyers have finite budgets. Successful sales deduct the 5% fee.</p></section>'+ 
+    tradeCenter()+
     '<section class="panel"><div class="section-eyebrow">TRADER PROFILES</div><h2>Meet the Buyers</h2>'+ 
     '<p class="muted tiny">Different collectors value different item types and negotiate with varying patience. Budgets are saved and decrease after purchases.</p>'+ 
     '<div class="market-trader-directory">'+traderDirectory+'</div></section>'+
-    '<section class="panel"><div class="row space"><h3>List from Inventory</h3>'+
-    '<span class="muted tiny">'+ownable.length+' available</span></div>'+
-    (sellShelf?'<div class="cards">'+sellShelf+'</div>':
-      '<p class="muted">Nothing available to list. Existing listings are held separately.</p>')+
-    (ownable.length>6?'<p class="muted tiny">Showing 6 items. Use Full inventory to choose from the rest.</p>':'')+
+    '<section class="panel" id="market-sell"><div class="row space"><h3>List from Inventory</h3>'+
+    '<span class="muted tiny" id="marketOwnedCount">'+ownable.length+' available</span></div>'+
+    '<p class="muted tiny">Search every available collectible directly here; opening a listing moves only that item into escrow.</p>'+
+    '<div class="market-owned-controls">'+
+    '<label>Find an item<input id="marketOwnedSearch" class="field" type="search" placeholder="Weapon or finish..." value="'+
+      escapeHTML(marketOwnedView.search)+'" oninput="updateMarketOwnedFilter(\'search\',this.value)"></label>'+
+    '<label>Type<select class="field" id="marketOwnedKind" onchange="updateMarketOwnedFilter(\'kind\',this.value)">'+
+      [['all','All items'],['weapon','Base weapons'],['skin','Approved skins'],['case','Cases']]
+        .map(x=>'<option value="'+x[0]+'"'+select(x[0],marketOwnedView.kind)+'>'+x[1]+'</option>').join('')+'</select></label>'+
+    '<label>Order<select class="field" id="marketOwnedSort" onchange="updateMarketOwnedFilter(\'sort\',this.value)">'+
+      [['newest','Recently acquired'],['value-desc','Highest value'],['value-asc','Lowest value'],['name','Item name']]
+        .map(x=>'<option value="'+x[0]+'"'+select(x[0],marketOwnedView.sort)+'>'+x[1]+'</option>').join('')+'</select></label>'+
+    '</div><div id="marketOwnedResults">'+renderMarketOwnedResults()+'</div>'+
     '</section>';
 }
 function enhancedPortfolio(){
