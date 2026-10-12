@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "awp--night-watch",
+  "baseModel": "awp",
+  "weapon": "AWP",
+  "finish": "Night Watch",
+  "rarity": "Rare",
+  "tier": 2,
+  "finishVersion": "033D-pilot-1",
+  "neutralSource": "assets/renders/masters/awp-neutral-1600.webp",
+  "exports": {
+    "reel": "assets/renders/finishes/awp--night-watch-400.webp",
+    "inventory": "assets/renders/finishes/awp--night-watch-800.webp",
+    "inspect": "assets/renders/finishes/awp--night-watch-1600.webp"
+  },
+  "palette": [
+    "#242a55",
+    "#5b4689",
+    "#b5aaff"
+  ],
+  "method": "deterministic masked surface pigment and engraved pattern on source AWP silhouette",
+  "maskRegions": [
+    "olive-chassis",
+    "paint-main",
+    "paint-secondary",
+    "scope-housing"
+  ],
+  "sourceBundleLibrary": "/LootHub/loothub-awp-master-033D.zip",
+  "sourceScript": "scripts/build_awp_2d.py",
+  "approved": false
+}
