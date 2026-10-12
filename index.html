@@ -23,15 +23,42 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 @media(max-width:600px){.reveal-art .weapon-art{height:155px}.reel{height:125px}.tile .weapon-art{height:74px}}
 </style><link rel="stylesheet" href="./design.css"></head><body><div class="shell"><header class="top"><div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.3.2 · ARSENAL</small></div><div class="wallet">◈ <span id="wallet">0</span> coins<div id="saveStatus" class="save-status">● Checking save</div></div></header><nav class="nav" id="nav"></nav><main class="layout"><div id="main"></div><aside><section class="panel"><b>PORTFOLIO</b><div id="stats"></div></section><section class="panel"><b>ACTIVITY</b><div class="feed" id="feed"></div></section></aside></main><footer>Fictional single-player economy · No real-money purchases, wagering, or cash-out · Progress saves on this device.</footer></div><div id="overlay"></div>
 <script src="./assets/weapon-masters.js"></script>
+<script src="./assets/neutral-art/butterfly-knife.js"></script>
+<script src="./assets/neutral-art/pump-shotgun.js"></script>
+<script src="./assets/neutral-art/desert-eagle.js"></script>
+<script src="./assets/neutral-art/machete.js"></script>
+<script src="./assets/neutral-art/colt-45-revolver.js"></script>
+<script src="./assets/neutral-art/mp5.js"></script>
+<script src="./assets/neutral-art/mac-10.js"></script>
+<script src="./assets/neutral-art/tec-9.js"></script>
+<script src="./assets/neutral-art/tactical-tomahawk.js"></script>
+<script src="./assets/neutral-art/spas-12.js"></script>
 <script src="./upgrade.js"></script>
 <script>
 const KEY='loothub-arsenal-alpha-v1', tiers=['Common','Uncommon','Rare','Super Rare','Legendary'],odds=[70,20,7.5,2,.5], labels=['Standard Issue','Field Grade','Mil-Spec','Classified','Covert / Special'];
 const catalog=[
-['Glock-18','Slate Grid',0,6,'🔫'],['USP-S','Dustline',0,7,'🔫'],['MP5','Metro Fade',0,8,'🔫'],['P250','Tarmac',0,5,'🔫'],['Nova','Ash Veil',0,7,'🔫'],
-['UMP-45','Signal Green',1,19,'🔫'],['FAMAS','Polar Relay',1,23,'🔫'],['MAC-10','Circuit Blue',1,17,'🔫'],['Five-SeveN','Copper Web',1,21,'🔫'],
-['M4A4','Voltage Bloom',2,70,'🔫'],['AK-47','Ghostline',2,85,'🔫'],['AWP','Night Watch',2,105,'🎯'],['Desert Eagle','Solar Ash',2,92,'🔫'],
-['AK-47','Crimson Circuit',3,310,'🔫'],['AWP','Eclipse',3,390,'🎯'],['M4A1-S','Prism Burn',3,280,'🔫'],
-['Karambit','Starfall',4,1900,'🗡️'],['Butterfly Knife','Spectrum',4,2400,'🗡️'],['Bayonet','Black Ember',4,1650,'🗡️']];
+['Glock-18','Slate Grid',0,6,'🔫'],
+['MP5','Metro Fade',0,8,'🔫'],
+['MAC-10','Circuit Blue',1,17,'🔫'],
+['M4A4','Voltage Bloom',2,70,'🔫'],
+['AK-47','Ghostline',2,85,'🔫'],
+['AWP','Night Watch',2,105,'🎯'],
+['Desert Eagle','Solar Ash',2,92,'🔫'],
+['AK-47','Crimson Circuit',3,310,'🔫'],
+['AWP','Eclipse',3,390,'🎯'],
+['Karambit','Starfall',4,1900,'🗡️'],
+['Butterfly Knife','Spectrum',4,2400,'🗡️'],
+['12 Gauge Pump Shotgun','Walnut Steel',0,8,'🔫'],
+['MP5','Factory Black',0,8,'🔫'],
+['Tec-9','Perforated Steel',1,20,'🔫'],
+['MAC-10','Black Oxide',1,19,'🔫'],
+['Desert Eagle','Brushed Steel',1,22,'🔫'],
+['Colt .45 Revolver','Frontier Steel',2,95,'🔫'],
+['SPAS-12','Gunmetal',2,115,'🔫'],
+['Tactical Machete','Stonewash',3,320,'🗡️'],
+['Tactical Tomahawk','Field Steel',3,350,'🪓'],
+['Butterfly Knife','Satin Steel',4,1800,'🗡️']
+];
 let s=loadGame(KEY);if(!s||!Array.isArray(s.items))s={coins:0,items:[],history:[],earned:0,spent:0,sales:0,rep:0,openings:0,serial:0,offers:{},tab:'Home'};if(!Array.isArray(s.listings))s.listings=[];if(!Array.isArray(s.ledger))s.ledger=[];if(!s.preferences)s.preferences={fastOpen:false};
 let tab=s.tab||'Home',busy=false, pending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
 const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?'Sealed Arsenal Case':x.weapon+' | '+canonicalSkin(x.weapon,x.skin), rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>x.kind==='case'?25:Math.round(x.base*(x.stattrak?1.65:1)*(x.float<.07?1.4:x.float<.15?1.18:x.float>.45?.75:1)*(x.pattern===777?1.25:1)), caseItem=()=>({id:id(),kind:'case',paid:25}), rng=n=>Math.floor(Math.random()*n);
