@@ -319,7 +319,7 @@ const fs = require('fs');
     const removed=await page.evaluate(()=>{
       const id=s.market.npcListings[0].id;
       s.market.npcListings[0].expiresAt=Date.now()-1;
-      s.market.lastNpcRefreshAt=Date.now()-3600000;
+      s.market.lastNpcRefreshAt=Date.now()-24*3600000;
       save();
       return id;
     });
@@ -327,6 +327,8 @@ const fs = require('fs');
     const refreshed=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(!refreshed.market.npcListings.some(x=>x.id===removed),'Expired NPC listing must disappear');
     assert(refreshed.market.npcListings.length===15,'Expired NPC stock should restock without duplicate IDs');
+    assert(new Set(refreshed.market.npcListings.map(x=>x.item.id)).size===15,
+      'Restocked market items must preserve unique identities');
     assert(refreshed.market.lastOfflineReport.expired>=1,'Expiration must be included in report');
     assert(errors.length===0,'Browser errors after simulated offline return: '+errors.join('; '));
     // 0.4.7: full-inventory Market listing, search and pagination.
