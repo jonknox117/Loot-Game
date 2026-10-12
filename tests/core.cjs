@@ -1370,7 +1370,7 @@ test('0.5.0 defines five independent condition grades without changing published
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),100);
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:0})'),100);
 });
-test('0.5.0 fresh case remains ungraded, reward and NPC weapon/skin stock default to pristine',()=>{
+test('0.5.0/0.5.1 sealed cases are ungraded and a zero RNG roll produces pristine stock',()=>{
   const g=boot();
   g.run('for(let i=0;i<25;i++)clickEarn();buy()');
   const sealed=g.state().items[0];
@@ -1473,6 +1473,93 @@ test('0.5.0 old backups import; invalid grade and case condition are rejected',(
   const target=npcTampered.market.npcListings.find(x=>x.item.kind==='weapon');
   target.item.wearGrade=7;
   assert.equal(g.run('safeUpload('+JSON.stringify(npcTampered)+')'),false);
+});
+
+
+test('0.5.1 wear roll has fixed 8/22/40/22/8 boundaries without touching rarity',()=>{
+  const g=boot();
+  const pairs=[
+    [0,0],[.079999,0],[.08,1],[.299999,1],[.3,2],[.699999,2],
+    [.7,3],[.919999,3],[.92,4],[.999999,4],[1,4],[-1,0]
+  ];
+  for(const [fraction,grade] of pairs){
+    assert.equal(g.run('window.LootHubWear.rollGrade(()=>'+fraction+')'),grade,
+      'Wear grade at cumulative threshold '+fraction);
+  }
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(window.LootHubWear.ROLL_WEIGHTS)')),[8,22,40,22,8]);
+  const observed=JSON.parse(g.run('JSON.stringify((()=>{let found=[0,0,0,0,0];for(let i=0;i<10000;i++)found[window.LootHubWear.rollGrade(()=>(i+.5)/10000)]++;return found})())'));
+  assert.deepEqual(observed,[800,2200,4000,2200,800],
+    'Uniform sampling must produce exactly the published percentages');
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"skin",base:320,wearGrade:4})'),320);
+});
+test('0.5.1 case drop grade is rolled separately from rarity and weapon template',()=>{
+  const g=boot();
+  // Three random draws: existing rarity threshold, catalog pick and independent condition.
+  function reward(rarity,pick,wear){
+    g.run('Math.random=(()=>{const v=['+[rarity,pick,wear].join(',')+'];let i=0;return ()=>v[i++%v.length]})()');
+    return JSON.parse(g.run('JSON.stringify(roll())'));
+  }
+  const rarePristine=reward(.93,.05,.01);
+  const rareScarred=reward(.93,.05,.99);
+  assert.equal(rarePristine.tier,2);
+  assert.equal(rareScarred.tier,rarePristine.tier);
+  assert.equal(rareScarred.weapon,rarePristine.weapon);
+  assert.equal(rarePristine.wearGrade,0);
+  assert.equal(rareScarred.wearGrade,4);
+  const commonScarred=reward(.01,.05,.99);
+  assert.equal(commonScarred.tier,0);
+  assert.equal(commonScarred.wearGrade,4);
+  assert.notEqual(commonScarred.weapon,rareScarred.weapon);
+  const legendaryWorn=reward(.999,.99,.75);
+  assert.equal(legendaryWorn.tier,4);
+  assert.equal(legendaryWorn.wearGrade,3);
+  assert(legendaryWorn.kind==='weapon'||legendaryWorn.kind==='skin');
+});
+test('0.5.1 new NPC listings roll grade once while cases stay grade-free',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const current=g.state().market.npcListings.map(x=>({id:x.id,ask:x.ask,grade:x.item.wearGrade}));
+  // Existing stocked listings remain unchanged even when a refreshed market is checked.
+  g.run('window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),()=>.99)');
+  assert.deepEqual(g.state().market.npcListings.map(x=>({id:x.id,ask:x.ask,grade:x.item.wearGrade})),current);
+  const later=Date.now()+5*24*3600000;
+  const refresh=JSON.parse(g.run('JSON.stringify(window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,'+later+',()=>.99))'));
+  assert(refresh.added>0);
+  const offers=g.state().market.npcListings;
+  assert(offers.length>0);
+  assert(offers.some(x=>x.item.kind==='case'&&!Object.hasOwn(x.item,'wearGrade')));
+  assert(offers.some(x=>x.item.kind==='weapon'&&x.item.wearGrade===4));
+  assert(offers.some(x=>x.item.kind==='skin'&&x.item.wearGrade===4));
+  const before=offers.map(x=>({id:x.item.id,wear:x.item.wearGrade}));
+  g.run('window.LootHubWear.ensureGame(s)');
+  assert.deepEqual(g.state().market.npcListings.map(x=>({id:x.item.id,wear:x.item.wearGrade})),before);
+  assert.equal(g.run('safeUpload(JSON.parse(JSON.stringify(s)))'),true);
+});
+test('0.5.1 condition is not rerolled by transfers, imports, repeated calls or old save migration',()=>{
+  const g=boot();
+  g.run("const special={id:'one-time-scarred',kind:'skin',weapon:'MAC-10',skin:'Red Devil',base:1800,tier:4};window.LootHubWear.assignRolled(special,()=>.99);s.items.push(special)");
+  assert.equal(g.state().items[0].wearGrade,4);
+  assert.equal(g.run('window.LootHubWear.assignRolled(s.items[0],()=>0)'),false);
+  assert.equal(g.state().items[0].wearGrade,4);
+  const base=g.state().items[0].base;
+  g.run("window.LootHubMarketTransactions.createListing(s,'one-time-scarred',2000,Date.now());save()");
+  assert.equal(g.state().listings[0].item.wearGrade,4);
+  assert.equal(g.state().listings[0].item.base,base);
+  const restored=boot(g.store);
+  assert.equal(restored.state().listings[0].item.wearGrade,4);
+  restored.run("window.LootHubMarketTransactions.cancelListing(s,'listing-one-time-scarred');save()");
+  assert.equal(restored.state().items[0].wearGrade,4);
+  const previous=restored.state();
+  delete previous.items[0].wearGrade;
+  restored.store.setItem(KEY,JSON.stringify(previous));
+  const legacy=boot(restored.store);
+  assert.equal(legacy.state().items[0].wearGrade,0,
+    'Missing grades from old saves receive stable pristine condition, never a random draw');
+  legacy.run('save()');
+  const migrated=boot(legacy.store);
+  assert.equal(migrated.state().items[0].wearGrade,0);
+  assert.equal(migrated.state().items[0].base,base);
 });
 
 if(process.exitCode)process.exit(process.exitCode);
