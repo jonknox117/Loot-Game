@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.3D (AWP finish masters)
+# LootHub — Arsenal Alpha 0.3.3E (M4A4 Voltage Bloom)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -14,7 +14,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
 - **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **Five live transparent 2D finish pilots:** Glock-18 | Slate Grid, AK-47 | Ghostline, AK-47 | Crimson Circuit, AWP | Night Watch, and AWP | Eclipse. All have 400px reel, 800px inventory, and 1600px inspect WebPs, with repeatable source pipelines and archived editable sources.
+- **Six live transparent 2D finish pilots:** Glock-18 | Slate Grid, AK-47 | Ghostline, AK-47 | Crimson Circuit, AWP | Night Watch, AWP | Eclipse, and **M4A4 | Voltage Bloom**. All have 400px reel, 800px inventory and 1600px inspect WebPs; the original working files and production scripts are archived.
 
 ## Saving progress
 
@@ -41,11 +41,12 @@ The Saves tab provides:
 - **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
 - **0.3.3A Master pilot:** created a clean transparent Glock-style 2D base render, generated slide/body paint masks and a reusable Slate Grid finish, exported three high-quality sizes and integrated the actual WebPs into the live site (not base64 page data). Source geometry is AI-generated, a plausible Glock-like depiction rather than an OEM-certified 3D model. The remaining 18 finishes still use vector art.
 - **0.3.3B–C AK pilot completed:** one AK-47 master with Ghostline and Crimson Circuit, sharing identical alpha and model geometry.
-- **0.3.3D AWP pilot completed:** standalone right-facing AWP neutral master, Night Watch, and Eclipse, also sharing an exact silhouette. Original AI-generated 2D source imagery is used rather than manufacturer CAD. **M4A4 and Karambit remain unconverted.**
+- **0.3.3D AWP pilot completed:** standalone right-facing AWP neutral master, Night Watch, and Eclipse, also sharing an exact silhouette.
+- **0.3.3E M4A4 provisional bitmap pilot:** original generated M4A4 image, isolated from a comparison reference into one reusable neutral master, with a masked Voltage Bloom finish. All exports face right. The source weapon itself has approximately 1110 native horizontal pixels; the 1600px inspect image is an upscale/export, not native 1600px model detail. The result is **not marked final-approved** and can be upgraded later with a dedicated higher-resolution source. **Karambit remains unconverted.**
 
 ## Known limitations
 
-- Five original finish concepts use standalone transparent raster artwork; the remaining 14 use model-specific SVG artwork. No blurred crops or fake 3D viewer are used.
+- Six original finishes use standalone transparent raster artwork; the remaining 13 use model-specific SVG artwork. M4A4 is provisionally converted from generated reference art and needs final quality approval; the app does not claim to offer true 3D rotation.
 - Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
 - NPC buyers are simplified, not a deep supply/demand economy.
 - Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
@@ -53,7 +54,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Produce **isolated full-resolution** M4A4 (Voltage Bloom) and Karambit (Golden Talon) sources at the Glock/AK/AWP standard. Keep existing vector fallbacks until each passes QA.
+1. Produce an independently framed full-resolution M4A4 source to supersede the provisional Voltage Bloom image if required, then create the **Karambit | Golden Talon** master and finish at the same standard. Keep SVG fallbacks for other incomplete entries.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
