@@ -1,0 +1,17 @@
+name: LootHub Base-Weapon Regression
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Core economy, base catalog, and migration regressions
+        run: node tests/core.cjs
