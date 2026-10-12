@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.3C (AK-47 finish masters)
+# LootHub — Arsenal Alpha 0.3.3D (AWP finish masters)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -14,7 +14,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
 - **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **Three live transparent 2D finish pilots:** Glock-18 | Slate Grid, AK-47 | Ghostline, and AK-47 | Crimson Circuit, all with 400px reel, 800px inventory, and 1600px inspect WebPs. Neutral masters and repeatable compositing sources are preserved in Library ZIP bundles.
+- **Five live transparent 2D finish pilots:** Glock-18 | Slate Grid, AK-47 | Ghostline, AK-47 | Crimson Circuit, AWP | Night Watch, and AWP | Eclipse. All have 400px reel, 800px inventory, and 1600px inspect WebPs, with repeatable source pipelines and archived editable sources.
 
 ## Saving progress
 
@@ -40,11 +40,12 @@ The Saves tab provides:
 - **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
 - **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
 - **0.3.3A Master pilot:** created a clean transparent Glock-style 2D base render, generated slide/body paint masks and a reusable Slate Grid finish, exported three high-quality sizes and integrated the actual WebPs into the live site (not base64 page data). Source geometry is AI-generated, a plausible Glock-like depiction rather than an OEM-certified 3D model. The remaining 18 finishes still use vector art.
-- **0.3.3B–C AK pilot completed:** one new AK-47 master and two different finishes, with identical silhouette pixels and shared masks, live in the game. These are original AI-generated 2D sources with native 1774x887 detail, not manufacturer CAD. AWP, M4A4, and Karambit are **not yet converted** because full-resolution isolated masters haven't met the Glock benchmark.
+- **0.3.3B–C AK pilot completed:** one AK-47 master with Ghostline and Crimson Circuit, sharing identical alpha and model geometry.
+- **0.3.3D AWP pilot completed:** standalone right-facing AWP neutral master, Night Watch, and Eclipse, also sharing an exact silhouette. Original AI-generated 2D source imagery is used rather than manufacturer CAD. **M4A4 and Karambit remain unconverted.**
 
 ## Known limitations
 
-- Three original finish concepts use standalone raster artwork; the remaining 16 still use model-specific SVG artwork. No additional guns were silently replaced with blurred crops from a comparison board.
+- Five original finish concepts use standalone transparent raster artwork; the remaining 14 use model-specific SVG artwork. No blurred crops or fake 3D viewer are used.
 - Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
 - NPC buyers are simplified, not a deep supply/demand economy.
 - Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
@@ -52,7 +53,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Produce **isolated full-resolution** AWP (Night Watch and Eclipse), M4A4 (Voltage Bloom), and Karambit (Golden Talon) sources at the same quality standard; do not upscale contact-sheet crops. Keep existing vector fallbacks until each passes QA.
+1. Produce **isolated full-resolution** M4A4 (Voltage Bloom) and Karambit (Golden Talon) sources at the Glock/AK/AWP standard. Keep existing vector fallbacks until each passes QA.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
