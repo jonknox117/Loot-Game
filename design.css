@@ -373,3 +373,46 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
   .item .weapon-master {height:74px;}
 }
 
+
+
+/* Patch 0.3.3A: real transparent 2D artwork with source-size variants. */
+.master-raster {
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  isolation:isolate;
+  background:radial-gradient(ellipse at 50% 44%,#30445e 0%,#19273a 58%,#0f1827 100%);
+  border:1px solid rgba(143,164,191,.15);
+}
+.master-raster > img {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  max-width:100%;
+  image-rendering:auto;
+}
+.master-raster > .raster-fallback {
+  width:100%;
+  height:100%;
+}
+.master-raster > .raster-fallback[hidden],
+.master-raster > img[hidden] {display:none!important;}
+.master-raster .raster-fallback .weapon-master {width:100%;height:100%;}
+.item .master-raster {height:115px;border-bottom:2px solid #adb8c3;}
+.tile .master-raster {height:81px;width:100%;margin:0 auto 3px;border-radius:6px;}
+.reveal-art .master-raster {
+  min-height:195px;
+  height:clamp(185px,30vw,270px);
+  border-radius:11px;
+  border-color:rgba(173,184,195,.24);
+}
+@media(max-width:700px) {
+  .item .master-raster {height:84px;}
+  .tile .master-raster {height:76px;}
+  .reveal-art .master-raster {height:185px;min-height:0;}
+}
+@media(max-width:360px) {.item .master-raster{height:74px;}}
