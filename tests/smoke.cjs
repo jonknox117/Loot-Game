@@ -41,8 +41,9 @@ const fs = require('fs');
       }))};
     });
     assert(baselineWear.schema===1,'Wear data schema must exist in saved progress');
-    assert(baselineWear.items.every(x=>x.kind==='case'?!x.hasGrade:x.grade===0),
-      'New marketplace stock should be pristine; sealed cases should remain ungraded');
+    assert(baselineWear.items.every(x=>x.kind==='case'?!x.hasGrade:
+      (x.hasGrade&&Number.isInteger(x.grade)&&x.grade>=0&&x.grade<=4)),
+      'New marketplace stock must have a valid condition; sealed cases must remain ungraded');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
@@ -89,7 +90,8 @@ const fs = require('fs');
     // The entire reel must use approved neutral base-weapon masters.
     const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'||x.kind==='skin'));
     assert(expectedReward&&(expectedReward.kind==='weapon'||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish'].includes(expectedReward.skin)),'Case awarded an unapproved skin');
-    assert(expectedReward.wearGrade===0,'Fresh reward must have persistent pristine metadata');
+    assert(Number.isInteger(expectedReward.wearGrade)&&expectedReward.wearGrade>=0&&
+      expectedReward.wearGrade<=4,'Fresh reward must have one valid persistent wear grade');
     await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img=>img.complete&&img.naturalWidth>0),null,{timeout:15000});
     const reelArt=await page.evaluate(()=>[...document.querySelectorAll('#track .tile')].map(tile=>{
       const art=tile.querySelector('.master-raster');
@@ -101,6 +103,11 @@ const fs = require('fs');
     const winner=reelArt.find(x=>x.index===42);
     assert(winner.weapon===expectedReward.weapon,'The winning base weapon does not match saved reward');
     await page.screenshot({path:path.resolve(__dirname,'reel-colors.png')});
+    const persistedReward=await page.evaluate(id=>
+      JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.id===id),
+      expectedReward.id);
+    assert(persistedReward.wearGrade===expectedReward.wearGrade,
+      'Reward wear roll must be committed before case animation completes');
     await page.getByRole('button', { name: 'Skip animation' }).click();
     const revealed=await page.evaluate(()=>{
       const art=document.querySelector('.reveal-art .master-raster');
@@ -122,6 +129,8 @@ const fs = require('fs');
     const after = Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, ''));
     assert(after === cash, 'Wallet must persist after reload');
     assert(await page.locator('.item').count() === 0, 'Sold item must not reappear after reload');
+    assert((await page.evaluate(()=>window.LootHubWear.ROLL_WEIGHTS.join(',')))==='8,22,40,22,8',
+      'Published wear probabilities must match the independent grade roll table');
     assert((await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).wearSchemaVersion))===1,
       'Condition foundation must persist on reload');
     assert(errors.length === 0, 'Browser console errors: ' + errors.join('; '));
