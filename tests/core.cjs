@@ -7,8 +7,8 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['wear','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['wear','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
@@ -1353,5 +1353,127 @@ test('Legacy direct-buyer walkaway persists instead of generating fresh offers f
   assert.equal(g.state().items.length,1);
   assert.equal(g.state().sales,0);
 });
+
+test('0.5.0 defines five independent condition grades without changing published rarity odds',()=>{
+  const g=boot();
+  const wear=g.run('window.LootHubWear');
+  assert.equal(wear.SCHEMA_VERSION,1);
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(window.LootHubWear.GRADES.map(x=>x.name))')),
+    ['Pristine','Lightly Worn','Field-Tested','Heavily Worn','Battle-Scarred']);
+  for(let i=0;i<5;i++)assert.equal(g.run('window.LootHubWear.validGrade('+i+')'),true);
+  for(const x of [-1,5,2.5,null,'3',NaN,Infinity]){
+    assert.equal(g.run('window.LootHubWear.validGrade('+JSON.stringify(x)+')'),false);
+  }
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+  assert.equal(g.run('catalog.length'),24);
+  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),100);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:0})'),100);
+});
+test('0.5.0 fresh case remains ungraded, reward and NPC weapon/skin stock default to pristine',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  const sealed=g.state().items[0];
+  assert.equal(sealed.kind,'case');
+  assert.equal(Object.hasOwn(sealed,'wearGrade'),false);
+  g.run("openCase(s.items[0].id);finishOpening()");
+  const prize=g.state().items[0];
+  assert(['weapon','skin'].includes(prize.kind));
+  assert.equal(prize.wearGrade,0);
+  assert.equal(prize.paid,25);
+  g.run("go('Market')");
+  const stock=g.state().market.npcListings;
+  assert.equal(stock.length,15);
+  for(const x of stock){
+    if(x.item.kind==='case')assert.equal(Object.hasOwn(x.item,'wearGrade'),false);
+    else assert.equal(x.item.wearGrade,0);
+  }
+  assert.equal(g.state().wearSchemaVersion,1);
+  assert.equal(g.persisted().wearSchemaVersion,1);
+});
+test('0.5.0 old saves migrate owned, escrow and NPC stock without changing identity or value',()=>{
+  const store=new LocalStore(),a=boot(store);
+  a.run("go('Market')");
+  a.run("s.items.push({id:'retained-weapon',kind:'weapon',weapon:'AK-47',tier:2,base:123,paid:25})");
+  a.run("s.items.push({id:'retained-finish',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,paid:25})");
+  a.run("window.LootHubMarketTransactions.createListing(s,'retained-weapon',190,Date.now())");
+  a.run('save()');
+  const legacy=a.persisted();
+  const ids=legacy.market.npcListings.map(x=>x.id);
+  const bids=legacy.market.npcListings.map(x=>x.ask);
+  const beforeWallet=legacy.coins,beforeListings=legacy.listings.map(x=>x.item.id);
+  delete legacy.wearSchemaVersion;
+  for(const item of legacy.items)delete item.wearGrade;
+  for(const x of legacy.listings)delete x.item.wearGrade;
+  for(const x of legacy.market.npcListings)delete x.item.wearGrade;
+  store.setItem(KEY,JSON.stringify(legacy));
+  const b=boot(store),loaded=b.state();
+  assert.equal(loaded.wearSchemaVersion,1);
+  assert.equal(loaded.coins,beforeWallet);
+  assert.deepEqual(loaded.listings.map(x=>x.item.id),beforeListings);
+  assert.deepEqual(loaded.market.npcListings.map(x=>x.id),ids);
+  assert.deepEqual(loaded.market.npcListings.map(x=>x.ask),bids);
+  assert.equal(loaded.listings[0].ask,190);
+  assert.equal(loaded.listings[0].item.base,123);
+  assert.equal(loaded.listings[0].item.wearGrade,0);
+  assert.equal(loaded.items.find(x=>x.id==='retained-finish').wearGrade,0);
+  assert.equal(loaded.items.find(x=>x.id==='retained-finish').base,1800);
+  for(const x of loaded.market.npcListings){
+    assert(x.item.kind==='case'?!Object.hasOwn(x.item,'wearGrade'):x.item.wearGrade===0);
+  }
+  b.run('save()');
+  const reload=boot(store);
+  assert.equal(reload.state().listings[0].item.base,123);
+  assert.equal(reload.state().items.find(x=>x.id==='retained-finish').base,1800);
+  assert.equal(reload.state().listings[0].item.wearGrade,0);
+  assert.equal(reload.run('window.LootHubWear.ensureGame(s)'),0,'Repeated migration cannot reroll items');
+});
+test('0.5.0 wear data survives listing, repricing, cancellation and NPC purchase exactly',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'scuffed-keep',kind:'weapon',weapon:'AK-47',tier:2,base:85,wearGrade:4})");
+  g.run("window.LootHubMarketTransactions.createListing(s,'scuffed-keep',100,Date.now())");
+  assert.equal(g.state().listings[0].item.wearGrade,4);
+  g.run('window.LootHubMarketTransactions.repriceListing(s,s.listings[0].id,130,Date.now())');
+  assert.equal(g.state().listings[0].item.wearGrade,4);
+  g.run('window.LootHubMarketTransactions.cancelListing(s,s.listings[0].id)');
+  assert.equal(g.state().items.find(x=>x.id==='scuffed-keep').wearGrade,4);
+  g.run("go('Market')");
+  const npc=g.state().market.npcListings.find(x=>x.item.kind!=='case');
+  g.run('s.coins=100000;s.market.npcListings.find(x=>x.id==='+JSON.stringify(npc.id)+').item.wearGrade=3');
+  g.run('window.LootHubMarketTransactions.buyNpcListing(s,'+JSON.stringify(npc.id)+')');
+  const bought=g.state().items.find(x=>x.id===npc.item.id);
+  assert(bought&&bought.wearGrade===3);
+  g.run('save()');
+  const reopened=boot(g.store);
+  assert.equal(reopened.state().items.find(x=>x.id===npc.item.id).wearGrade,3);
+  assert.equal(reopened.state().items.find(x=>x.id==='scuffed-keep').wearGrade,4);
+});
+test('0.5.0 old backups import; invalid grade and case condition are rejected',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'grade-test',kind:'weapon',weapon:'MP5',tier:1,base:20,wearGrade:3})");
+  const current=g.state();
+  assert.equal(g.run('safeUpload('+JSON.stringify(current)+')'),true);
+  for(const bad of [-1,5,1.5,'3',null]){
+    const tampered=JSON.parse(JSON.stringify(current));
+    tampered.items.at(-1).wearGrade=bad;
+    assert.equal(g.run('safeUpload('+JSON.stringify(tampered)+')'),false);
+  }
+  const stale=JSON.parse(JSON.stringify(current));
+  delete stale.items.at(-1).wearGrade;
+  delete stale.wearSchemaVersion;
+  assert.equal(g.run('safeUpload('+JSON.stringify(stale)+')'),true);
+  const caseWithGrade=JSON.parse(JSON.stringify(current));
+  caseWithGrade.items.push({id:'illegal-case',kind:'case',paid:25,wearGrade:0});
+  assert.equal(g.run('safeUpload('+JSON.stringify(caseWithGrade)+')'),false);
+  const invalidSchema=JSON.parse(JSON.stringify(current));
+  invalidSchema.wearSchemaVersion=999;
+  assert.equal(g.run('safeUpload('+JSON.stringify(invalidSchema)+')'),false);
+  g.run("go('Market')");
+  const npcTampered=g.state();
+  const target=npcTampered.market.npcListings.find(x=>x.item.kind==='weapon');
+  target.item.wearGrade=7;
+  assert.equal(g.run('safeUpload('+JSON.stringify(npcTampered)+')'),false);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
