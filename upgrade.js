@@ -300,6 +300,11 @@ const lootHubBitmapArt=Object.freeze({
     reel:'assets/renders/finishes/m4a4--voltage-bloom-400.webp',
     inventory:'assets/renders/finishes/m4a4--voltage-bloom-800.webp',
     inspect:'assets/renders/finishes/m4a4--voltage-bloom-1600.webp'
+  }),
+  'Karambit|Golden Talon':Object.freeze({
+    reel:'assets/renders/finishes/karambit--golden-talon-400.webp',
+    inventory:'assets/renders/finishes/karambit--golden-talon-800.webp',
+    inspect:'assets/renders/finishes/karambit--golden-talon-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {
