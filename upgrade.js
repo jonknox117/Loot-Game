@@ -269,7 +269,27 @@ function enhancedPortfolio(){
   (s.ledger&&s.ledger.length?'':'<p class="muted">Your first transaction will appear here.</p>')+
   '</div><p class="muted tiny">All recorded events remain in the local save and exported backup; the journal displays the most recent 50.</p></section>';
 }
-function visualArt(item) {
+/* Pilot: approved render files only. Future skins remain on individually rendered SVG masters. */
+const lootHubBitmapArt=Object.freeze({
+  'Glock-18|Slate Grid':Object.freeze({
+    reel:'assets/renders/finishes/glock-18--slate-grid-400.webp',
+    inventory:'assets/renders/finishes/glock-18--slate-grid-800.webp',
+    inspect:'assets/renders/finishes/glock-18--slate-grid-1600.webp'
+  })
+});
+function visualArt(item,context='inventory') {
+  if(item&&item.kind==='skin'){
+    const entry=lootHubBitmapArt[item.weapon+'|'+item.skin];
+    if(entry){
+      const src=entry[context==='reel'?'reel':context==='inspect'?'inspect':'inventory'];
+      const fallback=window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)
+        ?window.ArsenalMasters.render(item):'';
+      return '<div class="art weapon-art master-raster" data-weapon-model="Glock-18" data-finish="Slate Grid" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
+        '<img src="./'+src+'" alt="Glock-18 | Slate Grid" decoding="async" loading="'+(context==='inspect'?'eager':'lazy')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
+        '<div class="raster-fallback" hidden>'+fallback+'</div></div>';
+    }
+  }
+
   // Arsenal vector master: per-model silhouette and consistent aspect ratio.
   // Sealed cases and any unmapped/imported legacy items retain the existing SVG fallback.
   if(item&&item.kind==='skin'&&typeof window!=='undefined'&&window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)){
