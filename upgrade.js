@@ -912,7 +912,9 @@ function visualArt(item,context='inventory') {
     window.LootHubWear.validGrade(item.wearGrade)?
     ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"'+
     (window.LootHubWearMaterials.maskPath(item.weapon)?
-      ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"':''):'';
+      ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"'+
+      ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
+      ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)){
     const file=window.LootHubSkinLines.imagePath(item,Number(size));
