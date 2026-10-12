@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "ak-47--ghostline",
+  "baseModel": "ak-47",
+  "finish": "Ghostline",
+  "rarity": "Rare",
+  "finishVersion": "033C-pilot-1",
+  "master": "assets/renders/masters/ak-47-neutral-1600.webp",
+  "exports": {
+    "reel": "assets/renders/finishes/ak-47--ghostline-400.webp",
+    "inventory": "assets/renders/finishes/ak-47--ghostline-800.webp",
+    "inspect": "assets/renders/finishes/ak-47--ghostline-1600.webp"
+  },
+  "palette": [
+    "#070f20",
+    "#398dad",
+    "#b1eaff"
+  ],
+  "material": "deep charcoal-blue gloss, luminous pale cyan flowing ghost filaments",
+  "production": {
+    "type": "masked-2D-surface-transfer",
+    "canonicalSilhouette": "neutral",
+    "maskRegions": [
+      "stock",
+      "receiver",
+      "grip",
+      "magazine",
+      "handguard"
+    ],
+    "originalSourceInLibrary": "/LootHub/loothub-ak-master-033C.zip",
+    "originalSourceImage": "source/ak-47-ghostline-source.png",
+    "alphaExact": true
+  },
+  "approved": false
+}
