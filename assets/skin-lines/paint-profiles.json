@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "note": "One profile per approved existing master. Exact alpha is the authoritative silhouette. Automatic material masks are reviewable and may be corrected per weapon without changing line artwork.",
+  "weapons": {
+    "glock-18": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "mp5": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "mac-10": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "tec-9": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "pump-shotgun": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "desert-eagle": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "colt-45-revolver": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "spas-12": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "ak-47": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "m4a4": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "machete": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 0.7,
+      "protectedRects": []
+    },
+    "m60": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "awp": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": [
+        [
+          0.33,
+          0.16,
+          0.68,
+          0.38
+        ],
+        [
+          0.59,
+          0.35,
+          0.98,
+          0.48
+        ]
+      ]
+    },
+    "tactical-tomahawk": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "rpg-7": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "karambit": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 0.7,
+      "protectedRects": []
+    },
+    "butterfly-knife": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 0.7,
+      "protectedRects": []
+    },
+    "m1911": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "thompson-smg": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "m1-garand": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "kar98k": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "fn-scar-l": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "fn-fal": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    },
+    "m134-minigun": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": []
+    }
+  }
+}
