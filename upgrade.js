@@ -249,7 +249,8 @@ function suggestListingPrice(price){
 }
 function listingEditor(item,ask,mode,listingId){
   const reference=estimated(item);
-  const quote=window.LootHubMarketCore.listingQuote(ask,reference);
+  const safeAsk=window.LootHubMarketCore.validAsk(ask)?ask:reference;
+  const quote=window.LootHubMarketCore.listingQuote(safeAsk,reference);
   const suggested=window.LootHubMarketCore.suggestedPrices(reference);
   const label=mode==='edit'?'EDIT LISTING PRICE':'CREATE A LISTING';
   const action=mode==='edit'?marketAction('submitPriceEdit',listingId):marketAction('submitListing',item.id);
@@ -261,7 +262,7 @@ function listingEditor(item,ask,mode,listingId){
     '<div class="stat"><span>Estimated value</span><b>'+money(reference)+' coins</b></div>'+
     '<label class="listing-price-label" for="listPrice">Your asking price</label>'+
     '<input id="listingPriceRef" type="hidden" value="'+reference+'">'+
-    '<input id="listPrice" class="field" aria-label="Your asking price" type="number" inputmode="numeric" min="1" max="100000000" step="1" value="'+ask+'" oninput="previewListingPrice()">'+
+    '<input id="listPrice" class="field" aria-label="Your asking price" type="number" inputmode="numeric" min="1" max="100000000" step="1" value="'+safeAsk+'" oninput="previewListingPrice()">'+
     '<div class="listing-quick-prices">'+suggested.map(v=>
       '<button type="button" onclick="suggestListingPrice('+v+')">'+money(v)+' ◈</button>').join('')+'</div>'+
     '<div class="listing-quote" aria-live="polite">'+
