@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "ak-47--crimson-circuit",
+  "baseModel": "ak-47",
+  "finish": "Crimson Circuit",
+  "rarity": "Super Rare",
+  "finishVersion": "033C-pilot-1",
+  "master": "assets/renders/masters/ak-47-neutral-1600.webp",
+  "exports": {
+    "reel": "assets/renders/finishes/ak-47--crimson-circuit-400.webp",
+    "inventory": "assets/renders/finishes/ak-47--crimson-circuit-800.webp",
+    "inspect": "assets/renders/finishes/ak-47--crimson-circuit-1600.webp"
+  },
+  "palette": [
+    "#110d15",
+    "#b32031",
+    "#ff453a"
+  ],
+  "material": "smoked black steel, carmine lacquer and intricate glowing red circuit traces",
+  "production": {
+    "type": "masked-2D-surface-transfer",
+    "canonicalSilhouette": "neutral",
+    "maskRegions": [
+      "stock",
+      "receiver",
+      "grip",
+      "magazine",
+      "handguard"
+    ],
+    "originalSourceInLibrary": "/LootHub/loothub-ak-master-033C.zip",
+    "originalSourceImage": "source/ak-47-crimson-circuit-source.png",
+    "alphaExact": true
+  },
+  "approved": false
+}
