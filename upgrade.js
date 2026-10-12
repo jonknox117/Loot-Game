@@ -574,6 +574,30 @@ function completeMarketNegotiation(kind,k){
   tab=kind==='buy'?'Inventory':'Market';
   render();
 }
+function marketPulse(){
+  const models=[{kind:'case'},...dropCatalog];
+  const tracked=models.map(item=>({item,...window.LootHubEconomy.priceInfo(s,item)}))
+    .sort((a,b)=>b.volume-a.volume||Math.abs(b.multiplier-1)-Math.abs(a.multiplier-1)||
+      a.key.localeCompare(b.key));
+  const rows=tracked.slice(0,8).map(x=>{
+    const percent=Math.round((x.multiplier-1)*100);
+    const direction=percent>0?'up':percent<0?'down':'flat';
+    const label=percent>0?'+'+percent+'%':percent+'%';
+    return '<div class="market-pulse-item">'+
+      '<b>'+escapeHTML(listingItemName(x.item))+'</b>'+
+      '<span class="market-pulse-price">'+money(x.value)+' ◈</span>'+
+      '<span class="market-pulse-trend '+direction+'">'+label+'</span>'+
+      '<span class="muted tiny">Base '+money(x.base)+' · Supply '+x.supply+
+        ' · '+x.volume+' trades</span></div>';
+  }).join('');
+  return '<section class="panel market-pulse-section">'+
+    '<div class="section-eyebrow">LIVE ECONOMY · MARKET INDEX</div>'+
+    '<div class="row space"><h2>Market Pulse</h2><span class="muted tiny">'+
+      tracked.length+' collectible markets</span></div>'+
+    '<p class="muted tiny">Prices respond to completed market trades and listing supply. Base estimates never change. Values are bounded, not guaranteed offers.</p>'+
+    '<div class="market-pulse-grid">'+rows+'</div>'+
+    '<p class="muted tiny">At most six completed trades per collectible per day affect prices. Refreshing the page cannot move the index.</p></section>';
+}
 function enhancedMarket(){
   if(isSaveCurrent()){
     window.LootHubTraders.ensure(s);
@@ -615,7 +639,7 @@ function enhancedMarket(){
   const view=npcMarketView;
   const select=(a,b)=>a===b?' selected':'';
   const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
-  return '<section class="panel npc-market-section">'+
+  return marketPulse()+'<section class="panel npc-market-section">'+
     '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
     '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
       count+' listings</span></div>'+
