@@ -1936,5 +1936,33 @@ test('0.5.5a mask sampling reads paint opacity without trusting transparent pixe
  assert.equal(g.run('window.LootHubWearMaterials.MAX_DECODED'),6);
 });
 
+
+test('0.5.5a material maps fully cover every weapon silhouette, one surface per pixel',()=>{
+  const g=boot(),p=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-lines/paint-profiles.json'),'utf8'));
+  assert.equal(Object.keys(p.weapons).length,24);
+  for(const slug of Object.keys(p.weapons)){
+    const base=path.join(root,'assets/skin-lines/materials',slug);
+    for(const suffix of ['--silhouette-1600.png','--material-1600.png']){
+      const name=base+suffix;
+      assert(fs.existsSync(name),'Missing generated full-coverage map '+name);
+      assert.equal(fs.readFileSync(name).toString('hex',0,8),'89504e470d0a1a0a');
+    }
+  }
+  for(const weapon of ['AK-47','Glock-18','M1 Garand','Kar98k','FN FAL','RPG-7']){
+    const masks=JSON.parse(g.run('JSON.stringify(({a:window.LootHubWearMaterials.materialPath('+JSON.stringify(weapon)+'),'+
+      'b:window.LootHubWearMaterials.silhouettePath('+JSON.stringify(weapon)+')}))'));
+    assert(masks.a.includes('--material-1600.png'));
+    assert(masks.b.includes('--silhouette-1600.png'));
+  }
+  const pixels=JSON.parse(g.run('JSON.stringify((()=>{'+
+    'const rgba=Uint8ClampedArray.from([255,0,0,255,0,255,0,255,0,0,255,255,0,0,0,0]);'+
+    'return [0,.3,.6,1].map(x=>window.LootHubWearMaterials.sampleMaterial(rgba,4,1,x,0))})())'));
+  assert.deepEqual(pixels,['metal','wood','other','outside']);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("wood",.5,.5,1).rust'),false);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("other",.5,.5,1).rust'),false);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("metal",.5,.5,1).rust'),true);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("outside",.5,.5,1).rust'),false);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
