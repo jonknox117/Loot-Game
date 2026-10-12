@@ -1,4 +1,4 @@
-/* LootHub 0.4.5 — bounded single-player market discovery.
+/* LootHub 0.5.2 — bounded single-player market discovery.
    Base estimates never change. Only completed marketplace trades affect momentum.
    Quotes are deterministic from saved events + current listings; no rerolls on render. */
 (function(root){
@@ -32,7 +32,7 @@ function available(game,item){
   return mine.concat(theirs).reduce((count,x)=>count+(x&&key(x.item)===id?1:0),0);
 }
 function priceInfo(game,item,now=Date.now()){
-  const base=core.estimated(item),record=state(game,item);
+  const originalBase=core.baseEstimated(item),base=core.estimated(item),record=state(game,item);
   const supply=available(game,item);
   const elapsed=record&&Number.isFinite(record.updatedAt)?
     Math.max(0,now-record.updatedAt)/DAY:0;
@@ -42,7 +42,8 @@ function priceInfo(game,item,now=Date.now()){
   const scarcity=clamp((2-supply)*.02,-.08,.04);
   const multiplier=clamp(1+momentum+scarcity,MIN_FACTOR,MAX_FACTOR);
   const value=Math.max(1,Math.round(base*multiplier));
-  return {key:key(item),base,value,multiplier,momentum,scarcity,supply,
+  return {key:key(item),originalBase,base,wearMultiplier:root.LootHubWear.multiplier(item),
+    value,multiplier,momentum,scarcity,supply,
     volume:record&&Number.isSafeInteger(record.volume)?record.volume:0,
     recent:record&&Array.isArray(record.recent)?record.recent:[]};
 }

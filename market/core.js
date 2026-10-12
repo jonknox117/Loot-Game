@@ -1,4 +1,4 @@
-/* LootHub 0.4.1 marketplace rules and versioned market state.
+/* LootHub 0.5.2 marketplace rules and versioned market state.
    Pure calculations only; current case odds and economic multipliers stay unchanged. */
 (function(root){
 'use strict';
@@ -25,8 +25,11 @@ function validMarketState(m){
     Array.isArray(m.traders)&&!!m.priceHistory&&typeof m.priceHistory==='object'&&
     !Array.isArray(m.priceHistory)&&Number.isFinite(m.lastSimulatedAt));
 }
-function estimated(item){
+function baseEstimated(item){
   return item.kind==='case'?25:Math.max(1,Math.round(Number(item.base)||1));
+}
+function estimated(item){
+  return item.kind==='case'?25:root.LootHubWear.conditionValue(item,baseEstimated(item));
 }
 function validAsk(ask){return Number.isSafeInteger(ask)&&ask>=1&&ask<=100000000}
 function eligible(item){return !!(item&&typeof item.id==='string'&&item.id.length>0&&
@@ -44,6 +47,6 @@ function suggestedPrices(reference){
     Math.max(1,Math.min(100000000,Math.round(base*multiplier)))))]
 }
 root.LootHubMarketCore=Object.freeze({
-  SCHEMA_VERSION,ensureMarketState,validMarketState,estimated,validAsk,eligible,netProceeds,listingQuote,suggestedPrices
+  SCHEMA_VERSION,ensureMarketState,validMarketState,baseEstimated,estimated,validAsk,eligible,netProceeds,listingQuote,suggestedPrices
 });
 })(window);

@@ -1367,7 +1367,7 @@ test('0.5.0 defines five independent condition grades without changing published
   assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
   assert.equal(g.run('catalog.length'),24);
   assert.equal(g.run('approvedSkins.length'),5);
-  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),100);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),55);
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:0})'),100);
 });
 test('0.5.0/0.5.1 sealed cases are ungraded and a zero RNG roll produces pristine stock',()=>{
@@ -1491,7 +1491,7 @@ test('0.5.1 wear roll has fixed 8/22/40/22/8 boundaries without touching rarity'
   assert.deepEqual(observed,[800,2200,4000,2200,800],
     'Uniform sampling must produce exactly the published percentages');
   assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
-  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"skin",base:320,wearGrade:4})'),320);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"skin",base:320,wearGrade:4})'),176);
 });
 test('0.5.1 case drop grade is rolled separately from rarity and weapon template',()=>{
   const g=boot();
@@ -1562,5 +1562,109 @@ test('0.5.1 condition is not rerolled by transfers, imports, repeated calls or o
   assert.equal(migrated.state().items[0].base,base);
 });
 
+
+test('0.5.2 grade multipliers adjust estimates while base values and case odds stay intact',()=>{
+  const g=boot();
+  const expected=[100,95,85,70,55];
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(window.LootHubWear.VALUE_MULTIPLIERS)')),
+    [1,.95,.85,.7,.55]);
+  for(let grade=0;grade<5;grade++){
+    const item={kind:'weapon',weapon:'AK-47',base:100,tier:2,wearGrade:grade};
+    assert.equal(g.run('window.LootHubMarketCore.baseEstimated('+JSON.stringify(item)+')'),100);
+    assert.equal(g.run('window.LootHubMarketCore.estimated('+JSON.stringify(item)+')'),expected[grade]);
+    const info=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+JSON.stringify({...item,id:'test-'+grade})+'))'));
+    assert.equal(info.originalBase,100);
+    assert.equal(info.base,expected[grade]);
+    assert.equal(info.wearMultiplier,g.run('window.LootHubWear.multiplier('+JSON.stringify(item)+')'));
+  }
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:8,wearGrade:2})'),7);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:1,wearGrade:4})'),1);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",base:25})'),25);
+  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",base:25,wearGrade:4})'),25);
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+  assert.equal(g.run('approvedSkins.length'),5);
+});
+test('0.5.2 inventory and inspections display exact grade, modifier, base, condition and market price',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'mp5-graded',kind:'weapon',weapon:'MP5',tier:0,base:8,wearGrade:2})");
+  g.run("s.items.push({id:'pristine-owned',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:0})");
+  g.run("s.items.push({id:'sealed-owned',kind:'case',paid:25})");
+  let inventory=g.run('inventory()');
+  assert(inventory.includes('Condition: Field-Tested'));
+  assert(inventory.includes('Condition: Pristine'));
+  assert(inventory.includes('Sealed case · No condition'));
+  assert(inventory.includes('data-wear-grade="2"'));
+  g.run("inspect('mp5-graded')");
+  const dialog=g.byId('overlay').innerHTML;
+  for(const label of ['Field-Tested','Base value (Pristine)','8 coins','Wear modifier',
+    '0.85×','Condition-adjusted value','7 coins','Estimated market value']){
+    assert(dialog.includes(label),'Missing condition breakdown label: '+label);
+  }
+  g.run("inspect('pristine-owned')");
+  assert(g.byId('overlay').innerHTML.includes('1.00×'));
+  g.run("inspect('sealed-owned')");
+  assert(g.byId('overlay').innerHTML.includes('No wear grade'));
+  assert(!g.byId('overlay').innerHTML.includes('0.85×'));
+});
+test('0.5.2 NPC asking prices depend on wear, while existing asks and transfers remain unchanged',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const listing=g.state().market.npcListings.find(l=>l.item.kind==='weapon');
+  assert(listing);
+  const before=g.state().market.npcListings.find(l=>l.id===listing.id).ask;
+  g.run("s.market.npcListings.find(l=>l.id==="+JSON.stringify(listing.id)+").item.wearGrade=4");
+  const info=JSON.parse(g.run("JSON.stringify(window.LootHubEconomy.priceInfo(s,s.market.npcListings.find(l=>l.id==="+JSON.stringify(listing.id)+").item))"));
+  assert.equal(info.base,Math.max(1,Math.round(info.originalBase*.55)));
+  assert.equal(g.state().market.npcListings.find(l=>l.id===listing.id).ask,before,
+    'Existing NPC asking prices must not be rewritten');
+  const screen=g.run('renderNpcMarketResults()');
+  assert(screen.includes('Condition: Battle-Scarred'));
+  g.run('inspectNpcListing('+JSON.stringify(listing.id)+')');
+  assert(g.byId('overlay').innerHTML.includes('0.55×'));
+  g.run('s.coins=100000');
+  g.run('window.LootHubMarketTransactions.buyNpcListing(s,'+JSON.stringify(listing.id)+')');
+  const bought=g.state().items.find(x=>x.id===listing.item.id);
+  assert(bought&&bought.wearGrade===4&&bought.paid===before);
+  assert.equal(bought.base,listing.item.base);
+});
+test('0.5.2 condition affects instant sale, listing estimates and counteroffer baselines',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'wear-pristine',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:0})");
+  g.run("s.items.push({id:'wear-scarred',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:4})");
+  assert.equal(g.run('window.LootHubMarketCore.estimated(s.items[0])'),100);
+  assert.equal(g.run('window.LootHubMarketCore.estimated(s.items[1])'),55);
+  g.run("inspect('wear-scarred')");
+  assert(g.byId('overlay').innerHTML.includes('Instant sell (43)'));
+  g.run("sellOffer('wear-scarred')");
+  assert(g.byId('overlay').innerHTML.includes('55 coins'));
+  g.run("listItem('wear-scarred')");
+  assert(g.byId('overlay').innerHTML.includes('Condition-adjusted value'));
+  assert(g.byId('overlay').innerHTML.includes('0.55×'));
+  g.byId('listPrice').value='64';
+  g.run("submitListing('wear-scarred')");
+  assert.equal(g.state().listings[0].ask,64);
+  assert.equal(g.state().listings[0].item.wearGrade,4);
+  assert(g.run('enhancedMarket()').includes('Condition: Battle-Scarred'));
+  const beforeAsk=g.state().listings[0].ask;
+  g.run('save()');
+  const reloaded=boot(g.store);
+  assert.equal(reloaded.state().listings[0].ask,beforeAsk);
+  assert.equal(reloaded.state().listings[0].item.wearGrade,4);
+  assert.equal(reloaded.state().items.find(x=>x.id==='wear-pristine').wearGrade,0);
+});
+test('0.5.2 case-opening reveal reports its rolled grade and adjusted value',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'case-for-reveal',kind:'case',paid:25})");
+  g.run("openCase('case-for-reveal')");
+  const reward=g.state().items[0];
+  const condition=JSON.parse(g.run('JSON.stringify(window.LootHubWear.label(s.items[0].wearGrade))'));
+  g.run('finishOpening()');
+  const html=g.byId('overlay').innerHTML;
+  assert(html.includes('Condition: '+condition));
+  assert(html.includes('Condition-adjusted value'));
+  assert(html.includes('Wear modifier'));
+  assert(html.includes('Estimated market value'));
+  assert.equal(g.state().items[0].wearGrade,reward.wearGrade);
+});
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');

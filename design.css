@@ -560,3 +560,18 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 .trade-journal .stat span{overflow-wrap:anywhere}
 @media(max-width:720px){.market-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.market-owned-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.market-owned-controls label:first-child{grid-column:span 2}}
 @media(max-width:480px){.market-shortcuts button{min-height:46px}.trading-tools-controls{grid-template-columns:1fr}.trade-record{align-items:stretch;flex-direction:column}.trade-record-actions{flex-direction:row;align-items:center;justify-content:space-between;width:100%}.trade-record-actions button{min-width:120px;min-height:44px}.trade-journal .stat{align-items:flex-start;flex-direction:column;gap:6px}}
+
+
+/* Wear 0.5.2 — readable condition metadata; does not alter weapon art. */
+.wear-grade{display:inline-flex;align-items:center;max-width:100%;gap:5px;padding:4px 9px;border:1px solid #52657c;border-radius:7px;background:#28374a;color:#d8e2f0;font-size:12px;font-weight:750;line-height:1.4;white-space:normal}
+.wear-grade.grade-0{border-color:#759c96;color:#c1f1db;background:#223b39}
+.wear-grade.grade-1{border-color:#6a8f94;color:#b9e1e2;background:#253c46}
+.wear-grade.grade-2{border-color:#8e846b;color:#e2d0a5;background:#40382b}
+.wear-grade.grade-3{border-color:#a07c69;color:#ebc1a5;background:#473229}
+.wear-grade.grade-4{border-color:#a16f63;color:#f3b2a6;background:#482b29}
+.npc-listing-body .wear-grade,.listing-identity-copy .wear-grade{margin-top:4px}
+.item .wear-grade{font-size:11px;padding:3px 7px}
+.dialog .stat{gap:12px}
+.dialog .stat span{min-width:0}
+.dialog .stat b{text-align:right;overflow-wrap:anywhere}
+@media(max-width:480px){.wear-grade{font-size:11px}.dialog .stat{align-items:flex-start}}

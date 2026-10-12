@@ -1,5 +1,5 @@
-/* LootHub 0.5.1 — independent, persistent collectible condition metadata.
-   No drop odds, cosmetic art, wear rendering, or valuations change in this patch. */
+/* LootHub 0.5.2 — independent, persistent collectible condition metadata.
+   No drop odds or cosmetic art change; condition now affects prices. */
 (function(root){
 'use strict';
 const SCHEMA_VERSION=1;
@@ -13,6 +13,10 @@ const GRADES=Object.freeze([
 // Condition rolls are independent of rarity: 8 / 22 / 40 / 22 / 8 percent.
 // Only newly created weapon/skin instances roll; migrated items remain unchanged.
 const ROLL_WEIGHTS=Object.freeze([8,22,40,22,8]);
+// Pristine is the existing base-value benchmark. Only newly graded wear reduces value.
+const VALUE_MULTIPLIERS=Object.freeze([1,.95,.85,.70,.55]);
+function multiplier(item){return wearable(item)&&validGrade(item.wearGrade)?VALUE_MULTIPLIERS[item.wearGrade]:1}
+function conditionValue(item,base){return Math.max(1,Math.round(base*multiplier(item)))}
 function rollGrade(random=Math.random){
   const sampled=Number(random());
   const unit=Number.isFinite(sampled)?Math.min(.999999999999,Math.max(0,sampled)):0;
@@ -66,6 +70,6 @@ function validGame(game,allowLegacyMissing=true){
   return all.every(item=>validItem(item,allowLegacyMissing));
 }
 root.LootHubWear=Object.freeze({
-  SCHEMA_VERSION,GRADES,ROLL_WEIGHTS,rollGrade,wearable,assignRolled,validGrade,label,validItem,ensureItem,ensureGame,validGame
+  SCHEMA_VERSION,GRADES,ROLL_WEIGHTS,VALUE_MULTIPLIERS,rollGrade,wearable,assignRolled,validGrade,label,multiplier,conditionValue,validItem,ensureItem,ensureGame,validGame
 });
 })(window);

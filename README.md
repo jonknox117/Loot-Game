@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Wear Generation 0.5.1)
+# LootHub — Curated Arsenal (Wear Display & Pricing 0.5.2)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -127,6 +127,24 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
+
+## Wear overhaul 0.5.2 — Visible condition and adjusted market prices
+
+Weapon and skin condition is now both **visible** and **economically meaningful**. All five grades use a shared price table in `market/wear.js`:
+
+| Condition | Value multiplier |
+| --- | ---: |
+| Pristine | 1.00× |
+| Lightly Worn | 0.95× |
+| Field-Tested | 0.85× |
+| Heavily Worn | 0.70× |
+| Battle-Scarred | 0.55× |
+
+- The original immutable **base value** is retained in every collectible. The **condition-adjusted value** is `max(1, round(base × multiplier))`, and the existing live marketplace supply/momentum adjustment applies afterward. For example an MP5 with base 8 in Field-Tested condition has a condition value of 7, followed by the normal market factor.
+- Inventory cards, weapon inspections, case-opening reward reveals, NPC market listings and detail screens, player listings, and the market's inventory-for-sale shelf now identify each actual collectible's saved grade. Inspection/listing dialogs show base value, wear modifier, condition-adjusted value, and live market estimate separately.
+- Instant sales, the original direct-buyer negotiation, marketplace recommendations and auto-sale probability, NPC-generated asking prices, and new buyer offers now use condition-adjusted market/value calculations. Item identity, condition and base remain unchanged across transfers.
+- Previously owned weapons migrated to **Pristine** (1.00×) keep their old base value. **Existing player and NPC asking prices are not rewritten**, even when a different grade has already been saved on the item. Sealed cases have no wear grade and retain their 25-coin reference price.
+- Model rarity odds (70/20/7.5/2/0.5), condition-roll odds (8/22/40/22/8), original master images, approved skin images, local save key, and trade history are unchanged. The actual grime/scratch/rust *visual effects* will follow in 0.5.3 and later.
 
 ## Wear overhaul 0.5.1 — Independent condition rolls
 
