@@ -1,4 +1,4 @@
-/* LootHub 0.4.1 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.2 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -48,6 +48,26 @@ function repriceListing(game,listingId,ask,now){
   listing.updatedAt=now;
   return {listing,oldAsk,changed:true};
 }
+function buyNpcListing(game,listingId){
+  if(!game||!game.market||!Array.isArray(game.market.npcListings)||
+     !Array.isArray(game.items)||!Array.isArray(game.listings)||
+     !Number.isSafeInteger(game.coins)||game.coins<0||
+     !Number.isSafeInteger(game.spent)||game.spent<0)return null;
+  const offers=game.market.npcListings;
+  const index=offers.findIndex(x=>x&&x.id===listingId);
+  if(index<0)return null;
+  const listing=offers[index],item=listing.item,price=listing.ask;
+  if(!core.validAsk(price)||!core.eligible(item)||game.coins<price||
+     game.items.some(x=>x.id===item.id)||
+     game.listings.some(x=>x.item&&x.item.id===item.id)||
+     offers.some((x,i)=>i!==index&&x&&x.item&&x.item.id===item.id))return null;
+  offers.splice(index,1);
+  game.coins-=price;
+  game.spent+=price;
+  item.paid=price;
+  game.items.push(item);
+  return {item,price,seller:listing.seller,listingId};
+}
 function cancelListing(game,listingId){
   if(!Array.isArray(game.listings)||!Array.isArray(game.items))return null;
   const index=game.listings.findIndex(x=>x.id===listingId);
@@ -72,6 +92,6 @@ function settleListing(game,listingId){
   return {item:listing.item,ask:listing.ask,net,fee:listing.ask-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
-  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing
+  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing,buyNpcListing
 });
 })(window);
