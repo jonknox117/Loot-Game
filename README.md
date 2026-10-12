@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Material-Aware Wear 0.5.5b)
+# LootHub — Curated Arsenal (Material Map Refinement 0.5.5c)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -141,6 +141,18 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
+
+## Wear overhaul 0.5.5c — Material-boundary refinement and visual QA
+
+After comparing all **24 neutral master images** with their three-channel material maps, the weapon profile has been refined in the areas most likely to generate misplaced wear: AWP optic/barrel, SCAR-L receiver/handguard, MAC-10 folding stock, M4A4 magazine/grip, M1 Garand barrel/wood furniture, SPAS-12 metal and polymer regions, and tactical tomahawk blade/handle boundary.
+
+- All 24 original silhouette maps and their 24 metal/wood/other maps still match the source alpha **pixel-for-pixel** and classify every visible pixel exactly once. The 24 paint-main masks stay independent and unchanged.
+- `assets/skin-lines/material-landmarks.json` fixes **57 visible source-art reference points** across all 24 weapon models. The Python map audit fails if any known metal, wood or other point changes to the wrong material or becomes transparent.
+- `scripts/audit_material_maps.py --output tests/material-review-sheet.png` produces one contact sheet displaying every original weapon next to a color-coded material overlay. The `Build universal weapon skin lines` GitHub workflow runs this audit, uploads the review-sheet artifact and regenerates deterministic maps whenever the source changes.
+- AWP barrel oxidation is no longer wrongly suppressed by the optic's protection rectangle. The scope remains protected. SCAR-L central receiver is eligible metal again, without treating synthetic handguard sections as metal.
+- The browser's existing material-aware scratch/chip/rust renderer consumes the regenerated maps automatically. No new weapon or skin artwork, changes to saved wear grade, price, rarity or item identity. The first skin lines are **not** automatically released.
+
+**Quality status:** `reviewStatus: refined-draft`, `reviewed: false` for each model. Automated pixel coverage and landmark checks verify structure and key distinctions but do not prove every curved boundary is flawless. Owner approval/any final spot corrections remain necessary before changing the release gate.
 
 ## Wear overhaul 0.5.5b — Material-aware procedural wear
 
