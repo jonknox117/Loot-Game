@@ -20,6 +20,10 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Market', exact: true }).click();
     await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});
     assert(await page.locator('.npc-listing').count()===15,'Initial NPC market stock should contain 15 listings');
+    assert(await page.locator('.market-pulse-item').count()===8,'Market Pulse needs eight index cards');
+    assert((await page.locator('.market-pulse-section').textContent()).includes('Base '),'Price index should show base estimates');
+    const firstHistory=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.priceHistory);
+    assert(Object.keys(firstHistory).length===0,'Merely opening the market should not create sales history');
     assert(await page.locator('.market-trader-profile').count()===6,'The buyer directory must display all six specialists');
     const initialTraders=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.traders);
     assert(initialTraders.length===16&&new Set(initialTraders.map(t=>t.style)).size===6,
@@ -181,9 +185,19 @@ const fs = require('fs');
     assert(purchased.coins===beforePurchase.coins-cheapestOffer.ask,'NPC purchase must debit exactly the posted price');
     assert(purchased.market.npcListings.length===beforePurchase.market.npcListings.length-1,'Purchased NPC listing must disappear');
     assert(purchased.items.some(x=>x.id===cheapestOffer.item.id&&x.kind===cheapestOffer.item.kind),'Exact NPC item must transfer to inventory');
+    const itemMarketKey=cheapestOffer.item.kind==='case'?'case':
+      cheapestOffer.item.kind+':'+encodeURIComponent(cheapestOffer.item.weapon.toLowerCase())+
+        (cheapestOffer.item.kind==='skin'?':'+encodeURIComponent(cheapestOffer.item.skin.toLowerCase()):'');
+    const tradeSignal=purchased.market.priceHistory[itemMarketKey];
+    assert(tradeSignal&&tradeSignal.volume===1&&tradeSignal.recent[0].side==='buy',
+      'Completed marketplace purchase must add a saved demand signal');
+    assert(tradeSignal.recent[0].price===cheapestOffer.ask,
+      'Price history must reflect the exact executed trade');
     await page.reload({waitUntil:'load'});
     const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(afterReload.items.some(x=>x.id===cheapestOffer.item.id),'Purchased NPC item must survive reload');
+    assert(JSON.stringify(afterReload.market.priceHistory[itemMarketKey])===JSON.stringify(tradeSignal),
+      'Dynamic prices should not reroll during a reload');
     assert(!afterReload.market.npcListings.some(x=>x.id===cheapestOffer.id),'Purchased listing must not regenerate');
     assert(errors.length===0,'Browser errors after NPC market purchase: '+errors.join('; '));
 
@@ -258,6 +272,14 @@ const fs = require('fs');
     const postSale=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(postSale.coins===preSale.coins+Math.max(1,Math.floor(incoming.npcOffer*.95)),'Negotiated sale fee must be 5%');
     assert(postSale.listings.length===0,'Sold player item must leave escrow');
+    const finished=Object.values(postSale.market.priceHistory).flatMap(x=>x.recent);
+    assert(finished.some(x=>x.side==='sell'&&x.price===incoming.npcOffer),
+      'Negotiated seller trade must contribute a bounded supply-side market signal');
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    assert(await page.locator('.market-pulse-item').count()===8,
+      'Market Pulse must be usable after both trade directions');
+    assert((await page.locator('.market-pulse-section').textContent()).includes('trades'),
+      'Market Pulse needs completed-trade volume indicators');
     const buyerBefore=preSale.market.traders.find(t=>t.id===incoming.traderId);
     const buyerAfter=postSale.market.traders.find(t=>t.id===incoming.traderId);
     assert(buyerBefore&&buyerAfter&&buyerAfter.wallet===buyerBefore.wallet-incoming.npcOffer,

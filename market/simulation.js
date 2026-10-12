@@ -1,4 +1,4 @@
-/* LootHub 0.4.0 marketplace sale simulation, extracted without rebalancing. */
+/* LootHub 0.4.5 marketplace sale simulation, extracted without rebalancing. */
 (function(root){
 'use strict';
 const core=root.LootHubMarketCore,tx=root.LootHubMarketTransactions;
@@ -21,7 +21,7 @@ function advanceListings(game,now,random=Math.random){
     if(!intervals)continue;
     listing.checkedAt=start+intervals*60000;
     changed=true;
-    const ratio=listing.ask/Math.max(1,core.estimated(listing.item));
+    const ratio=listing.ask/Math.max(1,root.LootHubEconomy.marketValue(game,listing.item,now));
     const chance=listingChance(ratio);
     let sold=false;
     for(let n=0;n<intervals;n++)if(random()<chance){sold=true;break}

@@ -161,7 +161,8 @@ function safeUpload(data) {
     }
   }
   if(data.market!=null){
-    if(!window.LootHubMarketCore.validMarketState(data.market))return false;
+    if(!window.LootHubMarketCore.validMarketState(data.market)||
+       !window.LootHubEconomy.validHistory(data.market.priceHistory))return false;
     if(data.market.npcListings.length>100||data.market.negotiations.length>1000||
        data.market.traders.length>100)return false;
     const traderIds=new Set();
@@ -301,7 +302,7 @@ function suggestListingPrice(price){
   previewListingPrice();
 }
 function listingEditor(item,ask,mode,listingId){
-  const reference=estimated(item);
+  const reference=marketEstimate(item);
   const safeAsk=window.LootHubMarketCore.validAsk(ask)?ask:reference;
   const quote=window.LootHubMarketCore.listingQuote(safeAsk,reference);
   const suggested=window.LootHubMarketCore.suggestedPrices(reference);
@@ -312,7 +313,8 @@ function listingEditor(item,ask,mode,listingId){
     '<h2>'+escapeHTML(listingItemName(item))+'</h2>'+
     '<div class="listing-editor-art">'+visualArt(item,'inspect')+'</div>'+
     '<p class="muted tiny">The exact owned item stays in escrow until it sells or you cancel. Changing the price costs nothing. A 5% fee applies only when it sells.</p>'+
-    '<div class="stat"><span>Estimated value</span><b>'+money(reference)+' coins</b></div>'+
+    '<div class="stat"><span>Market value</span><b>'+money(reference)+' coins</b></div>'+ 
+    '<div class="stat"><span>Base estimate</span><b>'+money(estimated(item))+' coins</b></div>'+
     '<label class="listing-price-label" for="listPrice">Your asking price</label>'+
     '<input id="listingPriceRef" type="hidden" value="'+reference+'">'+
     '<input id="listPrice" class="field" aria-label="Your asking price" type="number" inputmode="numeric" min="1" max="100000000" step="1" value="'+safeAsk+'" oninput="previewListingPrice()">'+
@@ -352,7 +354,7 @@ function submitListing(k){
 function listItem(k){
   const item=s.items.find(v=>v.id===k&&window.LootHubMarketCore.eligible(v));
   if(!item)return;
-  listingEditor(item,estimated(item),'create',null);
+  listingEditor(item,marketEstimate(item),'create',null);
 }
 function editListing(k){
   const listing=(s.listings||[]).find(v=>v.id===k);
@@ -392,15 +394,16 @@ function updateNpcMarketFilter(field,value){
   if(count)count.textContent=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView).length+
     ' listings';
 }
+function marketEstimate(item){return window.LootHubEconomy.marketValue(s,item)}
 function npcPriceLabel(listing){
-  const estimate=estimated(listing.item),ratio=listing.ask/Math.max(1,estimate);
+  const estimate=marketEstimate(listing.item),ratio=listing.ask/Math.max(1,estimate);
   return ratio<.92?'Below estimate':ratio>1.12?'Above estimate':'Near estimate';
 }
 function renderNpcMarketResults(){
   const listings=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView);
   return listings.map(l=>{
     const persona=window.LootHubTraders.summary(window.LootHubTraders.get(s,l.seller));
-    const item=l.item,estimate=estimated(item);
+    const item=l.item,info=window.LootHubEconomy.priceInfo(s,item);
     return '<article class="npc-listing">'+
       '<div class="npc-listing-art">'+visualArt(item)+'</div>'+
       '<div class="npc-listing-body">'+
@@ -408,7 +411,8 @@ function renderNpcMarketResults(){
       '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
       '<div class="muted tiny">Seller: '+escapeHTML(l.seller)+' · '+escapeHTML(persona.persona)+'</div>'+
       '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
-      '<span class="muted tiny">Est. '+money(estimate)+' ◈ · '+npcPriceLabel(l)+'</span></div>'+
+      '<span class="muted tiny">Market '+money(info.value)+' ◈ · Base '+money(info.base)+' ◈</span>'+ 
+      '<span class="muted tiny">'+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
       '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+ 
       '<button onclick="'+marketAction('negotiateNpcListing',l.id)+'">Make offer</button>'+
@@ -435,7 +439,8 @@ function inspectNpcListing(k){
     '<div class="stat"><span>Trading style</span><b>'+escapeHTML(personality.persona)+'</b></div>'+ 
     '<p class="muted tiny">'+escapeHTML(personality.description)+' · Prefers '+escapeHTML(personality.focus)+'</p>'+
     '<div class="stat"><span>Asking price</span><b>'+money(listing.ask)+' coins</b></div>'+
-    '<div class="stat"><span>Reference estimate</span><b>'+money(estimated(item))+' coins</b></div>'+
+    '<div class="stat"><span>Base estimate</span><b>'+money(estimated(item))+' coins</b></div>'+ 
+    '<div class="stat"><span>Live market value</span><b>'+money(marketEstimate(item))+' coins</b></div>'+
     '<div class="stat"><span>Price assessment</span><b>'+npcPriceLabel(listing)+'</b></div>'+
     '<p class="muted tiny">'+escapeHTML(attributes.join(' · ')||
       (item.kind==='skin'?'Approved cosmetic · exact listed item':item.kind==='case'?
@@ -569,6 +574,30 @@ function completeMarketNegotiation(kind,k){
   tab=kind==='buy'?'Inventory':'Market';
   render();
 }
+function marketPulse(){
+  const models=[{kind:'case'},...dropCatalog];
+  const tracked=models.map(item=>({item,...window.LootHubEconomy.priceInfo(s,item)}))
+    .sort((a,b)=>b.volume-a.volume||Math.abs(b.multiplier-1)-Math.abs(a.multiplier-1)||
+      a.key.localeCompare(b.key));
+  const rows=tracked.slice(0,8).map(x=>{
+    const percent=Math.round((x.multiplier-1)*100);
+    const direction=percent>0?'up':percent<0?'down':'flat';
+    const label=percent>0?'+'+percent+'%':percent+'%';
+    return '<div class="market-pulse-item">'+
+      '<b>'+escapeHTML(listingItemName(x.item))+'</b>'+
+      '<span class="market-pulse-price">'+money(x.value)+' ◈</span>'+
+      '<span class="market-pulse-trend '+direction+'">'+label+'</span>'+
+      '<span class="muted tiny">Base '+money(x.base)+' · Supply '+x.supply+
+        ' · '+x.volume+' trades</span></div>';
+  }).join('');
+  return '<section class="panel market-pulse-section">'+
+    '<div class="section-eyebrow">LIVE ECONOMY · MARKET INDEX</div>'+
+    '<div class="row space"><h2>Market Pulse</h2><span class="muted tiny">'+
+      tracked.length+' collectible markets</span></div>'+
+    '<p class="muted tiny">Prices respond to completed market trades and listing supply. Base estimates never change. Values are bounded, not guaranteed offers.</p>'+
+    '<div class="market-pulse-grid">'+rows+'</div>'+
+    '<p class="muted tiny">At most six completed trades per collectible per day affect prices. Refreshing the page cannot move the index.</p></section>';
+}
 function enhancedMarket(){
   if(isSaveCurrent()){
     window.LootHubTraders.ensure(s);
@@ -582,7 +611,7 @@ function enhancedMarket(){
     return '<div class="listing-line market-listing-row">'+
       '<div class="listing-identity">'+visualArt(l.item)+
       '<div class="listing-identity-copy"><b>'+escapeHTML(listingItemName(l.item))+'</b>'+
-      '<span class="muted tiny">Estimated '+money(estimated(l.item))+' ◈ · Listed '+new Date(l.createdAt).toLocaleString()+'</span>'+
+      '<span class="muted tiny">Market '+money(marketEstimate(l.item))+' ◈ · Base '+money(estimated(l.item))+' ◈ · Listed '+new Date(l.createdAt).toLocaleString()+'</span>'+
       (l.updatedAt?'<span class="muted tiny">Price updated '+new Date(l.updatedAt).toLocaleString()+'</span>':'')+
       '</div></div>'+
       '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
@@ -597,7 +626,7 @@ function enhancedMarket(){
   const sellShelf=ownable.slice(0,6).map(item=>
     '<div class="item">'+visualArt(item)+
     '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
-    '<p class="muted">Est. '+money(estimated(item))+' coins</p>'+
+    '<p class="muted">Market '+money(marketEstimate(item))+' coins</p>'+
     '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
   const traderDirectory=s.market.traders.filter(x=>x.role==='buyer').map(t=>{
     const traits=window.LootHubTraders.summary(t);
@@ -610,11 +639,11 @@ function enhancedMarket(){
   const view=npcMarketView;
   const select=(a,b)=>a===b?' selected':'';
   const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
-  return '<section class="panel npc-market-section">'+
+  return marketPulse()+'<section class="panel npc-market-section">'+
     '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
     '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
       count+' listings</span></div>'+
-    '<p class="muted">Inspect and buy actual listed collectibles from NPC sellers. These listings persist between visits; prices and item IDs are fixed until purchased or expired.</p>'+
+    '<p class="muted">Browse individually priced NPC items. Posted asking prices stay fixed; the market estimate shifts with real completed trades and available stock.</p>'+
     '<div class="npc-market-filters">'+
       '<label>Search weapons & sellers<input id="npcSearch" class="field" type="search" placeholder="Weapon, finish, seller..." value="'+escapeHTML(view.search)+'" oninput="updateNpcMarketFilter(\'search\',this.value)"></label>'+
       '<label>Item type<select id="npcKindFilter" class="field" onchange="updateNpcMarketFilter(\'kind\',this.value)">'+
@@ -646,11 +675,14 @@ function enhancedMarket(){
     '</section>';
 }
 function enhancedPortfolio(){
-  const value=s.items.reduce((total,x)=>total+estimated(x),0);
-  const escrow=(s.listings||[]).reduce((total,x)=>total+estimated(x.item),0);
+  const value=s.items.reduce((total,x)=>total+marketEstimate(x),0);
+  const escrow=(s.listings||[]).reduce((total,x)=>total+marketEstimate(x.item),0);
+  const baseValue=s.items.reduce((total,x)=>total+estimated(x),0)+
+    (s.listings||[]).reduce((total,x)=>total+estimated(x.item),0);
   return '<section class="panel"><div class="section-eyebrow">WEALTH TRACKER</div><h2>My Portfolio</h2>'+
   '<div class="wealth"><span class="muted">Estimated net worth</span><div class="price">'+money(s.coins+value+escrow)+' ◈</div></div>'+
-  [['Available coins',s.coins],['Inventory value',value],['Listed item value',escrow],
+  [['Available coins',s.coins],['Inventory market value',value],['Escrow market value',escrow],
+   ['Base collectible estimate',baseValue],
   ['Total clicked earnings',s.earned],['Lifetime purchase costs',s.spent],['Lifetime sales proceeds',s.sales],
   ['Cases opened',s.openings],['Reputation',s.rep]].map(x=>'<div class="stat"><span>'+x[0]+'</span><b>'+money(x[1])+'</b></div>').join('')+
   '<div class="row" style="margin-top:18px"><button onclick="go(\'Saves\')">Manage save backups</button><button onclick="go(\'Market\')">Open marketplace</button></div></section>'+

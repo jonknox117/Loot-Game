@@ -1,4 +1,4 @@
-/* LootHub Marketplace 0.4.2: persistent simulated seller inventory.
+/* LootHub Marketplace 0.4.5: persistent simulated seller inventory.
    All rewards come exclusively from the live, explicitly approved dropCatalog. */
 (function(root){
 'use strict';
@@ -17,7 +17,7 @@ function availablePool(dropCatalog){
     (x.kind!=='skin'||(typeof x.skin==='string'&&x.skin.length>0))):[];
 }
 function pick(pool,random){return pool[Math.floor(validRandom(random)*pool.length)]}
-function makeListing(m,pool,now,random){
+function makeListing(game,m,pool,now,random){
   const ticket=m.nextNpcId++;
   const slot=(ticket-1)%TIER_CYCLE.length;
   let template;
@@ -33,8 +33,8 @@ function makeListing(m,pool,now,random){
   }
   const item={...template,id:'npc-item-'+ticket};
   if(item.kind==='case')item.paid=25;
-  const estimate=core.estimated(item);
-  const ask=Math.max(1,Math.min(100000000,Math.round(estimate*(.86+validRandom(random)*.48))));
+  const market=root.LootHubEconomy.marketValue(game,item,now);
+  const ask=Math.max(1,Math.min(100000000,Math.round(market*(.86+validRandom(random)*.48))));
   return {id:'npc-list-'+ticket,seller:SELLERS[ticket%SELLERS.length],
     item,ask,createdAt:now,expiresAt:now+(24+Math.floor(validRandom(random)*49))*3600000};
 }
@@ -51,7 +51,7 @@ function refreshNpcMarket(game,dropCatalog,now=Date.now(),random=Math.random){
   if(m.npcInitialized!==true){
     m.npcInitialized=true;
     m.lastNpcRefreshAt=now;
-    while(m.npcListings.length<TARGET){m.npcListings.push(makeListing(m,pool,now,random));added++}
+    while(m.npcListings.length<TARGET){m.npcListings.push(makeListing(game,m,pool,now,random));added++}
     return {changed:true,added,expired};
   }
   if(!Number.isFinite(m.lastNpcRefreshAt))m.lastNpcRefreshAt=now;
@@ -63,7 +63,7 @@ function refreshNpcMarket(game,dropCatalog,now=Date.now(),random=Math.random){
   if(elapsed>0){
     m.lastNpcRefreshAt=now; // cap catch-up after lengthy offline time or clock changes
     const count=Math.min(TARGET-m.npcListings.length,Math.min(TARGET,elapsed));
-    for(let i=0;i<count;i++){m.npcListings.push(makeListing(m,pool,now,random));added++}
+    for(let i=0;i<count;i++){m.npcListings.push(makeListing(game,m,pool,now,random));added++}
     changed=true;
   }
   return {changed,added,expired};
