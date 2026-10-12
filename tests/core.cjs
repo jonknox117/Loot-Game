@@ -13,7 +13,11 @@ const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8')
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
-const script=masters+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
+const universalData=fs.readFileSync(path.join(root,'assets/skin-lines/line-data.js'),'utf8');
+const universalRegistry=fs.readFileSync(path.join(root,'market/skin-lines.js'),'utf8');
+assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
+assert(html.includes('<script src="./market/skin-lines.js"></script>'));
+const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -49,6 +53,31 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
+test('Three reusable lines register 24 stable skins each without modifying Arsenal drops',()=>{
+  const g=boot();
+  const lines=JSON.parse(g.run('JSON.stringify(window.LootHubSkinLines.lines)'));
+  assert.equal(lines.length,3);
+  assert.equal(g.run('catalog.length'),24);
+  const originalCount=g.run('dropCatalog.length');
+  assert.equal(originalCount,24+g.run('approvedSkins.length'));
+  for(const line of lines){
+    const skins=JSON.parse(g.run('JSON.stringify(lineCatalogs['+JSON.stringify(line.id)+'])'));
+    assert.equal(skins.length,24);
+    for(const item of skins){
+      assert.equal(item.kind,'skin');
+      assert.equal(item.skinLine,line.id);
+      assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
+      const path=g.run('window.LootHubSkinLines.imagePath('+JSON.stringify(item)+',400)');
+      assert(path.endsWith('.webp'));
+    }
+    const drop=JSON.parse(g.run('JSON.stringify(roll('+JSON.stringify(line.id)+'))'));
+    assert.equal(drop.skinLine,line.id);
+    assert(Number.isInteger(drop.wearGrade));
+  }
+  assert.equal(g.run('dropCatalog.length'),originalCount,'Original Arsenal case changed');
+  const fake={kind:'skin',weapon:'AWP',skin:'Unregistered',skinLine:'crimson-beauty'};
+  assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(fake)+')'),false);
+});
 test('Arsenal Case contains 24 supplied base weapons and ten owner-approved skins',()=>{
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
