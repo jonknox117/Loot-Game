@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "assetStatus": "model-specific-vector-masters-live",
-  "notes": "Patch 0.3.2 integrates 17 distinct source SVG model masters via assets/weapon-masters.js. Final finish illustrations and bitmap export files remain planned; SVG masters are usable now and load without network image requests.",
+  "assetStatus": "first-master-pilot-live",
+  "notes": "Glock-18 Slate Grid has a real transparent WebP raster pilot at 400/800/1600px. Neutral Glock render also exists in assets/renders/masters. Remaining entries use distinct model-specific SVG artwork; the final five-master art pipeline is not yet complete.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -46,15 +46,27 @@
       "finish": "Slate Grid",
       "tier": 0,
       "rarity": "Common",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/glock-18--slate-grid.png",
-      "inspection": "assets/renders/glock-18--slate-grid-1600.webp",
-      "inventory": "assets/renders/glock-18--slate-grid-640.webp",
-      "thumbnail": "assets/renders/glock-18--slate-grid-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/glock-18-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/glock-18--slate-grid-1600.webp",
+      "inventory": "assets/renders/finishes/glock-18--slate-grid-800.webp",
+      "thumbnail": "assets/renders/finishes/glock-18--slate-grid-400.webp",
       "approved": false,
       "vectorModel": "glock-18",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "provenance": "assets/source/glock-18/provenance.json",
+      "renderMode": "static-2d-webp",
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "sourceNativePixels": [
+        1774,
+        887
+      ],
+      "pilot": true,
+      "pilotReviewNote": "Original generated Glock-style raster plus repeatable masked Slate Grid finish; available and live, but not independently certified as a precise Glock-18 3D mesh."
     },
     {
       "id": "usp-s--dustline",
@@ -373,5 +385,8 @@
     "viewBox": "0 0 640 270",
     "usesSourceImageFallback": true,
     "status": "integrated"
-  }
+  },
+  "rasterPilots": [
+    "glock-18--slate-grid"
+  ]
 }
