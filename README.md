@@ -152,6 +152,8 @@ After comparing all **24 neutral master images** with their three-channel materi
 - AWP barrel oxidation is no longer wrongly suppressed by the optic's protection rectangle. The scope remains protected. SCAR-L central receiver is eligible metal again, without treating synthetic handguard sections as metal.
 - The browser's existing material-aware scratch/chip/rust renderer consumes the regenerated maps automatically. No new weapon or skin artwork, changes to saved wear grade, price, rarity or item identity. The first skin lines are **not** automatically released.
 
+The visual comparison can be reviewed from the successful **Build universal weapon skin lines** GitHub Actions run on this branch: download the `material-map-review` artifact and inspect `material-review-sheet.png` before approving a material profile.
+
 **Quality status:** `reviewStatus: refined-draft`, `reviewed: false` for each model. Automated pixel coverage and landmark checks verify structure and key distinctions but do not prove every curved boundary is flawless. Owner approval/any final spot corrections remain necessary before changing the release gate.
 
 ## Wear overhaul 0.5.5b — Material-aware procedural wear
