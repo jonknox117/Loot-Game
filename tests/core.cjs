@@ -153,6 +153,16 @@ test('Glock-18 Slate Grid pilot chooses correct 2D image size and retains SVG fa
     assert(bytes.length>10000,'Unusually tiny/truncated artwork: '+name);
   }
 });
+test('Catalog full-size art preview shows raster without granting or consuming inventory',()=>{
+  const g=boot();
+  const before=g.state();
+  g.run("previewCatalogFinish('Glock-18','Slate Grid')");
+  const html=g.byId('overlay').innerHTML;
+  assert(html.includes('glock-18--slate-grid-1600.webp'),'Catalog preview must use actual master image');
+  assert(html.includes('Glock-18 | Slate Grid'),'Preview has wrong finish');
+  assert.equal(g.state().coins,before.coins,'Catalog preview must never charge coins');
+  assert.deepEqual(g.state().items,before.items,'Catalog preview must not alter inventory');
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
