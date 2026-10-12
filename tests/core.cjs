@@ -265,7 +265,7 @@ test("Karambit Raptor's Gaze uses same neutral geometry across contexts",()=>{
     const actual=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
     assert(actual.includes('karambit--raptors-gaze-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
     assert(actual.includes('data-weapon-model="Karambit"'),'Incorrect Golden Talon weapon identity');
-    assert(actual.includes("data-finish=\"Raptor's Gaze\""),'Incorrect Golden Talon finish identity');
+    assert(actual.includes("data-finish=\"Raptor&#39;s Gaze\""),'Incorrect Golden Talon finish identity');
     assert(actual.includes('class="raster-fallback"'),'Karambit fallback SVG missing');
     for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--raptors-gaze']]){
       const bytes=fs.readFileSync(path.join(root,'assets/renders',part,filename+'-'+size+'.webp'));
