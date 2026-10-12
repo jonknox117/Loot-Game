@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Complete Material Maps 0.5.5a)
+# LootHub — Curated Arsenal (Material-Aware Wear 0.5.5b)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -142,6 +142,20 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
 
+## Wear overhaul 0.5.5b — Material-aware procedural wear
+
+Five condition levels now render **different mixes of damage**, not a single uniform texture with increased opacity. The renderer generates independent **scratch, grime, fade, chipped-finish and rust** layers and gates them with the same 24-weapon material maps and coating masks created in 0.5.5a.
+
+- **Metal:** abrasion, scratches, painted-surface chipping, oily grime and possible rust. Rust renders only where the decoded material map is unequivocally red/metal. Mask-loading failures yield **zero rust**.
+- **Wood:** softer scratches, dark residue and restrained fading; never metallic corrosion or metallic paint chips.
+- **Other (polymer, optics, rubber, and uncertain):** fine scuffs, grime and reduced fading. No rust or exposed-metal chipping.
+- **Paint-main:** fade and metal finish loss are limited to paintable/coated pixels, independent of the material-map silhouette. User-approved and future skin-line artwork keeps its original paint definition.
+- **Protected areas:** existing weapon-specific protected rectangles remain clear of wear, including scopes and selected hardware.
+- **Pristine:** the source image only. Lightly Worn focuses on fine abrasion. Field-Tested introduces finish damage; Heavily Worn adds chipped patches; Battle-Scarred has the densest finish breakup, grime and metal-only oxidation.
+- **Determinism and performance:** every mark remains stable for the item's saved ID and grade, clipped to the original WebP transparency. All 24 material/paint masks are shared via lazy cached 400×200 reads; overlays render only near the viewport. No new weapon/skin artwork, extra item IDs, rarity changes, valuation changes, or save migration.
+
+Material maps are still marked **unreviewed**, so 0.5.5c will visually inspect and refine their boundaries before owner-approved skin lines are released. Material-map and pixel-channel tests guard the rendering behavior, but draft boundaries can still require correction.
+
 ## Wear overhaul 0.5.5a — Complete silhouette and material maps
 
 All 24 base masters now have two **generated, source-aligned 1600×800 PNG maps** in `assets/skin-lines/materials/`:
@@ -151,7 +165,7 @@ All 24 base masters now have two **generated, source-aligned 1600×800 PNG maps*
 
 Profiles for all 24 masters contain conservative normalized metal, wood, and polymer/other zones in `paint-profiles.json`. The generator (`scripts/build_material_maps.py`) uses the original full-resolution alpha, applies the explicit region priorities and makes the entire remainder safe **OTHER**. These are *initial machine-assisted drafts*, not visually approved per-pixel material annotations; `reviewed:false` remains until the relevant maps are reviewed and corrected. Wood, polymer and unknown are not rust-eligible. The previous paint-main PNG is still for finish/skin eligibility, never proof that a surface is metal.
 
-The browser API (`market/wear-materials.js`) loads the real material map on demand with a small cache. The app exposes its path on weapon art. This patch creates/verifies maps and the material API **without changing the existing visual wear renderer or releasing any skin line**. The next renderer patch must use these material channels to limit metal-only rust; existing wear visuals remain unchanged for now.
+The browser API (`market/wear-materials.js`) loads the real material map on demand with a small cache. The app exposes its path on weapon art. Patch 0.5.5a created/verified these maps and the material API; Patch 0.5.5b now uses them for separate rendering passes. No new skin line has been released.
 
 To generate and validate: `python scripts/build_material_maps.py` then `python scripts/build_material_maps.py --check`. Weapon art, inventories, odds, values, condition grades and approved custom skins are unchanged.
 

@@ -1,13 +1,33 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const http = require('node:http');
+
+const root = path.resolve(__dirname,'..');
+const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css',
+  '.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'};
 
 (async () => {
+  // GitHub Pages serves all masters and material maps from one HTTPS origin.
+  // Local HTTP reproduces that origin for getImageData; file:// taints PNG/WebP canvases.
+  const server=http.createServer((req,res)=>{
+    try{
+      const route=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+      const file=path.resolve(root,'.'+route);
+      if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
+      fs.readFile(file,(err,data)=>{
+        if(err){res.writeHead(404);res.end();return}
+        res.setHeader('Content-Type',mimes[path.extname(file)]||'application/octet-stream');
+        res.writeHead(200);res.end(data);
+      });
+    }catch(_){res.writeHead(400);res.end()}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  const url = 'file://' + path.resolve(__dirname, '../index.html');
+  const url = 'http://127.0.0.1:' + server.address().port + '/index.html';
 
   const assert = (condition, message) => { if (!condition) throw Error(message); };
   const waitForVisible = async (selector) => page.locator(selector).waitFor({ state: 'visible', timeout: 10000 });
@@ -606,9 +626,80 @@ const fs = require('fs');
     assert(maps.metadata&&maps.metadata.includes('mp5--material-1600.png'),
       'Each weapon card must point to the corresponding material map');
     await page.evaluate(()=>closeDialog());
+
+    // 0.5.5b: real PNG material maps gate weathering pixels on iPhone.
+    const grades=[];
+    for(let grade=1;grade<=4;grade++){
+      await page.evaluate(g=>{
+        s.items.push({id:'AK-material-grade-'+g,kind:'weapon',weapon:'AK-47',
+          base:100,tier:2,wearGrade:g});
+        inspect('AK-material-grade-'+g);
+      },grade);
+      const surface=page.locator('.dialog .master-raster[data-wear-seed="AK-material-grade-'+grade+'"]');
+      await surface.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+      grades.push(await surface.evaluate(el=>{
+        const c=el.querySelector('canvas.wear-overlay');
+        const p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+        let active=0,checksum=2166136261;
+        for(let k=3;k<p.length;k+=4){
+          if(p[k])active++;
+          if(k%173===3)checksum=Math.imul(checksum^p[k],16777619)>>>0;
+        }
+        return {active,checksum,material:el.dataset.wearMaterial,channels:Number(el.dataset.wearChannels)};
+      }));
+    }
+    assert(grades.every(g=>g.active>40&&g.material==='three-channel'),
+      'Every non-Pristine grade must be produced by actual material-aware wear passes');
+    assert(new Set(grades.map(g=>g.checksum)).size===4,
+      'Each wear grade must produce a visibly distinct deterministic overlay');
+    assert(grades[3].active>grades[0].active*1.4,
+      'Battle-Scarred must have materially more wear than Lightly Worn');
+    const corrosion=await page.evaluate(async()=>{
+      const api=window.LootHubWearMaterials;
+      const renderer=window.LootHubWearRenderer;
+      const [material,paint]=await Promise.all([api.decodeMaterial('AK-47'),api.decode('AK-47')]);
+      if(!material||!paint)return {loaded:false};
+      const ele=document.querySelector('.dialog .master-raster');
+      const full=ele.querySelector('canvas.wear-overlay');
+      const image=ele.querySelector('img');
+      const scale=Math.min(full.width/image.naturalWidth,full.height/image.naturalHeight);
+      const dw=image.naturalWidth*scale,dh=image.naturalHeight*scale;
+      const geo={x:(full.width-dw)/2,y:(full.height-dh)/2,w:dw,h:dh};
+      let totalRust=0,metalRust=0,woodRust=0,otherRust=0,protectedRust=0;
+      for(let trial=0;trial<8;trial++){
+        const channel=renderer.renderLayer(document,full.width,full.height,
+          'AK-rust-test-'+trial,4,'rust',geo,material,paint,'AK-47',api);
+        if(!channel)continue;
+        const data=channel.getContext('2d').getImageData(0,0,channel.width,channel.height).data;
+        for(let y=0;y<channel.height;y++)for(let x=0;x<channel.width;x++){
+          const pos=(y*channel.width+x)*4;
+          if(!data[pos+3])continue;
+          totalRust++;
+          const u=(x+.5-geo.x)/geo.w,v=(y+.5-geo.y)/geo.h;
+          const kind=api.sampleMaterial(material.pixels,material.width,material.height,u,v);
+          const profile=api.getProfile('AK-47');
+          const restricted=api.inRects(profile.protectedRects,u,v)||
+            api.inRects(profile.wear.protectedRects,u,v);
+          if(restricted)protectedRust++;
+          if(kind==='metal')metalRust++;
+          if(kind==='wood')woodRust++;
+          if(kind==='other')otherRust++;
+        }
+        if(totalRust>60)break;
+      }
+      return {loaded:true,totalRust,metalRust,woodRust,otherRust,protectedRust};
+    });
+    assert(corrosion.loaded,'Real metal/wood/other PNG and paint mask must decode on iPhone');
+    assert(corrosion.totalRust>60,'Test should exercise visible corrosion on genuine metal pixels');
+    assert(corrosion.metalRust===corrosion.totalRust,'All rust pixels must be classed as actual metal');
+    assert(corrosion.woodRust===0&&corrosion.otherRust===0&&corrosion.protectedRust===0,
+      'No oxidation may spill onto wooden stocks, synthetic materials, or protected hardware');
+    await page.evaluate(()=>closeDialog());
+    assert(errors.length===0,'Material-aware filters raised browser errors: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
     await browser.close();
+    await new Promise(resolve=>server.close(resolve));
   }
 })().catch(err => { console.error('FAIL:', err.stack || err); process.exit(1); });
