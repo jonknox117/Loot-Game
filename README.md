@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.3A (first 2D master pilot)
+# LootHub — Arsenal Alpha 0.3.3C (AK-47 finish masters)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -14,7 +14,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
 - **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **First real transparent bitmap pilot:** Glock-18 | Slate Grid is rendered from one clear 2D master, with 400px reel, 800px inventory, and 1600px inspect versions. The neutral Glock master is also saved as three WebP sizes. The 2400x1200 working image and material masks are preserved in the master source archive.
+- **Three live transparent 2D finish pilots:** Glock-18 | Slate Grid, AK-47 | Ghostline, and AK-47 | Crimson Circuit, all with 400px reel, 800px inventory, and 1600px inspect WebPs. Neutral masters and repeatable compositing sources are preserved in Library ZIP bundles.
 
 ## Saving progress
 
@@ -40,11 +40,11 @@ The Saves tab provides:
 - **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
 - **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
 - **0.3.3A Master pilot:** created a clean transparent Glock-style 2D base render, generated slide/body paint masks and a reusable Slate Grid finish, exported three high-quality sizes and integrated the actual WebPs into the live site (not base64 page data). Source geometry is AI-generated, a plausible Glock-like depiction rather than an OEM-certified 3D model. The remaining 18 finishes still use vector art.
-- **0.3.3B Planned:** validate source recognition and clarity with the user, then replicate the source/master/finish process for AK-47, AWP, M4A4, and Karambit, followed by remaining models.
+- **0.3.3B–C AK pilot completed:** one new AK-47 master and two different finishes, with identical silhouette pixels and shared masks, live in the game. These are original AI-generated 2D sources with native 1774x887 detail, not manufacturer CAD. AWP, M4A4, and Karambit are **not yet converted** because full-resolution isolated masters haven't met the Glock benchmark.
 
 ## Known limitations
 
-- One Glock finish uses an original masked, high-resolution 2D raster; other finishes still use model-specific SVG artwork. Most detailed per-finish art remains planned. Source raster is generated art, not proof of mechanically exact geometry.
+- Three original finish concepts use standalone raster artwork; the remaining 16 still use model-specific SVG artwork. No additional guns were silently replaced with blurred crops from a comparison board.
 - Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
 - NPC buyers are simplified, not a deep supply/demand economy.
 - Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
@@ -52,7 +52,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Review first clean Glock model visually, then produce AK-47, AWP, M4A4, and Karambit masters with equivalent geometry clarity and isolated finish masks; keep SVG fallbacks until each raster passes QA.
+1. Produce **isolated full-resolution** AWP (Night Watch and Eclipse), M4A4 (Voltage Bloom), and Karambit (Golden Talon) sources at the same quality standard; do not upscale contact-sheet crops. Keep existing vector fallbacks until each passes QA.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
