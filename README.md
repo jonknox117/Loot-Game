@@ -14,7 +14,7 @@ A mobile-first, browser-based collectible weapon and marketplace game. The colle
 | Super Rare | AWP, Tactical Tomahawk, RPG-7 |
 | Legendary | Karambit, Butterfly Knife, M134 Minigun, **MAC-10 | Red Devil (approved skin)** |
 
-Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. The 24 base models are unskinned and have no finish/paint, float, pattern, or StatTrak rolls. The only currently approved cosmetic is **MAC-10 | Red Devil**, which is separately obtainable in the Legendary tier and does not overwrite the original MAC-10 model. Artwork in the case, opening reel, inventory, market listings, and inspect screen uses the same unskinned master for each model.
+Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. The 24 base models are unskinned and have no finish/paint, float, pattern, or StatTrak rolls. The only currently approved cosmetic is **MAC-10 | Red Devil**, which is separately obtainable in the Legendary tier and does not overwrite the original MAC-10 model. Artwork in the case, opening reel, inventory, market listings, and inspect screen uses the unskinned master for base weapons and the separately approved Red Devil art only for that specific skin.
 
 ## Master artwork
 
@@ -29,18 +29,18 @@ Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. The 24 
 
 ## Marketplace 0.4.0 — Foundation patch
 
-This release restructures the existing marketplace without changing gameplay or approving any skins.
+The initial marketplace patch restructured the existing marketplace; the current curated-art update separately releases one owner-approved Red Devil skin.
 
 - Market logic now lives in `market/core.js` (item eligibility, valuations and versioned state), `market/transactions.js` (wallet, inventory and escrow transfers), and `market/simulation.js` (existing NPC sale probability and elapsed intervals).
 - Existing items, market listings, asking prices, coins, saved offers and unique item IDs carry forward. The save uses the same browser key and save version 4, with a new `market.schemaVersion` field and reserved empty collections for later NPC listings, negotiations, traders and price history.
 - Current pricing, case odds, dealer negotiations, the 5% listing-sale fee and sale probabilities are unchanged.
 - Added migration, double-settlement and price-equivalence tests, plus mobile smoke validation.
-- **Zero skins are active or approved.** The new eligibility layer accommodates legacy items and future explicitly approved skins without creating cosmetics.
+- **Exactly one skin is active and approved: MAC-10 | Red Devil.** The eligibility layer continues to support future cosmetics only after explicit approval.
 - Real multiplayer trading and account-based saving remain out of scope.
 
 ## Marketplace 0.4.1 — Universal listings
 
-- All eligible owned cases and base weapons, including saved legacy weapon models, may be listed from inventory or directly from the Market trading desk. The transaction model also accepts cosmetic skin items **only once those skins are separately approved and released**; the active Arsenal Case still has **zero skins**.
+- All eligible owned cases and base weapons, including saved legacy weapon models and the approved Red Devil finish, may be listed from inventory or directly from the Market trading desk. The transaction model also accepts cosmetic skin items **only after those skins are separately approved and released**; the active Arsenal Case now has **one individually approved skin**.
 - A mobile-friendly listing editor accepts any whole-coin asking price from 1 through 100,000,000. Quick-price suggestions, the item preview, estimated value, a live 5% fee calculation and net proceeds make each asking price transparent.
 - Active listings now show their ask, estimated reference value, expected net proceeds and date. Sellers can **edit prices without cancelling**; repricing keeps the original listing and item IDs, original creation timestamp, and escrow ownership.
 - Repricing resets the next simulated buyer-check time, so old elapsed intervals cannot be back-applied to a newly lowered price. Cancelling restores the exact item without fees.
