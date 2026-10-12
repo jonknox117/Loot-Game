@@ -90,6 +90,8 @@ function loadGame(key) {
   // Do not write automatically; the next valid save handles migration and backup.
   const migrated=migrateLegacyFinishData(data);
   ensureMarketData(migrated);
+  // Run after retired-finish migration so preserved base values never change.
+  window.LootHubWear.ensureGame(migrated);
   return migrated;
 }
 function updateSaveIndicator(){
@@ -140,6 +142,9 @@ function recordActivity(data,text) {
   data.ledger.push({at:now,message:text,wallet:data.coins,itemCount:data.items.length,listingCount:(data.listings||[]).length});
 }
 function safeUpload(data) {
+  // Missing grades are valid for old backups. Present grades must be 0–4;
+  // unopened cases must never carry a weapon condition.
+  if(!window.LootHubWear.validGame(data,true))return false;
   if(!isValidSave(data) || data.items.length>50000 ||
      !Array.isArray(data.listings||[]) || (data.listings||[]).length>50000 ||
      !Number.isFinite(data.earned) || data.earned<0 ||
