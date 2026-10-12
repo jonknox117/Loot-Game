@@ -49,14 +49,15 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Arsenal Case contains exactly seventeen base weapons, no skins',()=>{
+test('Arsenal Case contains 24 supplied base weapons and only the approved skin',()=>{
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
   const cat=JSON.parse(g.run('JSON.stringify(catalog)'));
-  assert.equal(cat.length,17);
-  assert.equal(manifest.items.length,17);
-  assert.deepEqual(manifest.approvedSkins,[]);
-  assert.equal(manifest.catalogMode,'base-weapons-only');
+  assert.equal(cat.length,24);
+  assert.equal(manifest.items.length,24);
+  assert.equal(manifest.approvedSkins.length,1);
+  assert.equal(manifest.approvedSkins[0].displayName,'MAC-10 | Red Devil');
+  assert.equal(manifest.catalogMode,'24-base-weapon-models-plus-one-user-approved-skin');
   const weaponNames=new Set();
   for(const [weapon,tier,base,emoji] of cat){
     assert.equal(typeof weapon,'string');
@@ -74,10 +75,13 @@ test('Arsenal Case contains exactly seventeen base weapons, no skins',()=>{
     assert.equal(entry.finish,null);
   }
   assert(weaponNames.has('M60')&&weaponNames.has('RPG-7'));
+  for(const weapon of ['M1911','M1 Garand','Kar98k','Thompson SMG','FN SCAR-L','FN FAL','M134 Minigun'])assert(weaponNames.has(weapon));
+  const live=JSON.parse(g.run('JSON.stringify(approvedSkins)'));
+  assert.deepEqual(live,[['MAC-10','Red Devil',4,1800,'🔫']]);
 });
 test('All active weapon masters resolve to neutral WebP art only',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.neutralMasterPipeline.baseModelCount,17);
+  assert.equal(manifest.neutralMasterPipeline.baseModelCount,24);
   for(const asset of manifest.items){
     if(asset.renderMode==='transparent-webp-file'){
       const buf=fs.readFileSync(path.join(root,asset.master));
@@ -110,7 +114,7 @@ test('M60 and RPG-7 render as neutral masters in reel and inspection',()=>{
     }
   }
 });
-test('Old raster finish paths never render in the base-only collection',()=>{
+test('Old retired raster finishes stay disabled and user-approved finish alone appears',()=>{
   const g=boot();
   const obj={kind:'weapon',weapon:'Glock-18',tier:0,base:6};
   const img=g.run('visualArt('+JSON.stringify(obj)+',"inspect")');
@@ -118,24 +122,33 @@ test('Old raster finish paths never render in the base-only collection',()=>{
   assert(!img.includes('--slate-grid'));
   assert(!img.includes('data-finish'));
   const menu=g.run('cases()');
-  assert.equal((menu.match(/View weapon/g)||[]).length,17);
+  assert.equal((menu.match(/View weapon/g)||[]).length,24);
+  assert.equal((menu.match(/View skin/g)||[]).length,1);
+  assert(menu.includes('MAC-10 | Red Devil'));
   assert(menu.includes('Available base weapons'));
   for(const finish of ['Starfall','Slate Grid','Voltage Bloom','Crimson Circuit','Metro Fade']){
     assert(!menu.includes(finish),'Retired finish visible: '+finish);
   }
 });
-test('Every rarity tier gives a genuine unskinned base weapon',()=>{
+test('Every tier rewards an unskinned base weapon or the sole approved finish',()=>{
   for(const [random,tier] of [[.01,0],[.75,1],[.94,2],[.98,3],[.999,4]]){
     const g=boot(new LocalStore(),()=>random);
     const x=JSON.parse(g.run('JSON.stringify(roll())'));
-    assert.equal(x.kind,'weapon');
     assert.equal(x.tier,tier);
     assert.equal(typeof x.weapon,'string');
-    assert(!('skin' in x));
     assert(!('float' in x));
     assert(!('pattern' in x));
     assert(!('stattrak' in x));
-    assert.equal(g.run('itemName('+JSON.stringify(x)+')'),x.weapon);
+    if(x.kind==='skin'){
+      assert.equal(x.weapon,'MAC-10');
+      assert.equal(x.skin,'Red Devil');
+      assert.equal(tier,4);
+      assert.equal(g.run('itemName('+JSON.stringify(x)+')'),'MAC-10 | Red Devil');
+    }else{
+      assert.equal(x.kind,'weapon');
+      assert(!('skin' in x));
+      assert.equal(g.run('itemName('+JSON.stringify(x)+')'),x.weapon);
+    }
   }
 });
 test('Former skins migrate once without losing inventory, listing, or values',()=>{
@@ -194,6 +207,50 @@ test('Base-only preview and case prize do not invent finish labels',()=>{
   assert(final.includes('Base weapon · unskinned'));
 });
 
+test('Seven new original masters and owner-approved MAC-10 finish are real WebPs',()=>{
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  for(const slug of ['m1911','m1-garand','kar98k','thompson-smg','fn-scar-l','fn-fal','m134-minigun']){
+    const a=manifest.items.find(x=>x.modelSlug===slug);
+    assert(a&&a.sourceType==='user-supplied-original-image');
+    const js=fs.readFileSync(path.join(root,'assets/neutral-art',slug+'.js'),'utf8');
+    assert(js.includes('window.LootHubNeutralArt['+JSON.stringify(slug)+']'));
+    const sizes=js.match(/"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"/);
+    assert(sizes);
+    for(const base64 of sizes.slice(1)){
+      const buf=Buffer.from(base64,'base64');
+      assert.equal(buf.toString('ascii',0,4),'RIFF');
+      assert.equal(buf.toString('ascii',8,12),'WEBP');
+    }
+  }
+  const skin=manifest.approvedSkins[0];
+  const source=fs.readFileSync(path.join(root,skin.finishArt),'utf8');
+  assert(source.includes('window.LootHubSkinArt["MAC-10|Red Devil"]'));
+  assert(source.includes('"1600":"UklGR'));
+});
+test('Red Devil is rendered and saved as a skin, not a replacement MAC-10 master',()=>{
+  const g=boot();
+  g.run("window.LootHubSkinArt={'MAC-10|Red Devil':{'400':'UklGR-test','800':'UklGR-test','1600':'UklGR-test'}}");
+  g.run("window.LootHubNeutralArt={'mac-10':{'400':'UklGR-neutral','800':'UklGR-neutral','1600':'UklGR-neutral'}}");
+  for(const [ctx,w] of [['reel',400],['inventory',800],['inspect',1600]]){
+    const art=g.run('visualArt({kind:"skin",weapon:"MAC-10",skin:"Red Devil",tier:4,base:1800},'+JSON.stringify(ctx)+')');
+    assert(art.includes('data-finish="Red Devil"'));
+    assert(art.includes('data-art-status="approved-skin"'));
+    assert(art.includes('data-resolution="'+w+'"'));
+    const neutral=g.run('visualArt({kind:"weapon",weapon:"MAC-10",tier:0,base:8},'+JSON.stringify(ctx)+')');
+    assert(neutral.includes('data-art-status="base"'));
+    assert(!neutral.includes('Red Devil'));
+  }
+  const approved={coins:50,items:[{id:'red',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800}],
+    history:[],earned:50,spent:0,sales:0,rep:0,openings:1,serial:1,offers:{},tab:'Inventory'};
+  const storage=new LocalStore();
+  storage.setItem(KEY,JSON.stringify(approved));
+  const reload=boot(storage);
+  assert.equal(reload.state().items[0].kind,'skin');
+  assert.equal(reload.state().items[0].skin,'Red Devil');
+  assert.equal(reload.run('safeUpload(JSON.parse(JSON.stringify(s)))'),true);
+  reload.run('previewApprovedSkin(0)');
+  assert(reload.byId('overlay').innerHTML.includes('MAC-10 | Red Devil'));
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
@@ -354,7 +411,8 @@ test('Any existing weapon or future-approved skin instance is eligible without c
   assert.equal(listings[1].item.skin,'Test Finish');
   assert.equal(listings[1].item.pattern,777);
   assert.equal(g.run("window.LootHubMarketTransactions.cancelListing(s,'listing-future-approved-test').item.skin"),'Test Finish');
-  assert.equal(g.run('catalog.length'),17,'No new skins or case rewards may be introduced');
+  assert.equal(g.run('catalog.length'),24,'Marketplace test must not change approved base pool');
+  assert.equal(g.run('approvedSkins.length'),1,'No extra cosmetic finishes may be introduced');
 });
 test('Price edit keeps item escrowed and preserves listing identity and reference data',()=>{
   const g=boot();
