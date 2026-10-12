@@ -30,6 +30,17 @@ function isValidSave(data) {
     Number.isSafeInteger(data.coins) && data.coins>=0 &&
     Array.isArray(data.items) && Array.isArray(data.history));
 }
+// Keep existing items and market listings after the Golden Talon rename.
+function canonicalSkin(weapon,skin){
+  return weapon==='Karambit'&&skin==='Golden Talon'?"Raptor's Gaze":skin;
+}
+function migrateLegacyFinishData(data){
+  if(!data||typeof data!=='object')return data;
+  const migrate=item=>{if(item&&item.kind==='skin'&&item.weapon==='Karambit'&&item.skin==='Golden Talon')item.skin="Raptor's Gaze";};
+  if(Array.isArray(data.items))data.items.forEach(migrate);
+  if(Array.isArray(data.listings))data.listings.forEach(listing=>migrate(listing&&listing.item));
+  return data;
+}
 function loadGame(key) {
   let primary=null,backup=null,raw=null;
   try { raw=localStorage.getItem(key); if(raw!==null)primary=JSON.parse(raw); }catch(_){}
@@ -52,7 +63,8 @@ function loadGame(key) {
   if(!data.preferences||typeof data.preferences!=='object')data.preferences={fastOpen:false};
   lastPersistedRevision=typeof data.revision==='string'?data.revision:null;
   lastPersistedSnapshot=raw;
-  return data;
+  // Do not write automatically; the next valid save handles migration and backup.
+  return migrateLegacyFinishData(data);
 }
 function updateSaveIndicator(){
   const node=document.getElementById('saveStatus');
@@ -118,7 +130,7 @@ function safeUpload(data) {
       !Number.isFinite(item.base) || item.base<0 ||
       !Number.isFinite(item.pattern) || item.pattern<0 ||
       typeof item.weapon!=='string' || typeof item.skin!=='string' ||
-      !Array.isArray(catalog) || !catalog.some(a=>a[0]===item.weapon&&a[1]===item.skin&&a[2]===item.tier)))return false;
+      !Array.isArray(catalog) || !catalog.some(a=>a[0]===item.weapon&&a[1]===canonicalSkin(item.weapon,item.skin)&&a[2]===item.tier)))return false;
   }
   return true;
 }
@@ -301,22 +313,23 @@ const lootHubBitmapArt=Object.freeze({
     inventory:'assets/renders/finishes/m4a4--voltage-bloom-800.webp',
     inspect:'assets/renders/finishes/m4a4--voltage-bloom-1600.webp'
   }),
-  'Karambit|Golden Talon':Object.freeze({
-    reel:'assets/renders/finishes/karambit--golden-talon-400.webp',
-    inventory:'assets/renders/finishes/karambit--golden-talon-800.webp',
-    inspect:'assets/renders/finishes/karambit--golden-talon-1600.webp'
+  "Karambit|Raptor's Gaze":Object.freeze({
+    reel:'assets/renders/finishes/karambit--raptors-gaze-400.webp',
+    inventory:'assets/renders/finishes/karambit--raptors-gaze-800.webp',
+    inspect:'assets/renders/finishes/karambit--raptors-gaze-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {
   if(item&&item.kind==='skin'){
-    const entry=lootHubBitmapArt[item.weapon+'|'+item.skin];
+    const displaySkin=canonicalSkin(item.weapon,item.skin);
+    const entry=lootHubBitmapArt[item.weapon+'|'+displaySkin];
     if(entry){
       const src=entry[context==='reel'?'reel':context==='inspect'?'inspect':'inventory'];
       const fallback=window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)
-        ?window.ArsenalMasters.render(item):'';
+        ?window.ArsenalMasters.render(displaySkin===item.skin?item:{...item,skin:displaySkin}):'';
       const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-      return '<div class="art weapon-art master-raster" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
-        '<img src="./'+src+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
+      return '<div class="art weapon-art master-raster" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(displaySkin)+'" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
+        '<img src="./'+src+'" alt="'+safeAttr(item.weapon+' | '+displaySkin)+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
         '<div class="raster-fallback" hidden>'+fallback+'</div></div>';
     }
   }
