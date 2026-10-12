@@ -2,6 +2,8 @@ name: Build universal weapon skin lines
 on:
   push:
     branches: [main, feature/universal-skin-lines, wear-material-map-refinement-0.5.5c]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 concurrency:
   group: skin-line-${{ github.ref }}
@@ -21,16 +23,16 @@ jobs:
           python-version: '3.12'
       - name: Install Pillow
         run: python -m pip install 'Pillow>=10,<13'
-      - name: Generate and verify all neutral-master-derived variants
-        run: |
-          python scripts/build_skin_lines.py --self-test
-          python scripts/build_skin_lines.py
-          python scripts/build_skin_lines.py --check
       - name: Generate and verify complete 24-weapon material maps
         run: |
           python scripts/export_paint_profiles.py --check
           python scripts/build_material_maps.py
           python scripts/build_material_maps.py --check
+      - name: Generate and verify all neutral-master-derived variants
+        run: |
+          python scripts/build_skin_lines.py --self-test
+          python scripts/build_skin_lines.py
+          python scripts/build_skin_lines.py --check
       - name: Audit semantic material regions and render 24-weapon comparison
         run: python scripts/audit_material_maps.py --output tests/material-review-sheet.png
       - name: Upload mask review contact sheet
@@ -46,6 +48,7 @@ jobs:
       - name: Validate gameplay, catalog, saves, and generated skin registry
         run: node tests/core.cjs
       - name: Commit deterministic rendered art to current branch
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
