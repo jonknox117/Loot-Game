@@ -241,7 +241,7 @@ const fs = require('fs');
     const incoming=await page.evaluate(()=>{
       const data=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
       const id=data.listings[0].id;
-      return data.market.negotiations.find(x=>x.id==='sell:'+id);
+      return data.market.negotiations.find(x=>x.kind==='sell'&&x.listingId===id&&x.listingCreatedAt===data.listings[0].createdAt);
     });
     assert(incoming&&incoming.npcOffer>0,'Player listing should receive an NPC buyer offer');
     await page.getByRole('button',{name:/^Accept /}).click();
