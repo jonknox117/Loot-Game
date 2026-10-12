@@ -275,6 +275,16 @@ const lootHubBitmapArt=Object.freeze({
     reel:'assets/renders/finishes/glock-18--slate-grid-400.webp',
     inventory:'assets/renders/finishes/glock-18--slate-grid-800.webp',
     inspect:'assets/renders/finishes/glock-18--slate-grid-1600.webp'
+  }),
+  'AK-47|Ghostline':Object.freeze({
+    reel:'assets/renders/finishes/ak-47--ghostline-400.webp',
+    inventory:'assets/renders/finishes/ak-47--ghostline-800.webp',
+    inspect:'assets/renders/finishes/ak-47--ghostline-1600.webp'
+  }),
+  'AK-47|Crimson Circuit':Object.freeze({
+    reel:'assets/renders/finishes/ak-47--crimson-circuit-400.webp',
+    inventory:'assets/renders/finishes/ak-47--crimson-circuit-800.webp',
+    inspect:'assets/renders/finishes/ak-47--crimson-circuit-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {
@@ -284,8 +294,9 @@ function visualArt(item,context='inventory') {
       const src=entry[context==='reel'?'reel':context==='inspect'?'inspect':'inventory'];
       const fallback=window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)
         ?window.ArsenalMasters.render(item):'';
-      return '<div class="art weapon-art master-raster" data-weapon-model="Glock-18" data-finish="Slate Grid" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
-        '<img src="./'+src+'" alt="Glock-18 | Slate Grid" decoding="async" loading="'+(context==='inspect'?'eager':'lazy')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
+      const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      return '<div class="art weapon-art master-raster" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
+        '<img src="./'+src+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
         '<div class="raster-fallback" hidden>'+fallback+'</div></div>';
     }
   }
