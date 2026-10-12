@@ -68,3 +68,16 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - Eclipse: masked dark metallic-gold chassis with original eclipse medallion, repeating engraved arcs, and gold edge lines. The real stock, magazine, bipod, scope, and silhouette remain intact.
 - The actual neutral source is original AI-generated **illustration**, not CAD or a licensed manufacturer GLB. This is a high-resolution raster visual pilot; final iOS Safari review is still pending.
 - No user balances, item odds, item attributes or save keys changed. All remaining non-raster items continue using their model-specific vector fallbacks.
+
+## 0.3.3E — M4A4 neutral art + Voltage Bloom source-qualified pilot
+
+- **Integrated:** M4A4 | Voltage Bloom (existing Rare catalog entry). A neutral M4A4 and distinct cyan/lightning/flower-pattern finish now share exact transparent silhouette and component masks.
+- Renders: `assets/renders/masters/m4a4-neutral-{400,800,1600}.webp` and `assets/renders/finishes/m4a4--voltage-bloom-{400,800,1600}.webp`.
+- All exports are transparent native WebP files committed as Git binary blobs, not embedded as base64 or stretched from the thumbnail output.
+- Artwork source is an original generated 1774×887 comparison-sheet illustration. The actual rifle region used is about **1110 native horizontal pixels**, so the 2400×1200 working canvas and 1600px inspect output involve upsampling. This is clearly a **provisional** model master, *not* independently framed native 1600px detail.
+- The source sheet, repeatable segmentation/compositor script, neutral source, finished source, masks, all six WebPs and previews are saved in Library at `/LootHub/loothub-m4a4-master-033E.zip`.
+- Production: `python scripts/build_m4a4_2d.py` from an extracted bundle (requires Pillow, NumPy and OpenCV).
+- Material masking keeps metallic mechanical details, rail and barrel intact and applies blue lacquer, electric flowers and fine energy tracery only on painted surfaces.
+- Both images point the muzzle right like the other released masters, and their alpha channels are **pixel-identical** before compression and in exported WebPs at all three sizes.
+- Current status: **pilot live; not final-approved**. A dedicated higher-detail source may replace this while keeping the finish recipe and asset addresses.
+- No game economy, saves, rarity odds or item instance data changed.
