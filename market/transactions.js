@@ -1,4 +1,4 @@
-/* LootHub 0.4.4 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.5 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -76,6 +76,7 @@ function buyNpcListing(game,listingId,negotiatedPrice){
   item.paid=price;
   game.items.push(item);
   root.LootHubTraders.finishPurchase(game,listing.seller,price);
+  root.LootHubEconomy.recordTrade(game,item,price,'buy');
   return {item,price,seller:listing.seller,listingId};
 }
 function cancelListing(game,listingId){
@@ -108,6 +109,7 @@ function settleListing(game,listingId,negotiatedPrice){
   game.rep+=1;
   if(negotiated&&negotiated.traderId)
     root.LootHubTraders.finishSale(game,negotiated.traderId,price);
+  root.LootHubEconomy.recordTrade(game,listing.item,price,'sell');
   return {item:listing.item,ask:price,net,fee:price-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
