@@ -2,9 +2,9 @@
   "schemaVersion": 3,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "catalogMode": "24-base-weapon-models-plus-one-user-approved-skin",
-  "assetStatus": "24-original-neutral-masters-and-one-approved-MAC-10-Red-Devil-skin",
-  "notes": "24 unskinned base weapon models and exactly 1 owner-selected Red Devil skin are active. Seven new masters are imported from supplied images, three JPEG backgrounds keyed into true transparency. Neutral MAC-10 is preserved; Red Devil is an independently collectible cosmetic. All other proposed/generated skin art is excluded. Previous save/money/listings remain preserved.",
+  "catalogMode": "24-base-weapon-models-plus-five-user-approved-skins",
+  "assetStatus": "24-original-neutral-masters-and-five-owner-approved-skins",
+  "notes": "24 unskinned base weapons and five original owner-approved skins. All skins are separately obtainable in Arsenal Cases and eligible for marketplace listings; originals remain unmodified. Previous saves, funds, and listings are preserved; published case-tier probabilities are unchanged.",
   "caseOddsPercent": [
     70,
     20,
@@ -50,7 +50,83 @@
       "thumbnail": "assets/skins/mac-10--red-devil.js#400",
       "inventory": "assets/skins/mac-10--red-devil.js#800",
       "inspection": "assets/skins/mac-10--red-devil.js#1600",
-      "note": "Only active cosmetic finish, personally supplied/approved; original unskinned MAC-10 master retained separately."
+      "note": "First approved skin; the separate unskinned MAC-10 remains live."
+    },
+    {
+      "id": "rpg-7--glory",
+      "kind": "skin",
+      "weapon": "RPG-7",
+      "skin": "Glory",
+      "displayName": "RPG-7 | Glory",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 1200,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/rpg-7.js",
+      "finishArt": "assets/skins/rpg-7--glory.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/rpg-7--glory.js#400",
+      "inventory": "assets/skins/rpg-7--glory.js#800",
+      "inspection": "assets/skins/rpg-7--glory.js#1600",
+      "note": "Original owner-supplied finish with independent, unchanged neutral base weapon."
+    },
+    {
+      "id": "colt-45-revolver--high-stakes",
+      "kind": "skin",
+      "weapon": "Colt .45 Revolver",
+      "skin": "High Stakes",
+      "displayName": "Colt .45 Revolver | High Stakes",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 900,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/colt-45-revolver.js",
+      "finishArt": "assets/skins/colt-45-revolver--high-stakes.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/colt-45-revolver--high-stakes.js#400",
+      "inventory": "assets/skins/colt-45-revolver--high-stakes.js#800",
+      "inspection": "assets/skins/colt-45-revolver--high-stakes.js#1600",
+      "note": "Original owner-supplied finish with independent, unchanged neutral base weapon."
+    },
+    {
+      "id": "butterfly-knife--the-hydra",
+      "kind": "skin",
+      "weapon": "Butterfly Knife",
+      "skin": "The Hydra",
+      "displayName": "Butterfly Knife | The Hydra",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 3600,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/butterfly-knife.js",
+      "finishArt": "assets/skins/butterfly-knife--the-hydra.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/butterfly-knife--the-hydra.js#400",
+      "inventory": "assets/skins/butterfly-knife--the-hydra.js#800",
+      "inspection": "assets/skins/butterfly-knife--the-hydra.js#1600",
+      "note": "Original owner-supplied finish with independent, unchanged neutral base weapon."
+    },
+    {
+      "id": "fn-fal--the-luck-o-the-irish",
+      "kind": "skin",
+      "weapon": "FN FAL",
+      "skin": "The Luck O The Irish",
+      "displayName": "FN FAL | The Luck O The Irish",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 320,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/fn-fal.js",
+      "finishArt": "assets/skins/fn-fal--the-luck-o-the-irish.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/fn-fal--the-luck-o-the-irish.js#400",
+      "inventory": "assets/skins/fn-fal--the-luck-o-the-irish.js#800",
+      "inspection": "assets/skins/fn-fal--the-luck-o-the-irish.js#1600",
+      "note": "Original owner-supplied finish with independent, unchanged neutral base weapon."
     }
   ],
   "items": [
@@ -580,7 +656,7 @@
       "M134 Minigun"
     ],
     "masterRegistry": "assets/manifest.json",
-    "skinsLive": 1
+    "skinsLive": 5
   },
   "legacySaveSupport": {
     "currentVersion": 4,
@@ -590,9 +666,13 @@
     "removedItems": false
   },
   "skinPipeline": {
-    "activeSkinCount": 1,
+    "activeSkinCount": 5,
     "allowedSkinIds": [
-      "mac-10--red-devil"
+      "mac-10--red-devil",
+      "rpg-7--glory",
+      "colt-45-revolver--high-stakes",
+      "butterfly-knife--the-hydra",
+      "fn-fal--the-luck-o-the-irish"
     ],
     "ownerApprovalRequired": true,
     "sourceImage": "D2CFA5D6-B927-46B6-9E12-99DAEC7897FC.jpeg",
@@ -602,6 +682,12 @@
       "400-webp",
       "800-webp",
       "1600-webp"
-    ]
+    ],
+    "sourceImages": {
+      "rpg-7--glory": "Owner-provided high-resolution artwork, October 12, 2026",
+      "colt-45-revolver--high-stakes": "Owner-provided high-resolution artwork, October 12, 2026",
+      "butterfly-knife--the-hydra": "Owner-provided high-resolution artwork, October 12, 2026",
+      "fn-fal--the-luck-o-the-irish": "Owner-provided high-resolution artwork, October 12, 2026"
+    }
   }
 }
