@@ -18,7 +18,7 @@ const fs = require('fs');
 
     // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
     await page.getByRole('button', { name: 'Market', exact: true }).click();
-    await waitForVisible('.npc-listing');
+    await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});
     assert(await page.locator('.npc-listing').count()===15,'Initial NPC market stock should contain 15 listings');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
