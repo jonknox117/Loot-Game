@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.3)
+# LootHub — Curated Arsenal (Marketplace 0.4.4)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -65,6 +65,15 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Settlement helpers refuse negotiated discounts without a matching, still-valid saved agreement. Completed trades cannot repeat. Selling, cancelling, repricing, or expiration makes unfinished negotiations unavailable, rather than leaving stale bargains usable.
 - Offer histories persist under the existing \`market.negotiations\` array and are included in local browser backups; older saves migrate with no inventory, wallet, listing ID, or case-odds changes.
 - Existing fast instant sales and their separate legacy dealer option are unchanged. Advanced trader personalities and broader market pricing behavior are planned for subsequent patches.
+
+## Marketplace 0.4.4 — NPC trader personalities
+
+- Six distinct trading styles now shape prices and outcomes: Bargain Hunter, Collector, Impatient Trader, Veteran Dealer, Wealthy Enthusiast, and Opportunist. Each one has a different negotiation floor/ceiling, degree of concession, and patience (2–4 rounds).
+- Ten existing NPC sellers now have persistent profiles. Six named specialist buyers enter the **Meet the Buyers** directory, with collectible preferences, saved finite budgets, and a visible negotiation style.
+- NPC buyers prefer different weapon families (knives, rifles, pistols, shotguns, SMGs, cases, heavy weapons, sniper rifles, approved skins). A specific collector's budget and preferences influence whether they offer on your listing and how much they are willing to pay.
+- Buyer wallets are debited only on successful negotiated transfers; NPC vendor wallets receive coins from purchases. An agreed sale cannot complete when its buyer lacks the funds. A new listing without any affordable buyer displays **No affordable buyer yet** rather than pretending an NPC can purchase it.
+- Negotiations snapshot the selected trader, offer limits, patience and concession rate at their first opening. Closing or reloading does not reroll offers, and old negotiations lacking these new fields retain their prior behavior.
+- The trade history, existing item IDs, local save key/version, marketplace fees, base weapon pool, and the sole approved Red Devil skin remain unchanged. Dynamic supply/demand pricing remains planned for 0.4.5.
 
 ## Economy and progression
 
