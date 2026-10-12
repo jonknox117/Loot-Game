@@ -188,6 +188,32 @@ test('AK raster masters share exact geometry and show matching reel-to-inspect f
     assert.equal(file.toString('ascii',8,12),'WEBP','Neutral AK master invalid');
   }
 });
+test('AWP bitmap masters load correct original Night Watch/Eclipse artwork at three sizes',()=>{
+  const g=boot();
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  for(const [skin,slug,tier] of [['Night Watch','night-watch',2],['Eclipse','eclipse',3]]){
+    const item={kind:'skin',weapon:'AWP',skin,tier};
+    const entry=manifest.items.find(x=>x.weapon==='AWP'&&x.finish===skin);
+    assert(entry&&entry.pilot===true,'Missing live AWP bitmap entry '+skin);
+    assert.equal(entry.approved,false,'Unreviewed pilot must not be called final-approved');
+    assert.equal(entry.renderMode,'static-2d-webp');
+    for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+      const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
+      assert(html.includes('awp--'+slug+'-'+size+'.webp'),'Wrong AWP finish source in '+context);
+      assert(html.includes('data-weapon-model="AWP"'),'The rendered AWP weapon metadata is wrong');
+      assert(html.includes('data-finish="'+skin+'"'),'AWP finish changes between contexts');
+      assert(html.includes('class="raster-fallback"'),'AWP preview missing fallback');
+      const bitmap=fs.readFileSync(path.join(root,'assets/renders/finishes','awp--'+slug+'-'+size+'.webp'));
+      assert.equal(bitmap.toString('ascii',0,4),'RIFF','Invalid WebP header');
+      assert.equal(bitmap.toString('ascii',8,12),'WEBP','Invalid WebP payload');
+      assert(bitmap.length>9000,'Suspiciously small WebP render');
+    }
+  }
+  for(const size of [400,800,1600]){
+    const src=fs.readFileSync(path.join(root,'assets/renders/masters','awp-neutral-'+size+'.webp'));
+    assert.equal(src.toString('ascii',8,12),'WEBP','Neutral AWP master missing');
+  }
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
