@@ -62,7 +62,7 @@ function sampleMaterial(data,width,height,x,y){
   return 'other';
 }
 function eligibility(weapon,x,y,paintAmount=0){
-  const material=typeof weapon==='string'?materialAt(weapon,x,y,paintAmount):weapon;
+  const material=surfaceTypes.includes(weapon)?weapon:materialAt(weapon,x,y,paintAmount);
   const isProtected=material==='protected';
   return Object.freeze({
     material,
