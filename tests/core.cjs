@@ -214,6 +214,33 @@ test('AWP bitmap masters load correct original Night Watch/Eclipse artwork at th
     assert.equal(src.toString('ascii',8,12),'WEBP','Neutral AWP master missing');
   }
 });
+test('M4A4 Voltage Bloom pilot preserves actual model and finish across all image sizes',()=>{
+  const g=boot();
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const entry=manifest.items.find(x=>x.id==='m4a4--voltage-bloom');
+  assert(entry && entry.pilot===true && entry.approved===false,'M4 pilot must be registered without false final approval');
+  assert.equal(entry.renderMode,'static-2d-webp');
+  assert.equal(entry.master,'assets/renders/masters/m4a4-neutral-1600.webp');
+  const item={kind:'skin',weapon:'M4A4',skin:'Voltage Bloom',tier:2};
+  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+    const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
+    assert(html.includes('m4a4--voltage-bloom-'+size+'.webp'),'Wrong bitmap for '+context);
+    assert(html.includes('data-weapon-model="M4A4"'),'Wrong model in bitmap metadata');
+    assert(html.includes('data-finish="Voltage Bloom"'),'Wrong skin in bitmap metadata');
+    assert(html.includes('class="raster-fallback"'),'Raster art must preserve SVG fallback');
+    for(const file of ['m4a4--voltage-bloom','m4a4-neutral']){
+      const filename=path.join(root,'assets/renders',file==='m4a4-neutral'?'masters':'finishes',file+'-'+size+'.webp');
+      const bytes=fs.readFileSync(filename);
+      assert.equal(bytes.toString('ascii',0,4),'RIFF','Invalid bitmap RIFF');
+      assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid bitmap format');
+      assert(bytes.length>10000,'Truncated or unusually tiny bitmap '+filename);
+    }
+  }
+  const recipe=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/m4a4--voltage-bloom.json'),'utf8'));
+  assert.equal(recipe.weapon,'M4A4');
+  assert.equal(recipe.finish,'Voltage Bloom');
+  assert.equal(recipe.approved,false);
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
