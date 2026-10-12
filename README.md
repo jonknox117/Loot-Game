@@ -1,75 +1,51 @@
-# LootHub — Arsenal Alpha 0.3.3H (Starfall Karambit)
+# LootHub — Base Arsenal
 
-Live browser game: https://loot-game-kappa.vercel.app
+**Playable:** https://jonknox117.github.io/Loot-Game/
 
-## Playable features
+A mobile-first, browser-based collectible weapon and marketplace game. The current live collection contains **17 base weapon models and zero collectible skins**. No cosmetic skin may enter the game without the owner's explicit selection and approval.
 
-- Start with zero coins and earn one coin per MicroTasks tap.
-- Buy sealed Arsenal Cases for 25 coins, hold or resell them, or open them with an animated item reel.
-- 19 original finish concepts covering recognizable firearm model names and rare knives.
-- Common, Uncommon, Rare, Super Rare, Legendary tiers; published example drop odds 70/20/7.5/2/0.5%.
-- Unique item instances with wear, float, pattern seed, StatTrak chance, rarity and market estimate.
-- Instant dealer sale, direct negotiation, and player-owned marketplace listings with an NPC buyer simulation and 5% listing-sale fee.
-- Player listings are kept separate from inventory and remain listed on reload; elapsed time is processed on return.
-- Portfolio and transaction journal.
-- Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
-- **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **Seven live transparent 2D finish pilots:** Glock-18 | Slate Grid; AK-47 | Ghostline and Crimson Circuit; AWP | Night Watch and Eclipse; M4A4 | Voltage Bloom; and **Karambit | Starfall**. All have 400px reel, 800px inventory and 1600px inspect WebPs, plus archived source art and reproducible scripts.
+## Current Arsenal Case — base weapons only
 
-## Saving progress
+| Drop tier | Models |
+| --- | --- |
+| Common | Glock-18, MP5, MAC-10, Tec-9, 12 Gauge Pump Shotgun |
+| Uncommon | Desert Eagle, Colt .45 Revolver, SPAS-12 |
+| Rare | AK-47, M4A4, Tactical Machete, M60 |
+| Super Rare | AWP, Tactical Tomahawk, RPG-7 |
+| Legendary | Karambit, Butterfly Knife |
 
-**The game autosaves on the current device and browser.** It retains wallet balances, clicked earnings, purchase costs, sales, owned cases and skins, attributes, marketplace listings, negotiations, portfolio stats, transaction history, reputation and current page. Save format upgrades preserve earlier LootHub localStorage progress.
+Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. Base weapons have distinct tiers and market values, but **no finish name, paint, float, pattern, or StatTrak roll**. Artwork in the case, opening reel, inventory, market listings, and inspect screen uses the same unskinned master for each model.
 
-The Saves tab provides:
-- JSON export of your entire saved game.
-- Import of a previously exported save.
-- Restoration of the previous local browser snapshot, if available.
-- A local save indicator; storage write failures display a warning.
+## Master artwork
 
-**This is not yet account-based or cloud saving.** Progress is associated with the current browser origin/profile, and can be lost if the browser's site data is deleted or the phone is replaced. Export your backup for transferring between devices. Changes in a different browser tab are not synchronized. Private Browsing is not reliable long-term storage.
+- `assets/manifest.json` is the canonical, 17-model **base master registry**, and has `approvedSkins: []`.
+- 12 supplied/approved weapon models load right-facing, transparent neutral masters through individual `assets/neutral-art/<model>.js` files containing 400/800/1600-pixel WebP images.
+- Newest masters: **M60** (the supplied source JPEG was precisely keyed off its white background) and **RPG-7** (source transparency preserved).
+- Glock-18, AK-47, AWP, M4A4 and Karambit use the original `assets/renders/masters/<model>-neutral-1600.webp` raster files.
+- `assets/weapon-masters.js` is a neutral-only vector fallback for retired weapon models from older saves. Its colorful procedural finish palettes were removed.
+- Previous finished skin images may remain as unused historical files in the repository; they are **not mapped, selectable, rolled, displayed, or used for marketplace trading**.
+- Future skins will be introduced only following approval. A finish must never be improvised in the game.
 
-## Developer checks
+## Economy and progression
 
-- `node tests/core.cjs` is a deterministic Node.js regression suite covering legacy save migration, interrupted openings, listing escrow, backup recovery, unsafe corruption, concurrent browser tabs, and `assets/manifest.json` parity. Vercel's `buildCommand` runs this suite before deployment.
-- `node tests/smoke.cjs` runs a Playwright Chromium mobile-viewport UI smoke test. GitHub Actions is configured to run the Node suite, then this browser test, on pushes to `main`.
-- A **READY** Vercel deployment is evidence of a successful deployment/build, not proof of browser-level usability. The Playwright job still needs an independently verified passing result.
+Players earn starter coins through MicroTasks, buy unopened cases, open them, inspect rewards, negotiate dealer offers, instantly sell, or list items for simulated marketplace sales. Listings enter escrow; player-owned items and wallet changes are saved, and NPC purchases are simulated when enough time has elapsed. The portfolio keeps a transaction journal and market-value estimate.
 
-## Patch 0.3 milestones
+## Save upgrade and safe migration
 
-- **0.3.0 Foundation:** save integrity guard, recovery instead of destructive save reset, stale multi-tab protection, deterministic regressions, and 19-item approved-artwork production manifest.
-- **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
-- **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
-- **0.3.3A Master pilot:** created a clean transparent Glock-style 2D base render, generated slide/body paint masks and a reusable Slate Grid finish, exported three high-quality sizes and integrated the actual WebPs into the live site (not base64 page data). Source geometry is AI-generated, a plausible Glock-like depiction rather than an OEM-certified 3D model. The remaining 18 finishes still use vector art.
-- **0.3.3B–C AK pilot completed:** one AK-47 master with Ghostline and Crimson Circuit, sharing identical alpha and model geometry.
-- **0.3.3D AWP pilot completed:** standalone right-facing AWP neutral master, Night Watch, and Eclipse, also sharing an exact silhouette.
-- **0.3.3E M4A4 provisional bitmap pilot:** original generated M4A4 image, isolated from a comparison reference into one reusable neutral master, with a masked Voltage Bloom finish. All exports face right. The source weapon itself has approximately 1110 native horizontal pixels; the 1600px inspect image is an upscale/export, not native 1600px model detail. The result is **not marked final-approved** and can be upgraded later with a dedicated higher-resolution source.
+The game uses the **existing** browser-local key `loothub-arsenal-alpha-v1`, now writing **save version 4**. This release converts existing owned retired skins and active listings to their matching **unskinned base weapons**. It **preserves wallet, unique item IDs, item counts, case counts, history, listing escrow, asking prices, negotiation state, reputation, and market value at the conversion moment**. Wear/float/pattern and old finish names are removed from migrated items; the conversion applies their old valuation exactly once. Items from weapon types removed in an earlier catalog change remain accessible as legacy base weapons rather than being destroyed.
 
-- **0.3.3F Golden Talon pilot (superseded art):** original right-facing karambit silhouette, premium burnished-gold blade, dark grip, and an eagle-shaped brow with a small dark recessed eye where blade meets hilt. Feathery relief engraving is drawn into the gold surface. Both neutral and finished exports use **pixel-identical alpha masks**, including the open finger ring, at all three sizes. The generated concept-board source is about 960px across the subject and does not have native 1600px detail; finish is **live but not final-approved**. Source and eight component masks: `/LootHub/loothub-karambit-master-033F.zip`.
+The previous raw save is automatically retained as a local snapshot during the first updated save. Older exported saves are accepted and migrated when loaded. Users can download, import, or restore progress from the Saves tab.
 
-- **0.3.3G Raptor's Gaze:** replaced Golden Talon with one long sculpted eyebrow along the blade and a separate dark eye near the blade heel, based on the user's annotated knife reference. The previous carved bird face is removed. The new 400/800/1600 WebPs use exact neutral geometry and transparent finger ring; the 1600 file is upsampled from a ~960px source subject. Owned and listed legacy Golden Talon items are renamed in memory on load with all their unique IDs, values, attributes and trading state preserved; normal saves persist the new title through existing backup safety checks. Source ZIP: `/LootHub/loothub-raptors-gaze-master-033G.zip`.
+**Saving is device- and browser-specific, not cloud/account based.** Export a backup before clearing browser data or changing devices.
 
-- **0.3.3H Starfall Karambit:** rejected the drawn eagle/brow approach and replaced it with a genuinely distinct original metallic surface treatment: sapphire-blue/cobalt steel, violet Damascus-like grain, cyan bevel, black texture, warm-gold ring. No facial motif or SVG geometry is drawn over the item. Both source and all 400/800/1600 transparent WebPs use the original neutral master's **pixel-identical alpha**, preserving the open ring. Legacy Golden Talon and Raptor's Gaze inventory and market listings become Starfall without reroll or value changes. The source and mask archive is at `/LootHub/loothub-karambit-starfall-033H.zip`. This remains a visual pilot pending user approval; source native knife width is ~960px, so the 1600px inspect image is resampled.
+## Verification
 
-## Known limitations
+- `node tests/core.cjs` checks base-only catalog/manifest parity, all active WebP masters, M60 and RPG-7 rendering paths, absence of old cosmetics, case opening, value-preserving migration, old save imports, listing escrow, backup recovery, and stale-tab safety.
+- `node tests/smoke.cjs` runs the Playwright mobile UI test; Playwright Chromium must be installed.
+- `.github/workflows/base-weapons-ci.yml` runs the Node core suite on pushes to `main`.
 
-- Seven original finishes use standalone transparent raster artwork; the remaining 12 use model-specific SVG artwork. M4A4 and Karambit are provisional conversions from original generated comparison art, with about 1110px and 960px native weapon detail respectively; their 1600px inspect files are resampled, not native full-resolution originals. Both require final visual signoff. The app does not claim true 3D rotation.
-- Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
-- NPC buyers are simplified, not a deep supply/demand economy.
-- Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
-- No real-money transactions or cash-out.
+The `assets/neutral-art` JS modules are only a base64 transport mechanism for exact transparent WebP files on static hosting; they do not paint or stylize the approved neutral masters.
 
-## Next major work
+## Scope
 
-1. Review the new Starfall metallic blade visually, then upgrade provisional M4A4/Karambit native source detail if needed. Convert the remaining twelve SVG-backed finishes using high-resolution isolated masters and shared-geometry finish masks.
-2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
-3. Refine cinematic openings and inspect screens.
-4. Improve market simulation, prices, liquidity and negotiated offers.
-5. Run and verify mobile end-to-end browser CI and audit persistence and economy edge cases.
-
-## October 2026 — Ten selected weapon masters and Arsenal Case roster
-
-The Arsenal Case now rolls only the user's approved weapon families: Glock-18, AK-47, AWP, M4A4, Karambit, Butterfly Knife, 12 Gauge Pump Shotgun, Desert Eagle, Colt .45 Revolver, Tactical Machete, Tactical Tomahawk, SPAS-12, MP5, MAC-10, and Tec-9. Previously owned items from the older case table remain in inventory and the market; the save key and economy are unchanged.
-
-Ten approved original neutral renders were added in three real transparent WebP sizes (400/800/1600): Butterfly Knife, 12 Gauge Pump Shotgun, Desert Eagle, Tactical Machete, Colt .45 Revolver, MP5, MAC-10, Tec-9, Tactical Tomahawk, SPAS-12. All barrels and blades face right. No composite image, white background, cords, or decorative SVG overlays. Neutral artwork is displayed in reel, inventory and inspect while painted finish-specific art is still being produced. Existing seven finished WebP skins take precedence. **A neutral master is not falsely described as a completed custom skin.**
-
-The GitHub connector currently supports UTF-8 content updates but not direct binary writes. Therefore the three WebP exports are stored losslessly as base64 data in individual `assets/neutral-art/<model>.js` modules; the browser uses their exact WebP bytes as `data:image/webp` image URLs. This is a transport format, not SVG art. Original sources and normal standalone WebP exports are archived in the Library package `/LootHub/loothub-ten-weapon-masters-2026-10-12.zip`. Case rarity odds are unchanged.
+The game is a simulated, local single-player economy, without real-money trading, server-authoritative transactions, or cloud saves. Case outcomes and market activity are generated locally.
