@@ -7,8 +7,8 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['core','transactions','simulation','npc','traders','haggling'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['core','transactions','simulation','npc','traders','haggling'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['core','transactions','simulation','npc','traders','haggling','economy'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['core','transactions','simulation','npc','traders','haggling','economy'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
@@ -869,6 +869,123 @@ test('Legacy negotiations retain agreed terms if personality fields were absent'
   assert.equal(g.state().market.negotiations[0].npcOffer,n.npcOffer);
   assert.equal(g.state().market.negotiations[0].rounds,0);
   assert.equal(g.run('window.LootHubHaggling.MAX_ROUNDS'),3);
+});
+test('Market economy distinguishes stable base estimates from computed supply-sensitive values',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const item={kind:'weapon',weapon:'AK-47',tier:2,base:85,id:'reference'};
+  assert.equal(g.run('estimated('+JSON.stringify(item)+')'),85);
+  const first=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+JSON.stringify(item)+'))'));
+  assert.equal(first.base,85);
+  assert(first.value>=60&&first.value<=115);
+  assert(first.supply>=0);
+  const initialHistory=JSON.stringify(g.state().market.priceHistory);
+  g.run("go('Inventory');go('Market');go('Portfolio');go('Market')");
+  assert.equal(JSON.stringify(g.state().market.priceHistory),initialHistory,
+    'Rendering market or portfolio does not create a trade');
+  assert.equal(g.run('estimated('+JSON.stringify(item)+')'),85);
+});
+test('Completed NPC item purchases register unique trade activity and persist after reload',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const listing=g.state().market.npcListings.find(x=>x.item.kind==='weapon');
+  const infoBefore=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+
+    JSON.stringify(listing.item)+'))'));
+  g.run('s.coins=10000;save()');
+  g.run('buyNpcListing('+JSON.stringify(listing.id)+')');
+  const after=g.state();
+  const id=g.run('window.LootHubEconomy.key('+JSON.stringify(listing.item)+')');
+  const entry=after.market.priceHistory[id];
+  assert(entry);
+  assert.equal(entry.volume,1);
+  assert.equal(entry.recent[0].side,'buy');
+  assert.equal(entry.recent[0].price,listing.ask);
+  assert(entry.momentum>0,'A buyer transaction adds demand');
+  const infoAfter=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+
+    JSON.stringify(listing.item)+'))'));
+  assert(infoAfter.value>=infoBefore.value);
+  g.run('buyNpcListing('+JSON.stringify(listing.id)+')');
+  assert.equal(g.state().market.priceHistory[id].volume,1,'No duplicate sale signal');
+  assert.deepEqual(boot(g.store).state().market.priceHistory[id],entry);
+});
+test('Settling an NPC purchase from a player-owned listing adds a sale signal once',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  g.byId('listPrice').value='30';
+  g.run('submitListing(s.items[0].id)');
+  const item=g.state().listings[0].item;
+  const id=g.run('window.LootHubEconomy.key('+JSON.stringify(item)+')');
+  g.run('s.listings[0].checkedAt=Date.now()-60000');
+  g.run('window.LootHubMarketSimulation.advanceListings(s,Date.now(),()=>0);save()');
+  const state=g.state();
+  assert.equal(state.listings.length,0);
+  assert.equal(state.market.priceHistory[id].volume,1);
+  assert.equal(state.market.priceHistory[id].recent[0].side,'sell');
+  assert.equal(state.market.priceHistory[id].recent[0].price,30);
+});
+test('Price discovery is capped per model per day, ignores backward time and extreme asks',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const obj={kind:'weapon',weapon:'M60',tier:2,base:105,id:'fake-test-instance'};
+  const t=Date.now();
+  for(let i=0;i<100;i++){
+    g.run('window.LootHubEconomy.recordTrade(s,'+JSON.stringify(obj)+',100000000,"buy",'+t+')');
+  }
+  const state=g.state();
+  const id=g.run('window.LootHubEconomy.key('+JSON.stringify(obj)+')');
+  assert.equal(state.market.priceHistory[id].volume,6);
+  assert.equal(state.market.priceHistory[id].recent.length,6);
+  assert.equal(state.market.priceHistory[id].eventsToday,6);
+  assert.equal(g.run('window.LootHubEconomy.recordTrade(s,'+JSON.stringify(obj)+',100000000,"buy",'+(t-86400000)+')'),false);
+  const price=g.run('window.LootHubEconomy.marketValue(s,'+JSON.stringify(obj)+','+t+')');
+  assert(price>=Math.round(105*.7)-1&&price<=Math.round(105*1.35)+1);
+  assert.equal(g.run('window.LootHubEconomy.recordTrade(s,'+JSON.stringify(obj)+',0,"buy",'+(t+86400000)+')'),false);
+  assert.equal(g.run('window.LootHubEconomy.recordTrade(s,'+JSON.stringify(obj)+',2,"invalid",'+(t+86400000)+')'),false);
+  assert.equal(g.state().market.priceHistory[id].volume,6);
+});
+test('Dynamic market values decay predictably and remain within hard bounds',()=>{
+  const g=boot();
+  const obj={kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,id:'approved-test'};
+  const start=Date.now();
+  const init=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+JSON.stringify(obj)+','+start+'))'));
+  g.run('window.LootHubEconomy.recordTrade(s,'+JSON.stringify(obj)+',2500,"buy",'+start+')');
+  const same=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+JSON.stringify(obj)+','+start+'))'));
+  const later=JSON.parse(g.run('JSON.stringify(window.LootHubEconomy.priceInfo(s,'+JSON.stringify(obj)+','+(start+20*86400000)+'))'));
+  assert(same.momentum>0);
+  assert(later.momentum<same.momentum);
+  assert(Math.abs(later.multiplier-1)<Math.abs(same.multiplier-1));
+  assert(same.value>=1260&&same.value<=2430);
+  assert.equal(init.base,1800);
+});
+test('Unsupported or corrupted trade histories fail import validation without harming legacy saves',()=>{
+  const g=boot();
+  const legacy=g.state();
+  delete legacy.market.priceHistory;
+  assert.equal(g.run('safeUpload('+JSON.stringify(legacy)+')'),false,'Malformed history fails schema');
+  const compatible=g.state();
+  compatible.market.priceHistory={};
+  assert.equal(g.run('safeUpload('+JSON.stringify(compatible)+')'),true);
+  const bad=g.state();
+  bad.market.priceHistory={'weapon:test':{momentum:99,volume:1,updatedAt:Date.now(),
+    lastDay:0,eventsToday:1,recent:[{at:Date.now(),price:4,side:'buy'}]}};
+  assert.equal(g.run('safeUpload('+JSON.stringify(bad)+')'),false);
+  assert.equal(g.state().market.priceHistory['weapon:test'],undefined);
+});
+test('Market Pulse and investment summaries show bounded market and unchanged base references',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const html=g.run('enhancedMarket()');
+  assert(html.includes('Market Pulse'));
+  assert(html.includes('collectible markets'));
+  assert(html.includes('Base '));
+  assert(html.includes('Supply '));
+  assert(html.includes('trades'));
+  assert.equal((html.match(/class="market-pulse-item"/g)||[]).length,8);
+  const portfolio=g.run('enhancedPortfolio()');
+  assert(portfolio.includes('Base collectible estimate'));
+  assert(portfolio.includes('Inventory market value'));
+  assert.equal(g.run('catalog.length'),24);
+  assert.equal(g.run('approvedSkins.length'),1);
 });
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
