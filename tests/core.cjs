@@ -49,15 +49,15 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Arsenal Case contains 24 supplied base weapons and five owner-approved skins',()=>{
+test('Arsenal Case contains 24 supplied base weapons and ten owner-approved skins',()=>{
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
   const cat=JSON.parse(g.run('JSON.stringify(catalog)'));
   assert.equal(cat.length,24);
   assert.equal(manifest.items.length,24);
-  assert.equal(manifest.approvedSkins.length,5);
+  assert.equal(manifest.approvedSkins.length,10);
   assert.equal(manifest.approvedSkins[0].displayName,'MAC-10 | Red Devil');
-  assert.equal(manifest.catalogMode,'24-base-weapon-models-plus-five-user-approved-skins');
+  assert.equal(manifest.catalogMode,'24-base-weapon-models-plus-ten-user-approved-skins');
   const weaponNames=new Set();
   for(const [weapon,tier,base,emoji] of cat){
     assert.equal(typeof weapon,'string');
@@ -81,7 +81,12 @@ test('Arsenal Case contains 24 supplied base weapons and five owner-approved ski
     ['RPG-7','Glory',3,1200,'🔫'],
     ['Colt .45 Revolver','High Stakes',3,900,'🔫'],
     ['Butterfly Knife','The Hydra',4,3600,'🗡️'],
-    ['FN FAL','The Luck O The Irish',2,320,'🔫']]);
+    ['FN FAL','The Luck O The Irish',2,320,'🔫'],
+    ['Tactical Machete','Predator',2,260,'🗡️'],
+    ['Desert Eagle','Blossom',3,950,'🔫'],
+    ['Karambit','Kryptonite',4,3800,'🗡️'],
+    ['SPAS-12','Blood Thirsty',3,1100,'🔫'],
+    ['AWP','Crimson Delight',4,4200,'🎯']]);
 });
 test('All active weapon masters resolve to neutral WebP art only',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
@@ -127,7 +132,7 @@ test('Old retired raster finishes stay disabled and user-approved finish alone a
   assert(!img.includes('data-finish'));
   const menu=g.run('cases()');
   assert.equal((menu.match(/View weapon/g)||[]).length,24);
-  assert.equal((menu.match(/View skin/g)||[]).length,5);
+  assert.equal((menu.match(/View skin/g)||[]).length,10);
   assert(menu.includes('MAC-10 | Red Devil'));
   assert(menu.includes('Available base weapons'));
   for(const finish of ['Starfall','Slate Grid','Voltage Bloom','Crimson Circuit','Metro Fade']){
@@ -256,8 +261,8 @@ test('Red Devil is rendered and saved as a skin, not a replacement MAC-10 master
 });
 test('All four newly approved cosmetics have real WebP art and survive save migration',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.skinPipeline.activeSkinCount,5);
-  const added=manifest.approvedSkins.slice(1), images={};
+  assert.equal(manifest.skinPipeline.activeSkinCount,10);
+  const added=manifest.approvedSkins.slice(1,5), images={};
   assert.equal(added.length,4);
   for(const entry of added){
     assert(html.includes('<script src="./'+entry.finishArt+'"></script>'));
@@ -296,6 +301,70 @@ test('All four newly approved cosmetics have real WebP art and survive save migr
   const tampered=game.state();tampered.items[0].skin='Unapproved';
   assert.equal(game.run('safeUpload('+JSON.stringify(tampered)+')'),false);
 });
+
+test('October five original skins load with valid transparent WebP in every view and are obtainable and tradeable',()=>{
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  assert.equal(manifest.approvedSkins.length,10);
+  assert.equal(manifest.skinPipeline.activeSkinCount,10);
+  assert.equal(manifest.neutralMasterPipeline.baseModelCount,24);
+  assert.deepEqual(JSON.parse(boot().run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+  const added=manifest.approvedSkins.slice(5);
+  assert.deepEqual(added.map(e=>e.displayName),[
+    'Tactical Machete | Predator','Desert Eagle | Blossom','Karambit | Kryptonite',
+    'SPAS-12 | Blood Thirsty','AWP | Crimson Delight'
+  ]);
+  const rendered={};
+  for(const entry of added){
+    assert(html.includes('<script src="./'+entry.finishArt+'"></script>'));
+    assert.equal(entry.approved,true);
+    assert.equal(entry.kind,'skin');
+    assert(manifest.items.find(x=>x.weapon===entry.weapon),'Neutral original missing for '+entry.weapon);
+    const source=fs.readFileSync(path.join(root,entry.finishArt),'utf8');
+    const win={};
+    vm.runInNewContext(source,{window:win},{timeout:10000});
+    const art=win.LootHubSkinArt[entry.weapon+'|'+entry.skin];
+    assert(art,entry.displayName+' image was not registered');
+    for(const size of ['400','800','1600']){
+      const buf=Buffer.from(art[size],'base64');
+      assert.equal(buf.toString('ascii',0,4),'RIFF');
+      assert.equal(buf.toString('ascii',8,12),'WEBP');
+      assert(buf.length>10000,'Unexpectedly tiny artwork '+entry.displayName);
+    }
+    rendered[entry.weapon+'|'+entry.skin]={'400':'UklGR-demo','800':'UklGR-demo','1600':'UklGR-demo'};
+  }
+  const g=boot();
+  g.run('window.LootHubSkinArt='+JSON.stringify(rendered));
+  const pool=JSON.parse(g.run('JSON.stringify(dropCatalog)'));
+  assert.equal(pool.filter(x=>x.kind==='skin').length,10);
+  for(const entry of added){
+    assert(pool.some(x=>x.weapon===entry.weapon&&x.skin===entry.skin&&x.kind==='skin'
+      &&x.tier===entry.tier&&x.base===entry.baseValue),'Skin not in case pool');
+    const item={id:'new-'+entry.id,kind:'skin',weapon:entry.weapon,skin:entry.skin,
+      tier:entry.tier,base:entry.baseValue,wearGrade:3};
+    for(const [context,size] of [['reel','400'],['inventory','800'],['inspect','1600']]){
+      const art=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
+      assert(art.includes('data-art-status="approved-skin"'),entry.displayName);
+      assert(art.includes('data-finish="'+entry.skin+'"'),entry.displayName);
+      assert(art.includes('data-resolution="'+size+'"'),entry.displayName);
+      assert(art.includes('data-wear-grade="3"'),entry.displayName);
+    }
+    assert.equal(g.run('isApprovedSkin('+JSON.stringify(item)+')'),true);
+  }
+  const original={coins:500,items:added.map((x,i)=>({id:'owner-'+i,kind:'skin',
+    weapon:x.weapon,skin:x.skin,tier:x.tier,base:x.baseValue,wearGrade:i})),
+    listings:[],history:[],earned:500,spent:0,sales:0,rep:0,openings:5,serial:6,
+    offers:{},tab:'Inventory'};
+  const store=new LocalStore();
+  store.setItem(KEY,JSON.stringify(original));
+  const reload=boot(store);
+  assert.deepEqual(reload.state().items.map(x=>x.kind),['skin','skin','skin','skin','skin']);
+  assert.deepEqual(reload.state().items.map(x=>x.skin),added.map(x=>x.skin));
+  assert.deepEqual(reload.state().items.map(x=>x.wearGrade),[0,1,2,3,4]);
+  assert.equal(reload.run('safeUpload(JSON.parse(JSON.stringify(s)))'),true);
+  const bad=reload.state();bad.items[0].skin='not owner-approved';
+  assert.equal(reload.run('safeUpload('+JSON.stringify(bad)+')'),false);
+});
+
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
@@ -457,7 +526,7 @@ test('Any existing weapon or future-approved skin instance is eligible without c
   assert.equal(listings[1].item.pattern,777);
   assert.equal(g.run("window.LootHubMarketTransactions.cancelListing(s,'listing-future-approved-test').item.skin"),'Test Finish');
   assert.equal(g.run('catalog.length'),24,'Marketplace test must not change approved base pool');
-  assert.equal(g.run('approvedSkins.length'),5,'Exactly the five owner-selected finishes may enter the case');
+  assert.equal(g.run('approvedSkins.length'),10,'Exactly the ten owner-selected finishes may enter the case');
 });
 test('Price edit keeps item escrowed and preserves listing identity and reference data',()=>{
   const g=boot();
@@ -555,7 +624,7 @@ test('NPC market stocks only approved weapons and cosmetic finishes',()=>{
     assert(!('stattrak' in entry.item)&&!('float' in entry.item),'NPC generator invented item attributes');
   }
   assert.equal(g.run('catalog.length'),24);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
 });
 test('NPC offers persist across tabs and page reload without rerolling',()=>{
   const g=boot();
@@ -900,7 +969,7 @@ test('NPC vendor wallets gain the amount paid for an approved inventory item',()
   assert.equal(updated.wallet,vendor.wallet+l.ask);
   assert.equal(updated.sold,1);
   assert.equal(g.run('catalog.length'),24);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
 });
 test('Legacy negotiations retain agreed terms if personality fields were absent',()=>{
   const g=boot();
@@ -1030,7 +1099,7 @@ test('Market Pulse and investment summaries show bounded market and unchanged ba
   assert(portfolio.includes('Base collectible estimate'));
   assert(portfolio.includes('Inventory market value'));
   assert.equal(g.run('catalog.length'),24);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
 });
 test('Offline catch-up advances once with bounded NPC trades and exact budget transfers',()=>{
   const g=boot();
@@ -1242,7 +1311,7 @@ test('Market layout offers mobile shortcuts, buyer filters and whole-inventory l
   assert.equal((html.match(/class="market-shortcuts"/g)||[]).length,1);
   assert.equal((html.match(/class="npc-listing"/g)||[]).length,15);
   assert.equal(g.run('catalog.length'),24);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
 });
 test('Four-round collector walkaway remains importable after a full negotiation',()=>{
   const g=boot();
@@ -1366,7 +1435,7 @@ test('0.5.0 defines five independent condition grades without changing published
   }
   assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
   assert.equal(g.run('catalog.length'),24);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),55);
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:0})'),100);
 });
@@ -1582,7 +1651,7 @@ test('0.5.2 grade multipliers adjust estimates while base values and case odds s
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",base:25})'),25);
   assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",base:25,wearGrade:4})'),25);
   assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
-  assert.equal(g.run('approvedSkins.length'),5);
+  assert.equal(g.run('approvedSkins.length'),10);
 });
 test('0.5.2 inventory and inspections display exact grade, modifier, base, condition and market price',()=>{
   const g=boot();

@@ -2,9 +2,9 @@
   "schemaVersion": 3,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "catalogMode": "24-base-weapon-models-plus-five-user-approved-skins",
-  "assetStatus": "24-original-neutral-masters-and-five-owner-approved-skins",
-  "notes": "24 unskinned base weapons and five original owner-approved skins. All skins are separately obtainable in Arsenal Cases and eligible for marketplace listings; originals remain unmodified. Previous saves, funds, and listings are preserved; published case-tier probabilities are unchanged.",
+  "catalogMode": "24-base-weapon-models-plus-ten-user-approved-skins",
+  "assetStatus": "24-original-neutral-masters-and-ten-owner-approved-skins",
+  "notes": "24 distinct neutral base weapons and ten individually approved cosmetic skins, including the five new user-supplied October 12 designs. All neutral weapon masters remain unchanged and independently obtainable. All ten cosmetics can drop from the Arsenal Case and trade in the simulated marketplace, with original tier odds and save data retained.",
   "caseOddsPercent": [
     70,
     20,
@@ -127,6 +127,106 @@
       "inventory": "assets/skins/fn-fal--the-luck-o-the-irish.js#800",
       "inspection": "assets/skins/fn-fal--the-luck-o-the-irish.js#1600",
       "note": "Original owner-supplied finish with independent, unchanged neutral base weapon."
+    },
+    {
+      "id": "tactical-machete--predator",
+      "kind": "skin",
+      "weapon": "Tactical Machete",
+      "skin": "Predator",
+      "displayName": "Tactical Machete | Predator",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 260,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "B7E00C24-E0F8-4E69-A0FC-3EED36A18B17.jpeg",
+      "master": "assets/neutral-art/machete.js",
+      "finishArt": "assets/skins/tactical-machete--predator.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/tactical-machete--predator.js#400",
+      "inventory": "assets/skins/tactical-machete--predator.js#800",
+      "inspection": "assets/skins/tactical-machete--predator.js#1600",
+      "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
+    },
+    {
+      "id": "desert-eagle--blossom",
+      "kind": "skin",
+      "weapon": "Desert Eagle",
+      "skin": "Blossom",
+      "displayName": "Desert Eagle | Blossom",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 950,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "793C8493-A63A-4E09-9F0D-9A751B475C13.jpeg",
+      "master": "assets/neutral-art/desert-eagle.js",
+      "finishArt": "assets/skins/desert-eagle--blossom.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/desert-eagle--blossom.js#400",
+      "inventory": "assets/skins/desert-eagle--blossom.js#800",
+      "inspection": "assets/skins/desert-eagle--blossom.js#1600",
+      "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
+    },
+    {
+      "id": "karambit--kryptonite",
+      "kind": "skin",
+      "weapon": "Karambit",
+      "skin": "Kryptonite",
+      "displayName": "Karambit | Kryptonite",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 3800,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "8625FBDA-68FC-4F17-B582-4CFCDB97E835.jpeg",
+      "master": "assets/renders/masters/karambit-neutral-1600.webp",
+      "finishArt": "assets/skins/karambit--kryptonite.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/karambit--kryptonite.js#400",
+      "inventory": "assets/skins/karambit--kryptonite.js#800",
+      "inspection": "assets/skins/karambit--kryptonite.js#1600",
+      "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
+    },
+    {
+      "id": "spas-12--blood-thirsty",
+      "kind": "skin",
+      "weapon": "SPAS-12",
+      "skin": "Blood Thirsty",
+      "displayName": "SPAS-12 | Blood Thirsty",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 1100,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "88996F62-58A0-4E4B-8C3F-46462C1D01C9.jpeg",
+      "master": "assets/neutral-art/spas-12.js",
+      "finishArt": "assets/skins/spas-12--blood-thirsty.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/spas-12--blood-thirsty.js#400",
+      "inventory": "assets/skins/spas-12--blood-thirsty.js#800",
+      "inspection": "assets/skins/spas-12--blood-thirsty.js#1600",
+      "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
+    },
+    {
+      "id": "awp--crimson-delight",
+      "kind": "skin",
+      "weapon": "AWP",
+      "skin": "Crimson Delight",
+      "displayName": "AWP | Crimson Delight",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 4200,
+      "approved": true,
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "F7C245E4-E3B2-4A90-AD47-31FF1003FB08.png",
+      "master": "assets/renders/masters/awp-neutral-1600.webp",
+      "finishArt": "assets/skins/awp--crimson-delight.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/awp--crimson-delight.js#400",
+      "inventory": "assets/skins/awp--crimson-delight.js#800",
+      "inspection": "assets/skins/awp--crimson-delight.js#1600",
+      "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
     }
   ],
   "items": [
@@ -656,7 +756,7 @@
       "M134 Minigun"
     ],
     "masterRegistry": "assets/manifest.json",
-    "skinsLive": 5
+    "skinsLive": 10
   },
   "legacySaveSupport": {
     "currentVersion": 4,
@@ -666,13 +766,18 @@
     "removedItems": false
   },
   "skinPipeline": {
-    "activeSkinCount": 5,
+    "activeSkinCount": 10,
     "allowedSkinIds": [
       "mac-10--red-devil",
       "rpg-7--glory",
       "colt-45-revolver--high-stakes",
       "butterfly-knife--the-hydra",
-      "fn-fal--the-luck-o-the-irish"
+      "fn-fal--the-luck-o-the-irish",
+      "tactical-machete--predator",
+      "desert-eagle--blossom",
+      "karambit--kryptonite",
+      "spas-12--blood-thirsty",
+      "awp--crimson-delight"
     ],
     "ownerApprovalRequired": true,
     "sourceImage": "D2CFA5D6-B927-46B6-9E12-99DAEC7897FC.jpeg",
@@ -687,7 +792,12 @@
       "rpg-7--glory": "Owner-provided high-resolution artwork, October 12, 2026",
       "colt-45-revolver--high-stakes": "Owner-provided high-resolution artwork, October 12, 2026",
       "butterfly-knife--the-hydra": "Owner-provided high-resolution artwork, October 12, 2026",
-      "fn-fal--the-luck-o-the-irish": "Owner-provided high-resolution artwork, October 12, 2026"
+      "fn-fal--the-luck-o-the-irish": "Owner-provided high-resolution artwork, October 12, 2026",
+      "tactical-machete--predator": "B7E00C24-E0F8-4E69-A0FC-3EED36A18B17.jpeg",
+      "desert-eagle--blossom": "793C8493-A63A-4E09-9F0D-9A751B475C13.jpeg",
+      "karambit--kryptonite": "8625FBDA-68FC-4F17-B582-4CFCDB97E835.jpeg",
+      "spas-12--blood-thirsty": "88996F62-58A0-4E4B-8C3F-46462C1D01C9.jpeg",
+      "awp--crimson-delight": "F7C245E4-E3B2-4A90-AD47-31FF1003FB08.png"
     }
   }
 }

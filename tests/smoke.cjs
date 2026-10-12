@@ -51,7 +51,7 @@ const fs = require('fs');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
-    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish'].includes(approvedName),'NPC inventory used an unapproved cosmetic');
+    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight'].includes(approvedName),'NPC inventory used an unapproved cosmetic');
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
     assert(await page.locator('.npc-listing').count()===1,'Skin type and weapon-name search must work together');
@@ -93,7 +93,7 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Open case' }).click();
     // The entire reel must use approved neutral base-weapon masters.
     const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'||x.kind==='skin'));
-    assert(expectedReward&&(expectedReward.kind==='weapon'||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish'].includes(expectedReward.skin)),'Case awarded an unapproved skin');
+    assert(expectedReward&&(expectedReward.kind==='weapon'||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight'].includes(expectedReward.skin)),'Case awarded an unapproved skin');
     assert(Number.isInteger(expectedReward.wearGrade)&&expectedReward.wearGrade>=0&&
       expectedReward.wearGrade<=4,'Fresh reward must have one valid persistent wear grade');
     await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img=>img.complete&&img.naturalWidth>0),null,{timeout:15000});
@@ -103,7 +103,7 @@ const fs = require('fs');
     }));
     assert(reelArt.length===48,'Must show 48 reel tiles');
     assert(reelArt.every(x=>x.loaded),'Some base masters failed to load');
-    assert(reelArt.every(x=>!x.finish||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish'].includes(x.finish)),'An unapproved cosmetic finish appeared on the reel');
+    assert(reelArt.every(x=>!x.finish||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight'].includes(x.finish)),'An unapproved cosmetic finish appeared on the reel');
     const winner=reelArt.find(x=>x.index===42);
     assert(winner.weapon===expectedReward.weapon,'The winning base weapon does not match saved reward');
     await page.screenshot({path:path.resolve(__dirname,'reel-colors.png')});
