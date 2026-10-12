@@ -160,7 +160,25 @@ function safeUpload(data) {
       if(!approved&&!legacyWear)return false;
     }
   }
-  if(data.market!=null&&!window.LootHubMarketCore.validMarketState(data.market))return false;
+  if(data.market!=null){
+    if(!window.LootHubMarketCore.validMarketState(data.market))return false;
+    if(data.market.npcListings.length>100)return false;
+    const listingIds=new Set();
+    for(const l of data.market.npcListings){
+      if(!l||typeof l.id!=='string'||l.id.length>150||listingIds.has(l.id)||
+         typeof l.seller!=='string'||l.seller.length>80||
+         !window.LootHubMarketCore.validAsk(l.ask)||
+         !Number.isFinite(l.createdAt)||!Number.isFinite(l.expiresAt)||
+         !window.LootHubMarketCore.eligible(l.item)||l.item.id.length>150||
+         ids.has(l.item.id)||listingIds.has(l.item.id))return false;
+      if(l.item.kind!=='case'&&(!Number.isInteger(l.item.tier)||l.item.tier<0||
+         l.item.tier>4||!Number.isFinite(l.item.base)||l.item.base<=0||
+         typeof l.item.weapon!=='string'||l.item.weapon.length>120))return false;
+      if(l.item.kind==='skin'&&!(l.item.weapon==='MAC-10'&&l.item.skin==='Red Devil'))return false;
+      listingIds.add(l.id);
+      ids.add(l.item.id);
+    }
+  }
   return true;
 }
 function exportProgress() {
