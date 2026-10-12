@@ -1,0 +1,45 @@
+{
+  "assetId": "ak-47-master-033C",
+  "model": "AK-47",
+  "date": "2026-10-11",
+  "sourceType": "Original AI-generated product-style neutral 2D weapon image; original separately generated Ghostline and Crimson Circuit source renders used only as masked surface artwork.",
+  "originalDimensions": [
+    1774,
+    887
+  ],
+  "masterWorkingResolution": [
+    2400,
+    1200
+  ],
+  "accuracyNotice": "Highly recognizable AK-style visual; not based on verified manufacturer CAD or an imported licensed 3D mesh.",
+  "allVariantsShareCanonicalAlpha": true,
+  "outputSizes": [
+    400,
+    800,
+    1600
+  ],
+  "method": "All images normalized from the same neutral master. Individual surface masks clip 2D finish RGB material treatments to stock, receiver, grip, magazine and handguard. Exact original alpha preserved in each variant.",
+  "sourceBundle": {
+    "libraryPath": "/LootHub/loothub-ak-master-033C.zip",
+    "contents": [
+      "three generated original PNGs",
+      "canonical full-resolution neutral PNG",
+      "two 2400px finished PNGs",
+      "six material masks",
+      "portable build_ak.py compositor",
+      "nine transparent WebP images",
+      "mobile card previews"
+    ]
+  },
+  "license": "Original AI-generated source imagery for this project; no third-party game textures or models imported.",
+  "approval": {
+    "shippingStatus": "pilot integrated",
+    "productionModelApproved": false,
+    "requires": "User acceptance and real iOS Safari render verification"
+  },
+  "sourceReference": [
+    "/mnt/data/classic_ak_47_weapon_render.png",
+    "/mnt/data/ghostline_ak_47_spectral_skin.png",
+    "/mnt/data/crimson_circuit_ak_47_skin.png"
+  ]
+}
