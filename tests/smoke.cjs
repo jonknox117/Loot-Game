@@ -496,11 +496,11 @@ const fs = require('fs');
       return {id:listing.item.id,weapon:listing.item.weapon};
     });
     await page.locator('#npcSearch').fill(npcWorn.weapon);
-    const npcCard=page.locator('#npcMarketResults .master-raster[data-wear-seed="'+npcWorn.id+'"]');
-    assert(await npcCard.count()===1,'Filtered NPC marketplace must retain exact item art metadata');
-    await npcCard.scrollIntoViewIfNeeded();
-    await npcCard.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
-    assert(await npcCard.locator('canvas.wear-overlay').count()===1,
+    const wornNpcCard=page.locator('#npcMarketResults .master-raster[data-wear-seed="'+npcWorn.id+'"]');
+    assert(await wornNpcCard.count()===1,'Filtered NPC marketplace must retain exact item art metadata');
+    await wornNpcCard.scrollIntoViewIfNeeded();
+    await wornNpcCard.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    assert(await wornNpcCard.locator('canvas.wear-overlay').count()===1,
       'Dynamically filtered NPC listing must receive its visible wear overlay');
     await page.getByRole('button',{name:'Reset filters'}).click();
     await page.evaluate(()=>{
