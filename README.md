@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.4)
+# LootHub — Curated Arsenal (Marketplace 0.4.5)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -74,6 +74,15 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Buyer wallets are debited only on successful negotiated transfers; NPC vendor wallets receive coins from purchases. An agreed sale cannot complete when its buyer lacks the funds. A new listing without any affordable buyer displays **No affordable buyer yet** rather than pretending an NPC can purchase it.
 - Negotiations snapshot the selected trader, offer limits, patience and concession rate at their first opening. Closing or reloading does not reroll offers, and old negotiations lacking these new fields retain their prior behavior.
 - The trade history, existing item IDs, local save key/version, marketplace fees, base weapon pool, and the sole approved Red Devil skin remain unchanged. Dynamic supply/demand pricing remains planned for 0.4.5.
+
+## Marketplace 0.4.5 — Dynamic economy
+
+- Every collectible retains its **fixed base estimate** from the approved weapon catalog. A distinct **market value** now responds to confirmed single-player marketplace purchases, player listing sales, and available listing supply. Price history is keyed to the weapon/finish type rather than an individual item ID.
+- **Market Pulse** displays current values, base estimates, supply counts, percentage change, and observed trade volume for eight highlighted collectible markets. Inventory and escrow net-worth indicators use market marks; the fixed base estimate is separately available in portfolio and trading details.
+- Every successful NPC purchase or completed player listing sale records the exact executed price and trade direction. Trades influence a small saved price momentum; posted NPC/player asking prices do not change after listing or on page refresh. Newly restocked NPC items price from the current market estimate.
+- Manipulation guardrails: market multipliers are clamped to 70–135% of the base, a single trade changes momentum only modestly, at most six trades **per item type per day** may move prices, recent samples are bounded, clock rollback cannot trigger a new daily quota, and momentum decays over time. Listing scarcity contributes at most ±8%.
+- Opening the marketplace, changing filters, reloading, or re-listing cannot themselves create a completed-trade signal. Only successful exchange of coins/items changes transaction-based momentum; old item IDs, save keys, dealer offers, active skin approval, and case odds remain unchanged.
+- New saves retain market signals in \`market.priceHistory\`. Existing version 4 saves with empty price history work as-is; imports reject corrupt or unbounded history. This remains a **single-player simulated economy**, not a network-wide exchange or independent live market data.
 
 ## Economy and progression
 
