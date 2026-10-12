@@ -1,7 +1,6 @@
-/* LootHub 0.5.3 — reusable procedural wear textures.
+/* LootHub 0.5.4 — reusable procedural wear textures.
    No extra gun images or manually traced silhouettes. The unchanged source
-   image alpha is the mask. For now previews run on inspect-sized raster art;
-   full inventory/reel integration belongs to the next patch. */
+   image alpha is the mask; the same renderer powers cards, reels, and dialogs. */
 (function(root){
 'use strict';
 const LIMITS=Object.freeze([
@@ -133,6 +132,27 @@ function paint(element,img,grade,seed){
     return false;
   }
 }
+// A single intersection observer renders only cards near the viewport.
+// This prevents large inventories and the 48-slot reel from allocating
+// dozens of canvases while they're invisible on a phone.
+const handlers=new WeakMap();
+let observer=null;
+function getObserver(){
+  if(observer||typeof root.IntersectionObserver!=='function')return observer;
+  observer=new root.IntersectionObserver(entries=>{
+    for(const entry of entries){
+      const el=entry.target;
+      if(!el.isConnected){
+        observer.unobserve(el);
+        handlers.delete(el);
+      }else if(entry.isIntersecting){
+        const start=handlers.get(el);
+        if(start)start();
+      }
+    }
+  },{rootMargin:'180px 0px',threshold:0});
+  return observer;
+}
 function attach(parent){
   if(!parent||typeof parent.querySelectorAll!=='function')return 0;
   const list=parent.querySelectorAll('.master-raster[data-wear-grade][data-wear-seed]');
@@ -143,18 +163,46 @@ function attach(parent){
     const img=element.querySelector('img');
     if(!img)continue;
     element.dataset.wearBound='true';
+    const viewport=getObserver();
+    let visible=!viewport;
+    const done=()=>{
+      if(viewport)viewport.unobserve(element);
+      handlers.delete(element);
+    };
     const draw=()=>{
-      if(!element.isConnected)return;
-      if(!paint(element,img,grade,seed)&&element.dataset.wearError!=='true'){
-        if(typeof root.requestAnimationFrame==='function')
-          root.requestAnimationFrame(()=>paint(element,img,grade,seed));
+      if(!element.isConnected){done();return}
+      if(!visible)return;
+      if(!img.complete||!img.naturalWidth)return;
+      if(paint(element,img,grade,seed)){done();return}
+      if(element.dataset.wearError==='true'){done();return}
+      if(typeof root.requestAnimationFrame==='function'){
+        // Allow one layout frame for just-mounted cards without a busy retry loop.
+        root.requestAnimationFrame(()=>{
+          if(element.isConnected&&paint(element,img,grade,seed))done();
+        });
       }
     };
+    if(viewport){
+      handlers.set(element,()=>{
+        visible=true;
+        draw();
+      });
+      viewport.observe(element);
+    }
     if(img.complete&&img.naturalWidth)draw();
     else img.addEventListener('load',draw,{once:true});
     count++;
   }
   return count;
 }
-root.LootHubWearRenderer=Object.freeze({LIMITS,MAX_PIXELS,hash,pattern,texture,attach});
+function release(parent){
+  if(!parent||typeof parent.querySelectorAll!=='function'||!observer)return 0;
+  const list=parent.querySelectorAll('.master-raster[data-wear-bound="true"]');
+  for(const element of list){
+    observer.unobserve(element);
+    handlers.delete(element);
+  }
+  return list.length;
+}
+root.LootHubWearRenderer=Object.freeze({LIMITS,MAX_PIXELS,hash,pattern,texture,attach,release});
 })(window);
