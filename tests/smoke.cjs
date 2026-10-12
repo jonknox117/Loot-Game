@@ -576,6 +576,36 @@ const fs = require('fs');
     }
     await page.evaluate(()=>closeDialog());
     assert(errors.length===0,'Full wear rollout produced browser errors: '+errors.join('; '));
+    // 0.5.5a: all approved masters have material and silhouette maps.
+    await page.evaluate(()=>inspect('wear-visual-proof'));
+    const maps=await page.evaluate(async()=>{
+      const api=window.LootHubWearMaterials;
+      const weapons=Object.keys(window.LootHubSkinLines.modelSlugs);
+      const entries=weapons.map(weapon=>({
+        silhouette:api.silhouettePath(weapon),material:api.materialPath(weapon),
+        finish:api.maskPath(weapon)
+      }));
+      const load=src=>new Promise(resolve=>{
+        const image=new Image();
+        image.onload=()=>resolve({ok:true,w:image.naturalWidth,h:image.naturalHeight});
+        image.onerror=()=>resolve({ok:false});
+        image.src=src;
+      });
+      const samples=await Promise.all(entries.slice(0,4).flatMap(e=>[load(e.silhouette),load(e.material)]));
+      return {total:weapons.length,unique:new Set(entries.map(e=>e.material)).size,
+        samples,allowedMetal:api.eligibility('metal',.5,.5,1).rust,
+        forbiddenWood:!api.eligibility('wood',.5,.5,1).rust,
+        forbiddenOther:!api.eligibility('other',.5,.5,1).rust,
+        metadata:document.querySelector('.dialog [data-material-mask]')?.dataset.materialMask};
+    });
+    assert(maps.total===24&&maps.unique===24,'Material map must exist for every master');
+    assert(maps.samples.every(x=>x.ok&&x.w===1600&&x.h===800),
+      'Silhouette and material PNGs must load at native 1600x800 resolution');
+    assert(maps.allowedMetal&&maps.forbiddenWood&&maps.forbiddenOther,
+      'Material-aware rust eligibility must exclude wood and nonmetal');
+    assert(maps.metadata&&maps.metadata.includes('mp5--material-1600.png'),
+      'Each weapon card must point to the corresponding material map');
+    await page.evaluate(()=>closeDialog());
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
