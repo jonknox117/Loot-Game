@@ -696,6 +696,33 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'No oxidation may spill onto wooden stocks, synthetic materials, or protected hardware');
     await page.evaluate(()=>closeDialog());
     assert(errors.length===0,'Material-aware filters raised browser errors: '+errors.join('; '));
+
+    // 0.5.5c: confirm material-map refinements render correctly in real Chromium.
+    const refined=await page.evaluate(async()=>{
+      const api=window.LootHubWearMaterials;
+      const expected=[
+        ['AWP',.78,.44,'metal'],                // barrel no longer protected as optic
+        ['AWP',.36,.31,'other'],                // actual scope keeps protected behavior
+        ['FN SCAR-L',.44,.36,'metal'],         // central receiver
+        ['FN SCAR-L',.70,.40,'other'],         // synthetic handguard
+        ['M1 Garand',.19,.54,'wood'],         // wooden stock
+        ['Glock-18',.28,.66,'other'],         // synthetic grip
+        ['Tactical Tomahawk',.88,.48,'metal'] // exposed cutting head
+      ];
+      const out=[];
+      for(const [weapon,x,y,wanted] of expected){
+        const img=await api.decodeMaterial(weapon);
+        const actual=img?api.sampleMaterial(img.pixels,img.width,img.height,x,y):'missing';
+        const eligible=await api.inspect(weapon,x,y);
+        out.push({weapon,wanted,actual,canRust:eligible.rust,source:!!img});
+      }
+      return out;
+    });
+    assert(refined.every(x=>x.source&&x.actual===x.wanted),
+      'Material segmentation must agree with known visible parts: '+JSON.stringify(refined));
+    assert(refined.every(x=>x.canRust===(x.wanted==='metal')),
+      'No metal oxidation should be allowed on wood, polymer or protected optics');
+    assert(errors.length===0,'Material map refinements produced browser errors: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
