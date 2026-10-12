@@ -1,4 +1,4 @@
-/* LootHub 0.4.2 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.3 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -48,7 +48,16 @@ function repriceListing(game,listingId,ask,now){
   listing.updatedAt=now;
   return {listing,oldAsk,changed:true};
 }
-function buyNpcListing(game,listingId){
+function permittedPrice(game,kind,listing,requested){
+  if(requested===undefined)return listing.ask;
+  const deals=game.market&&game.market.negotiations;
+  const n=Array.isArray(deals)&&root.LootHubHaggling.get(game,kind,listing.id);
+  if(!n||n.kind!==kind||n.listingId!==listing.id||
+    n.itemId!==listing.item.id||n.initialAsk!==listing.ask||
+    n.status!=='agreed'||n.agreedPrice!==requested||!core.validAsk(requested))return null;
+  return requested;
+}
+function buyNpcListing(game,listingId,negotiatedPrice){
   if(!game||!game.market||!Array.isArray(game.market.npcListings)||
      !Array.isArray(game.items)||!Array.isArray(game.listings)||
      !Number.isSafeInteger(game.coins)||game.coins<0||
@@ -56,7 +65,7 @@ function buyNpcListing(game,listingId){
   const offers=game.market.npcListings;
   const index=offers.findIndex(x=>x&&x.id===listingId);
   if(index<0)return null;
-  const listing=offers[index],item=listing.item,price=listing.ask;
+  const listing=offers[index],item=listing.item,price=permittedPrice(game,'buy',listing,negotiatedPrice);
   if(!core.validAsk(price)||!core.eligible(item)||game.coins<price||
      game.items.some(x=>x.id===item.id)||
      game.listings.some(x=>x.item&&x.item.id===item.id)||
@@ -78,18 +87,21 @@ function cancelListing(game,listingId){
   game.items.push(listing.item);
   return listing;
 }
-function settleListing(game,listingId){
+function settleListing(game,listingId,negotiatedPrice){
   if(!Array.isArray(game.listings))return null;
   const index=game.listings.findIndex(x=>x.id===listingId);
   if(index<0)return null;
   const listing=game.listings[index];
-  if(!listing.item||!core.validAsk(listing.ask))return null;
-  const net=core.netProceeds(listing.ask);
+  if(!listing.item)return null;
+  const price=negotiatedPrice===undefined?listing.ask:
+    permittedPrice(game,'sell',listing,negotiatedPrice);
+  if(!core.validAsk(price))return null;
+  const net=core.netProceeds(price);
   game.listings.splice(index,1);
   game.coins+=net;
   game.sales+=net;
   game.rep+=1;
-  return {item:listing.item,ask:listing.ask,net,fee:listing.ask-net};
+  return {item:listing.item,ask:price,net,fee:price-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
   purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing,buyNpcListing

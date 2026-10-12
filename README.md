@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.2)
+# LootHub — Curated Arsenal (Marketplace 0.4.3)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -55,6 +55,16 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Simulated NPC stock is generated and **saved on the first Market visit**, not regenerated on every page open. Stock replenishes at most once per 20-minute elapsed interval, up to a maximum of 15; unsold listings expire after 24–72 hours. No restocking by switching tabs or refreshing.
 - The existing player listing editor, listing escrow and offline simulated player sales are preserved. Saving remains local to your device (same key and version 4). Older save exports remain importable; NPC import validation rejects bad prices, duplicate IDs and unapproved skins.
 - This is a **single-player simulation**, not real player-to-player trading. Offer/counteroffer haggling with individual NPC traders is scoped to **Patch 0.4.3**.
+
+## Marketplace 0.4.3 — Two-way haggling
+
+- Every persistent NPC listing has **Make offer** controls, an offer transcript, seller counteroffers, and a maximum of three player-submitted offers. Seller limits are determined once per listing, not rerolled by closing the dialog, switching tabs, or reloading the browser.
+- Sellers can accept, counter, or permanently walk away. Buyers can accept a counteroffer, decline the negotiation, or complete an agreed purchase. Asking-price purchases continue to work independently.
+- Player-owned listings automatically receive one simulated collector offer when shown in the market; **Review offer** opens the matching saved transcript. The player can accept the NPC offer or counter. Final settlement credits proceeds after the same 5% listing fee.
+- **Agreed is not the same as paid:** a final **Complete purchase** or **Complete sale** step must succeed before money or the exact collectible moves. Insufficient funds leave an agreement in place without an item transfer.
+- Settlement helpers refuse negotiated discounts without a matching, still-valid saved agreement. Completed trades cannot repeat. Selling, cancelling, repricing, or expiration makes unfinished negotiations unavailable, rather than leaving stale bargains usable.
+- Offer histories persist under the existing \`market.negotiations\` array and are included in local browser backups; older saves migrate with no inventory, wallet, listing ID, or case-odds changes.
+- Existing fast instant sales and their separate legacy dealer option are unchanged. Advanced trader personalities and broader market pricing behavior are planned for subsequent patches.
 
 ## Economy and progression
 

@@ -162,7 +162,23 @@ function safeUpload(data) {
   }
   if(data.market!=null){
     if(!window.LootHubMarketCore.validMarketState(data.market))return false;
-    if(data.market.npcListings.length>100)return false;
+    if(data.market.npcListings.length>100||data.market.negotiations.length>1000)return false;
+    for(const n of data.market.negotiations){
+      if(!n||!['buy','sell'].includes(n.kind)||
+        typeof n.id!=='string'||n.id!==(n.kind+':'+n.listingId+(n.kind==='sell'?':'+n.listingCreatedAt:''))||
+        !Number.isFinite(n.listingCreatedAt)||
+        typeof n.listingId!=='string'||n.listingId.length>160||
+        typeof n.itemId!=='string'||n.itemId.length>150||
+        !window.LootHubMarketCore.validAsk(n.initialAsk)||
+        !window.LootHubMarketCore.validAsk(n.threshold)||
+        !window.LootHubMarketCore.validAsk(n.npcOffer)||
+        !Number.isSafeInteger(n.rounds)||n.rounds<0||n.rounds>3||
+        !['open','agreed','completed','walked','declined','unavailable'].includes(n.status)||
+        !Array.isArray(n.history)||n.history.length>30||
+        !Number.isFinite(n.createdAt)||!Number.isFinite(n.updatedAt)||
+        (n.status==='agreed'||n.status==='completed')&&
+          !window.LootHubMarketCore.validAsk(n.agreedPrice))return false;
+    }
     const listingIds=new Set();
     for(const l of data.market.npcListings){
       if(!l||typeof l.id!=='string'||l.id.length>150||listingIds.has(l.id)||
@@ -237,7 +253,8 @@ function marketTick(){
     recordActivity(s,'Marketplace sale: '+itemName(sale.item)+' for '+sale.net+
       ' coins ('+sale.fee+' fee)');
   }
-  if(result.changed)save();
+  if(window.LootHubHaggling.resolveUnavailable(s,Date.now()))save();
+  else if(result.changed)save();
 }
 function marketAction(name,id){return name+'('+escapeHTML(JSON.stringify(String(id)))+')'}
 function listingItemName(item){
@@ -337,6 +354,7 @@ function submitPriceEdit(k){
   const changed=window.LootHubMarketTransactions.repriceListing(s,k,ask,Date.now());
   if(!changed)return;
   if(changed.changed){
+    window.LootHubHaggling.closeForListing(s,'sell',k);
     recordActivity(s,'Updated '+listingItemName(changed.listing.item)+' listing from '+
       changed.oldAsk+' to '+ask+' coins');
     save();
@@ -347,6 +365,7 @@ function cancelListing(k){
   if(!canMutate())return;
   const listing=window.LootHubMarketTransactions.cancelListing(s,k);
   if(!listing)return;
+  window.LootHubHaggling.closeForListing(s,'sell',k);
   recordActivity(s,'Cancelled listing: '+listingItemName(listing.item));
   save();render();
 }
@@ -378,7 +397,8 @@ function renderNpcMarketResults(){
       '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
       '<span class="muted tiny">Est. '+money(estimate)+' ◈ · '+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
-      '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+
+      '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+ 
+      '<button onclick="'+marketAction('negotiateNpcListing',l.id)+'">Make offer</button>'+
       '<button class="primary" onclick="'+marketAction('buyNpcListing',l.id)+'">Buy now</button></div>'+
       '</div></article>';
   }).join('')||'<p class="muted">No listings match those filters. Try another weapon, price order, or rarity.</p>';
@@ -403,8 +423,9 @@ function inspectNpcListing(k){
     '<p class="muted tiny">'+escapeHTML(attributes.join(' · ')||
       (item.kind==='skin'?'Approved cosmetic · exact listed item':item.kind==='case'?
        'Sealed Arsenal Case':'Base weapon · unskinned'))+'</p>'+
-    '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiated offers arrive in Patch 0.4.3.</p>'+
-    '<div class="row"><button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
+    '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiate a better price or buy at the asking price.</p>'+
+    '<div class="row"><button onclick="'+marketAction('negotiateNpcListing',listing.id)+'">Make offer</button>'+ 
+    '<button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
       money(listing.ask)+' coins</button><button onclick="closeDialog()">Back to market</button></div>');
 }
 function buyNpcListing(k){
@@ -417,6 +438,7 @@ function buyNpcListing(k){
   }
   const sale=window.LootHubMarketTransactions.buyNpcListing(s,k);
   if(!sale)return;
+  window.LootHubHaggling.closeForListing(s,'buy',k);
   recordActivity(s,'Bought '+listingItemName(sale.item)+' from '+sale.seller+
     ' for '+sale.price+' coins');
   save();
@@ -424,9 +446,116 @@ function buyNpcListing(k){
   tab='Inventory';
   render();
 }
+function negotiateNpcListing(k){openMarketNegotiation('buy',k)}
+function reviewBuyerOffer(k){openMarketNegotiation('sell',k)}
+function openMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const negotiation=window.LootHubHaggling.begin(s,kind,k,Date.now());
+  if(!negotiation)return;
+  save();
+  renderMarketNegotiation(kind,k);
+}
+function renderMarketNegotiation(kind,k){
+  const n=window.LootHubHaggling.get(s,kind,k);
+  if(!n)return;
+  if((n.status==='open'||n.status==='agreed')&&!window.LootHubHaggling.stillAvailable(s,n)){
+    n.status='unavailable';n.updatedAt=Date.now();save();
+  }
+  const buy=kind==='buy',listing=(buy?s.market.npcListings:s.listings).find(x=>x.id===k);
+  const item=listing?.item || (s.items.find(x=>x.id===n.itemId));
+  const itemLabel=item?listingItemName(item):'Listing no longer available';
+  const status=n.status,initial=buy?n.initialAsk:n.npcOffer;
+  const history=n.history.slice(-9).map(e=>
+    '<div class="offer-message '+(e.by==='player'?'offer-player':'offer-trader')+'">'+
+      '<span class="muted tiny">'+(e.by==='player'?'You':escapeHTML(n.seller))+'</span>'+
+      '<span>'+(e.amount!=null?money(e.amount)+' coins':'')+
+      (e.message?' · '+escapeHTML(e.message):'')+'</span></div>').join('');
+  const stateCopy=status==='agreed'?
+    '<p class="notice">Deal agreed at <b>'+money(n.agreedPrice)+' coins</b>. Complete the trade to transfer the item and coins.</p>':
+    status==='walked'?'<p class="notice">This trader walked away. The same listing cannot be renegotiated.</p>':
+    status==='declined'?'<p class="notice">You ended this negotiation. Its history is saved.</p>':
+    status==='completed'?'<p class="notice">Trade completed. The item and coins have already transferred.</p>':
+    status==='unavailable'?'<p class="notice">This listing is no longer available at its negotiated price.</p>':'';
+  const roundLeft=Math.max(0,window.LootHubHaggling.MAX_ROUNDS-n.rounds);
+  const suggest=buy?Math.max(1,Math.round(n.npcOffer*.9)):Math.min(100000000,Math.round(n.npcOffer*1.1));
+  const controls=status==='open'?
+    '<label for="negotiationAmount">'+(buy?'Your purchase offer':'Your counter asking price')+
+    '</label><input id="negotiationAmount" aria-label="Your offer" class="field" type="number" min="1" max="'+
+      (buy?n.initialAsk:100000000)+'" step="1" inputmode="numeric" value="'+suggest+'">'+
+    '<div class="row offer-actions"><button class="primary" onclick="'+marketActionWithKind('sendNegotiationOffer',kind,k)+'">Send offer</button>'+
+    '<button onclick="'+marketActionWithKind('acceptMarketCounter',kind,k)+'">Accept '+
+      money(n.npcOffer)+' ◈</button>'+
+    '<button onclick="'+marketActionWithKind('leaveMarketNegotiation',kind,k)+'">Walk away</button></div>':
+    status==='agreed'?
+    '<button class="primary" onclick="'+marketActionWithKind('completeMarketNegotiation',kind,k)+'">'+
+      (buy?'Complete purchase':'Complete sale')+' · '+money(n.agreedPrice)+' ◈</button>':'';
+  dialog('<div class="section-eyebrow">'+(buy?'NEGOTIATE WITH SELLER':'REVIEW BUYER OFFER')+'</div>'+
+    '<h2>'+escapeHTML(itemLabel)+'</h2>'+
+    '<p class="muted tiny">Trader: '+escapeHTML(n.seller)+' · Original asking price: '+
+      money(n.initialAsk)+' coins · '+roundLeft+' offer'+(roundLeft===1?'':'s')+' remaining</p>'+
+    '<div class="offer-history">'+history+'</div>'+
+    stateCopy+controls+'<div class="row"><button onclick="closeDialog()">Close negotiation</button></div>');
+}
+function marketActionWithKind(fn,kind,k){
+  return fn+'('+escapeHTML(JSON.stringify(kind))+','+escapeHTML(JSON.stringify(k))+')';
+}
+function sendNegotiationOffer(kind,k){
+  if(!canMutate())return;
+  const input=document.getElementById('negotiationAmount');
+  if(!input)return;
+  const value=Number(input.value);
+  if(!window.LootHubMarketCore.validAsk(value)){
+    alert('Enter a whole-coin offer between 1 and 100,000,000.');return;
+  }
+  const outcome=window.LootHubHaggling.submit(s,kind,k,value,Date.now());
+  if(!outcome){alert('The offer is not valid for this negotiation.');return}
+  save();
+  renderMarketNegotiation(kind,k);
+}
+function acceptMarketCounter(kind,k){
+  if(!canMutate())return;
+  const outcome=window.LootHubHaggling.acceptCounter(s,kind,k,Date.now());
+  if(!outcome)return;
+  save();renderMarketNegotiation(kind,k);
+}
+function leaveMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const outcome=window.LootHubHaggling.walkAway(s,kind,k,Date.now());
+  if(!outcome)return;
+  save();renderMarketNegotiation(kind,k);
+}
+function completeMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const n=window.LootHubHaggling.get(s,kind,k);
+  if(!n||n.status!=='agreed')return;
+  if(!window.LootHubHaggling.stillAvailable(s,n)){
+    n.status='unavailable';n.updatedAt=Date.now();
+    save();renderMarketNegotiation(kind,k);return;
+  }
+  if(kind==='buy'&&s.coins<n.agreedPrice){
+    alert('Not enough coins to complete this deal. Earn coins or sell another item.');return;
+  }
+  const result=kind==='buy'?
+    window.LootHubMarketTransactions.buyNpcListing(s,k,n.agreedPrice):
+    window.LootHubMarketTransactions.settleListing(s,k,n.agreedPrice);
+  if(!result){alert('Trade could not be completed. Review your wallet and saved listings.');return}
+  n.status='completed';
+  n.updatedAt=Date.now();
+  n.history.push({by:'system',amount:n.agreedPrice,at:n.updatedAt,message:'Trade completed'});
+  recordActivity(s,kind==='buy'?
+    'Negotiated purchase of '+listingItemName(result.item)+' from '+result.seller+
+      ' for '+n.agreedPrice+' coins':
+    'Negotiated marketplace sale of '+listingItemName(result.item)+' for '+
+      result.net+' coins ('+result.fee+' fee)');
+  save();closeDialog();
+  tab=kind==='buy'?'Inventory':'Market';
+  render();
+}
 function enhancedMarket(){
   if(isSaveCurrent()){
     window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
+    for(const l of s.listings.slice(0,100))window.LootHubHaggling.begin(s,'sell',l.id);
+    window.LootHubHaggling.resolveUnavailable(s,Date.now());
   }
   const listingItems=(s.listings||[]).map(l=>{
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
@@ -438,7 +567,8 @@ function enhancedMarket(){
       '</div></div>'+
       '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
       '<span class="muted tiny">Receive '+(quote?money(quote.net):'—')+' ◈ after fee</span>'+
-      '<div class="row"><button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
+      '<div class="row"><button onclick="'+marketAction('reviewBuyerOffer',l.id)+'">Review offer</button>'+ 
+      '<button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
       '<button onclick="'+marketAction('cancelListing',l.id)+'">Cancel</button></div></div>'+
       '</div>';
   }).join('');
@@ -470,7 +600,7 @@ function enhancedMarket(){
         '<option value="'+x[0]+'"'+select(x[0],view.sort)+'>'+x[1]+'</option>').join('')+
       '</select></label></div>'+
     '<div class="npc-market-grid" id="npcMarketResults">'+renderNpcMarketResults()+'</div>'+
-    '<p class="muted tiny">NPC stock refreshes gradually over time and is unique to your saved game. No real players are connected. Make Offer functionality is planned for the next patch.</p>'+
+    '<p class="muted tiny">NPC stock refreshes gradually. Each listing supports a saved negotiation with up to three offers. No real players are connected.</p>'+
     '</section>'+
     '<section class="panel"><div class="row space"><h2>My Market Listings <span class="muted">('+
       (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
