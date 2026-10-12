@@ -44,3 +44,15 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - The base render was generated from original AI imagery, not from an exact OEM 3D model; this is a convincing Glock-style visual pilot, not a claim of manufacturer-exact geometry. The source image was natively 1774x887 before the transparent 2400x1200 working canvas.
 - The case catalog's **View finish** control lets players inspect this item at 1600px without needing to win it; no game state is modified.
 - Other 18 finishes continue using model-specific vector artwork. Full-quality approval for the remaining masters is pending.
+
+## 0.3.3C — AK-47 neutral model and two finished exports
+
+- **Live:** AK-47 | Ghostline and AK-47 | Crimson Circuit. Both reuse the exact neutral model and alpha silhouette. Each is a standalone transparent WebP at **400 × 200**, **800 × 400**, and **1600 × 800**.
+- Neutral master: `assets/renders/masters/ak-47-neutral-{400,800,1600}.webp`.
+- Original finish artwork: `assets/renders/finishes/ak-47--ghostline-{400,800,1600}.webp` and corresponding `ak-47--crimson-circuit` files.
+- The neutral generated source, both original finish sources, canonical 2400px working PNGs, six aligned paint-region masks, exact-geometry compositor, and review previews are archived at **/LootHub/loothub-ak-master-033C.zip** in the user's Library.
+- To reproduce from an unzipped source bundle, use **`python scripts/build_ak_2d.py <unzipped bundle folder>`** with Pillow, NumPy and OpenCV. All variants are normalized to one neutral alpha mask and verified at every output size.
+- The original source artwork is AI-generated (native 1774 × 887) and fitted into a 2400 × 1200 working canvas; no manufacturer-exact CAD/3D source is claimed. The 1600px image is an export resolution, not native 1600px source detail.
+- Both AK exports use exact model and finish metadata in opening reels, inventory cards, and item inspection; other weapons continue to use their dedicated SVG fallbacks until they meet the same raster detail standard.
+- Remaining initial anchors (AWP, M4A4, Karambit) still need **isolated, high-resolution neutral source renders**. Multi-weapon mood boards were **rejected as raster sources**: cropping their 400–700px artwork and upscaling it would not meet the approved Glock clarity benchmark.
+- Work on the exact existing catalog finishes: **AWP Night Watch**, **AWP Eclipse**, **M4A4 Voltage Bloom**, and **Karambit Golden Talon**. Never create new inventory names merely because a design reference board contained them.
