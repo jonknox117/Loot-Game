@@ -686,15 +686,15 @@ test('Player listings receive durable buyer offers, counters and 5% settlement f
   g.run('submitListing(s.items[0].id)');
   const listing=g.state().listings[0];
   const prior=g.state().coins;
-  const incoming=g.state().market.negotiations.find(x=>x.id==='sell:'+listing.id);
+  const incoming=g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt);
   assert(incoming);
   assert.equal(incoming.status,'open');
   assert(incoming.npcOffer>0);
   const reloaded=boot(g.store);
-  assert.equal(reloaded.state().market.negotiations.find(x=>x.id==='sell:'+listing.id).npcOffer,incoming.npcOffer);
+  assert.equal(reloaded.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).npcOffer,incoming.npcOffer);
   reloaded.run("reviewBuyerOffer("+JSON.stringify(listing.id)+")");
   reloaded.run("acceptMarketCounter('sell',"+JSON.stringify(listing.id)+")");
-  const agreed=reloaded.state().market.negotiations.find(x=>x.id==='sell:'+listing.id);
+  const agreed=reloaded.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt);
   assert.equal(agreed.agreedPrice,incoming.npcOffer);
   assert.equal(reloaded.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listing.id)+",1)"),null,'Cannot force a nonagreed sales price');
   reloaded.run("completeMarketNegotiation('sell',"+JSON.stringify(listing.id)+")");
@@ -702,8 +702,8 @@ test('Player listings receive durable buyer offers, counters and 5% settlement f
   assert.equal(final.listings.length,0);
   assert.equal(final.items.length,0);
   assert.equal(final.coins,prior+Math.max(1,Math.floor(incoming.npcOffer*.95)));
-  assert.equal(final.market.negotiations.find(x=>x.id==='sell:'+listing.id).status,'completed');
-  assert.equal(boot(g.store).state().market.negotiations.find(x=>x.id==='sell:'+listing.id).status,'completed');
+  assert.equal(final.market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).status,'completed');
+  assert.equal(boot(g.store).state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).status,'completed');
 });
 test('Repricing and listing disappearance invalidate pending haggling',()=>{
   const g=boot();
@@ -711,12 +711,12 @@ test('Repricing and listing disappearance invalidate pending haggling',()=>{
   g.byId('listPrice').value='99';
   g.run('submitListing(s.items[0].id)');
   const listing=g.state().listings[0];
-  assert.equal(g.state().market.negotiations.find(x=>x.id==='sell:'+listing.id).status,'open');
+  assert.equal(g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).status,'open');
   g.byId('listPrice').value='101';
   g.run("submitPriceEdit("+JSON.stringify(listing.id)+")");
-  assert.equal(g.state().market.negotiations.find(x=>x.id==='sell:'+listing.id).status,'unavailable');
+  assert.equal(g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).status,'unavailable');
   g.run("reviewBuyerOffer("+JSON.stringify(listing.id)+")");
-  assert.equal(g.state().market.negotiations.find(x=>x.id==='sell:'+listing.id).status,'unavailable');
+  assert.equal(g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id&&x.listingCreatedAt===listing.createdAt).status,'unavailable');
   const old=g.state().coins;
   g.run("completeMarketNegotiation('sell',"+JSON.stringify(listing.id)+")");
   assert.equal(g.state().coins,old);
