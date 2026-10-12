@@ -509,3 +509,18 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 .market-trader-profile span{line-height:1.4}
 @media(max-width:800px){.market-trader-directory{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:450px){.market-trader-directory{grid-template-columns:1fr}}
+
+
+/* Patch 0.4.5: bounded live market index and price deltas */
+.market-pulse-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.market-pulse-item{display:grid;grid-template-columns:1fr auto;align-content:start;column-gap:8px;row-gap:7px;padding:12px;border:1px solid #364a62;border-radius:11px;background:#172435;min-width:0}
+.market-pulse-item b{font-size:13px;overflow-wrap:anywhere;grid-column:1/-1}
+.market-pulse-price{font-size:17px;font-weight:750;white-space:nowrap}
+.market-pulse-trend{justify-self:end;font-size:12px;font-weight:800;border-radius:5px;padding:4px 6px;background:#344455}
+.market-pulse-trend.up{color:#89dfad;background:#193d37}
+.market-pulse-trend.down{color:#ffa497;background:#50312f}
+.market-pulse-trend.flat{color:#c8d3df}
+.market-pulse-item .tiny{grid-column:1/-1;line-height:1.45}
+@media(max-width:960px){.market-pulse-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.market-pulse-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.market-pulse-item{padding:9px}.market-pulse-price{font-size:15px}}
+@media(max-width:340px){.market-pulse-grid{grid-template-columns:1fr}}
