@@ -392,14 +392,17 @@ function cancelListing(k){
   save();render();
 }
 // Market filters are transient UI state; actual NPC listings are durable save data.
-let npcMarketView={search:'',kind:'all',tier:'all',sort:'price-asc'};
+let npcMarketView={search:'',kind:'all',tier:'all',sort:'price-asc',affordability:'all'};
+function npcMatches(){return window.LootHubTradingTools.filterNpc(s,npcMarketView)}
+function resetNpcMarketFilters(){npcMarketView={search:'',kind:'all',tier:'all',sort:'price-asc',affordability:'all'};render()}
+
 function updateNpcMarketFilter(field,value){
   if(!Object.prototype.hasOwnProperty.call(npcMarketView,field))return;
   npcMarketView[field]=String(value||'').slice(0,120);
   const results=document.getElementById('npcMarketResults');
   if(results)results.innerHTML=renderNpcMarketResults();
   const count=document.getElementById('npcMarketCount');
-  if(count)count.textContent=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView).length+
+  if(count)count.textContent=npcMatches().length+
     ' listings';
 }
 function marketEstimate(item){return window.LootHubEconomy.marketValue(s,item)}
@@ -408,7 +411,7 @@ function npcPriceLabel(listing){
   return ratio<.92?'Below estimate':ratio>1.12?'Above estimate':'Near estimate';
 }
 function renderNpcMarketResults(){
-  const listings=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView);
+  const listings=npcMatches();
   return listings.map(l=>{
     const persona=window.LootHubTraders.summary(window.LootHubTraders.get(s,l.seller));
     const item=l.item,info=window.LootHubEconomy.priceInfo(s,item);
@@ -581,6 +584,118 @@ function completeMarketNegotiation(kind,k){
   save();closeDialog();
   tab=kind==='buy'?'Inventory':'Market';
   render();
+}
+// These controls only change the current Market view, never the persisted game.
+let marketOwnedView={search:'',kind:'all',sort:'newest',limit:12};
+let tradeCenterView={status:'all',kind:'all'};
+function updateMarketOwnedFilter(field,value){
+  if(!['search','kind','sort'].includes(field))return;
+  marketOwnedView[field]=String(value||'').slice(0,120);
+  marketOwnedView.limit=12;
+  refreshOwnedShelf();
+}
+function showMoreMarketOwned(){
+  marketOwnedView.limit+=12;
+  refreshOwnedShelf();
+}
+function refreshOwnedShelf(){
+  const target=document.getElementById('marketOwnedResults');
+  if(target)target.innerHTML=renderMarketOwnedResults();
+  const count=document.getElementById('marketOwnedCount');
+  if(count)count.textContent=window.LootHubTradingTools.filterOwned(s,marketOwnedView).length+' available';
+}
+function renderMarketOwnedResults(){
+  const all=window.LootHubTradingTools.filterOwned(s,marketOwnedView);
+  const cards=all.slice(0,marketOwnedView.limit).map(item=>
+    '<div class="item">'+visualArt(item)+'<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
+    '<p class="muted tiny">Market '+money(marketEstimate(item))+' ◈ · Base '+
+      money(estimated(item))+' ◈</p>'+
+    '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
+  return (cards?'<div class="cards">'+cards+'</div>':
+    '<p class="muted">No available collectibles match these filters.</p>')+
+    (all.length>marketOwnedView.limit?'<button id="marketOwnedMore" class="market-more" onclick="showMoreMarketOwned()">Show more ('+
+      (all.length-marketOwnedView.limit)+' remaining)</button>':'');
+}
+function updateTradeCenterFilter(field,value){
+  if(!['status','kind'].includes(field))return;
+  tradeCenterView[field]=String(value||'').slice(0,30);
+  const container=document.getElementById('tradeCenterResults');
+  if(container)container.innerHTML=renderTradeCenterResults();
+  const count=document.getElementById('tradeCenterCount');
+  if(count)count.textContent=window.LootHubTradingTools.filterNegotiations(s,tradeCenterView).length+' conversations';
+}
+function tradeItemLabel(record){
+  if(typeof record.itemName==='string'&&record.itemName)return record.itemName;
+  const listing=(record.kind==='buy'?s.market.npcListings:s.listings)
+    .find(x=>x.id===record.listingId&&x.item&&x.item.id===record.itemId);
+  const owned=s.items.find(x=>x.id===record.itemId);
+  return listing?listingItemName(listing.item):owned?listingItemName(owned):
+    'Collectible '+String(record.itemId||'');
+}
+function renderTradeCenterResults(){
+  const offers=window.LootHubTradingTools.filterNegotiations(s,tradeCenterView);
+  return offers.slice(0,40).map(n=>{
+    const status=n.status||'unknown';
+    const open=!!(n.kind==='buy'?s.market.npcListings:s.listings).find(x=>x.id===n.listingId)&&
+      ['open','agreed'].includes(status)&&window.LootHubHaggling.stillAvailable(s,n);
+    const action=open?marketActionWithKind('openMarketNegotiation',n.kind,n.listingId):
+      marketAction('openTradeRecord',n.id);
+    return '<div class="trade-record"><div class="trade-record-body">'+
+      '<b>'+escapeHTML(tradeItemLabel(n))+'</b>'+
+      '<span class="muted tiny">'+(n.kind==='buy'?'Buying from ':'Selling to ')+
+        escapeHTML(n.seller||'NPC trader')+' · '+new Date(n.updatedAt||n.createdAt).toLocaleString()+'</span>'+
+      '<span class="muted tiny">Last offer '+money(n.agreedPrice||n.npcOffer||n.initialAsk)+' ◈ · '+
+        n.rounds+' submitted</span></div>'+
+      '<div class="trade-record-actions"><span class="trade-status status-'+escapeHTML(status)+'">'+
+        escapeHTML(status)+'</span><button onclick="'+action+'">'+(open?'Continue':'View history')+
+      '</button></div></div>';
+  }).join('')+(offers.length>40?'<p class="muted tiny">Showing 40 most recent conversations. All history remains in your save.</p>':'')||
+    '<p class="muted">No negotiations match this view.</p>';
+}
+function openTradeRecord(id){
+  const n=s.market.negotiations.find(x=>x&&x.id===id);
+  if(!n)return;
+  const log=(Array.isArray(n.history)?n.history:[]).map(event=>
+    '<div class="offer-message '+(event.by==='player'?'offer-player':'offer-trader')+'">'+
+    '<span class="muted tiny">'+(event.by==='player'?'You':event.by==='system'?'System':
+      escapeHTML(n.seller||'Trader'))+'</span><span>'+
+    (event.amount!=null?money(event.amount)+' coins':'')+
+    (event.message?' · '+escapeHTML(event.message):'')+'</span></div>').join('');
+  dialog('<div class="section-eyebrow">SAVED NEGOTIATION HISTORY</div>'+
+    '<h2>'+escapeHTML(tradeItemLabel(n))+'</h2>'+
+    '<p class="muted tiny">'+(n.kind==='buy'?'Purchase':'Sale')+' · '+
+      escapeHTML(n.seller||'Trader')+' · '+escapeHTML(n.status)+
+      ' · Original price '+money(n.initialAsk)+' ◈</p>'+
+    '<div class="offer-history">'+log+'</div>'+
+    (n.status==='completed'?'<p class="notice">Trade completed at '+money(n.agreedPrice)+' coins.</p>':
+      '<p class="muted tiny">This is a read-only record. A closed negotiation cannot be restarted.</p>')+
+    '<button onclick="closeDialog()">Close history</button>');
+}
+function tradeCenter(){
+  const select=(a,b)=>a===b?' selected':'';
+  const offers=window.LootHubTradingTools.filterNegotiations(s,tradeCenterView);
+  const recent=window.LootHubTradingTools.marketJournal(s,12);
+  return '<section class="panel" id="market-offers"><div class="section-eyebrow">OFFERS AND RECORDS</div>'+
+    '<div class="row space"><h2>Trading Desk</h2><span class="muted tiny" id="tradeCenterCount">'+
+      offers.length+' conversations</span></div>'+
+    '<p class="muted tiny">Continue pending deals or inspect completed and expired negotiations. All attempts remain recorded when you reload.</p>'+
+    '<div class="trading-tools-controls">'+
+    '<label>Status<select class="field" id="tradeStatusFilter" onchange="updateTradeCenterFilter(\'status\',this.value)">'+
+      [['all','All'],['active','Active offers'],['agreed','Agreed'],['complete','Completed'],['closed','Closed / expired']]
+        .map(x=>'<option value="'+x[0]+'"'+select(x[0],tradeCenterView.status)+'>'+x[1]+'</option>').join('')+'</select></label>'+
+    '<label>Direction<select class="field" id="tradeKindFilter" onchange="updateTradeCenterFilter(\'kind\',this.value)">'+
+      [['all','Buying & selling'],['buy','Buying'],['sell','Selling']]
+        .map(x=>'<option value="'+x[0]+'"'+select(x[0],tradeCenterView.kind)+'>'+x[1]+'</option>').join('')+'</select></label>'+
+    '</div><div id="tradeCenterResults" class="trade-center-results">'+renderTradeCenterResults()+'</div>'+
+    '<h3>Recent Market Activity</h3><div class="trade-journal">'+
+    (recent.length?recent.map(x=>'<div class="stat"><span class="muted tiny">'+
+      new Date(x.at).toLocaleString()+' · '+escapeHTML(x.message)+'</span>'+
+      '<b>'+money(x.wallet)+' ◈</b></div>').join(''):
+      '<p class="muted tiny">Your completed market actions will appear here.</p>')+'</div></section>';
+}
+function jumpMarketSection(id){
+  const node=document.getElementById(id);
+  if(node&&typeof node.scrollIntoView==='function')node.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function marketPulse(){
   const models=[{kind:'case'},...dropCatalog];
