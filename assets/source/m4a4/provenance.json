@@ -1,0 +1,20 @@
+{
+  "version": "0.3.3E-provisional",
+  "model": "M4A4",
+  "finishes": [
+    "Voltage Bloom"
+  ],
+  "exportWidths": [
+    400,
+    800,
+    1600
+  ],
+  "nativeSourceApprox": [
+    1110,
+    326
+  ],
+  "note": "Normalized high-detail image from original generated comparison sheet; 2400x1200 is working canvas, not native model detail. User visual sign-off still needed.",
+  "sourceType": "original AI-generated, not extracted from a third-party game",
+  "transparentAlphaExact": true,
+  "sourceFacing": "left in generated reference; all exports face right"
+}
