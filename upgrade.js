@@ -162,7 +162,19 @@ function safeUpload(data) {
   }
   if(data.market!=null){
     if(!window.LootHubMarketCore.validMarketState(data.market))return false;
-    if(data.market.npcListings.length>100||data.market.negotiations.length>1000)return false;
+    if(data.market.npcListings.length>100||data.market.negotiations.length>1000||
+       data.market.traders.length>100)return false;
+    const traderIds=new Set();
+    for(const trader of data.market.traders){
+      if(!trader||typeof trader.id!=='string'||trader.id.length>90||traderIds.has(trader.id)||
+         !['buyer','seller'].includes(trader.role)||typeof trader.name!=='string'||
+         !Array.isArray(trader.focus)||trader.focus.length>12||
+         !Number.isSafeInteger(trader.wallet)||trader.wallet<0||
+         !Number.isSafeInteger(trader.initialBudget)||trader.initialBudget<0||
+         !Number.isSafeInteger(trader.bought)||trader.bought<0||
+         !Number.isSafeInteger(trader.sold)||trader.sold<0)return false;
+      traderIds.add(trader.id);
+    }
     for(const n of data.market.negotiations){
       if(!n||!['buy','sell'].includes(n.kind)||
         typeof n.id!=='string'||n.id!==(n.kind+':'+n.listingId+(n.kind==='sell'?':'+n.listingCreatedAt:''))||
@@ -387,13 +399,14 @@ function npcPriceLabel(listing){
 function renderNpcMarketResults(){
   const listings=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView);
   return listings.map(l=>{
+    const persona=window.LootHubTraders.summary(window.LootHubTraders.get(s,l.seller));
     const item=l.item,estimate=estimated(item);
     return '<article class="npc-listing">'+
       '<div class="npc-listing-art">'+visualArt(item)+'</div>'+
       '<div class="npc-listing-body">'+
       '<span class="tag '+cls(rarity(item))+'">'+escapeHTML(rarity(item))+'</span>'+
       '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
-      '<div class="muted tiny">Seller: '+escapeHTML(l.seller)+'</div>'+
+      '<div class="muted tiny">Seller: '+escapeHTML(l.seller)+' · '+escapeHTML(persona.persona)+'</div>'+
       '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
       '<span class="muted tiny">Est. '+money(estimate)+' ◈ · '+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
@@ -407,6 +420,8 @@ function inspectNpcListing(k){
   const listing=s.market.npcListings.find(x=>x.id===k);
   if(!listing)return;
   const item=listing.item;
+  const trader=window.LootHubTraders.get(s,listing.seller);
+  const personality=window.LootHubTraders.summary(trader);
   const attributes=[];
   if(Number.isFinite(item.float))attributes.push('Wear float: '+item.float);
   if(Number.isFinite(item.pattern))attributes.push('Pattern: '+item.pattern);
@@ -416,7 +431,9 @@ function inspectNpcListing(k){
     '<div class="tag '+cls(rarity(item))+'">'+escapeHTML(rarity(item))+'</div>'+
     '<div class="big reveal-art">'+visualArt(item,'inspect')+'</div>'+
     '<h2>'+escapeHTML(name)+'</h2>'+
-    '<div class="stat"><span>Seller</span><b>'+escapeHTML(listing.seller)+'</b></div>'+
+    '<div class="stat"><span>Seller</span><b>'+escapeHTML(listing.seller)+'</b></div>'+ 
+    '<div class="stat"><span>Trading style</span><b>'+escapeHTML(personality.persona)+'</b></div>'+ 
+    '<p class="muted tiny">'+escapeHTML(personality.description)+' · Prefers '+escapeHTML(personality.focus)+'</p>'+
     '<div class="stat"><span>Asking price</span><b>'+money(listing.ask)+' coins</b></div>'+
     '<div class="stat"><span>Reference estimate</span><b>'+money(estimated(item))+' coins</b></div>'+
     '<div class="stat"><span>Price assessment</span><b>'+npcPriceLabel(listing)+'</b></div>'+
@@ -476,7 +493,7 @@ function renderMarketNegotiation(kind,k){
     status==='declined'?'<p class="notice">You ended this negotiation. Its history is saved.</p>':
     status==='completed'?'<p class="notice">Trade completed. The item and coins have already transferred.</p>':
     status==='unavailable'?'<p class="notice">This listing is no longer available at its negotiated price.</p>':'';
-  const roundLeft=Math.max(0,window.LootHubHaggling.MAX_ROUNDS-n.rounds);
+  const roundLeft=Math.max(0,(n.maxRounds||window.LootHubHaggling.MAX_ROUNDS)-n.rounds);
   const suggest=buy?Math.max(1,Math.round(n.npcOffer*.9)):Math.min(100000000,Math.round(n.npcOffer*1.1));
   const controls=status==='open'?
     '<label for="negotiationAmount">'+(buy?'Your purchase offer':'Your counter asking price')+
@@ -491,8 +508,9 @@ function renderMarketNegotiation(kind,k){
       (buy?'Complete purchase':'Complete sale')+' · '+money(n.agreedPrice)+' ◈</button>':'';
   dialog('<div class="section-eyebrow">'+(buy?'NEGOTIATE WITH SELLER':'REVIEW BUYER OFFER')+'</div>'+
     '<h2>'+escapeHTML(itemLabel)+'</h2>'+
-    '<p class="muted tiny">Trader: '+escapeHTML(n.seller)+' · Original asking price: '+
+    '<p class="muted tiny">Trader: '+escapeHTML(n.seller)+(n.persona?' · '+escapeHTML(n.persona):'')+' · Original asking price: '+
       money(n.initialAsk)+' coins · '+roundLeft+' offer'+(roundLeft===1?'':'s')+' remaining</p>'+
+    (n.description?'<p class="muted tiny">'+escapeHTML(n.description)+' · Collects '+escapeHTML((n.focus||[]).join(', '))+'</p>':'')+
     '<div class="offer-history">'+history+'</div>'+
     stateCopy+controls+'<div class="row"><button onclick="closeDialog()">Close negotiation</button></div>');
 }
@@ -553,11 +571,13 @@ function completeMarketNegotiation(kind,k){
 }
 function enhancedMarket(){
   if(isSaveCurrent()){
+    window.LootHubTraders.ensure(s);
     window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
     for(const l of s.listings.slice(0,100))window.LootHubHaggling.begin(s,'sell',l.id);
     window.LootHubHaggling.resolveUnavailable(s,Date.now());
   }
   const listingItems=(s.listings||[]).map(l=>{
+    const offer=window.LootHubHaggling.get(s,'sell',l.id);
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
     return '<div class="listing-line market-listing-row">'+
       '<div class="listing-identity">'+visualArt(l.item)+
@@ -567,7 +587,8 @@ function enhancedMarket(){
       '</div></div>'+
       '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
       '<span class="muted tiny">Receive '+(quote?money(quote.net):'—')+' ◈ after fee</span>'+
-      '<div class="row"><button onclick="'+marketAction('reviewBuyerOffer',l.id)+'">Review offer</button>'+ 
+      '<div class="row">'+(offer?'<button onclick="'+marketAction('reviewBuyerOffer',l.id)+'">Review offer</button>':
+        '<span class="muted tiny">No affordable buyer yet</span>')+ 
       '<button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
       '<button onclick="'+marketAction('cancelListing',l.id)+'">Cancel</button></div></div>'+
       '</div>';
@@ -578,6 +599,14 @@ function enhancedMarket(){
     '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
     '<p class="muted">Est. '+money(estimated(item))+' coins</p>'+
     '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
+  const traderDirectory=s.market.traders.filter(x=>x.role==='buyer').map(t=>{
+    const traits=window.LootHubTraders.summary(t);
+    return '<div class="market-trader-profile"><b>'+escapeHTML(t.name)+'</b>'+
+      '<span class="muted tiny">'+escapeHTML(traits.persona)+'</span>'+
+      '<span class="muted tiny">Collects '+escapeHTML(traits.focus)+'</span>'+
+      '<span class="muted tiny">Available budget: '+money(t.wallet)+' ◈ · '+
+        traits.patience+' offer rounds</span></div>';
+  }).join('');
   const view=npcMarketView;
   const select=(a,b)=>a===b?' selected':'';
   const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
@@ -605,7 +634,10 @@ function enhancedMarket(){
     '<section class="panel"><div class="row space"><h2>My Market Listings <span class="muted">('+
       (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
     (listingItems||'<p class="muted">No active listings. Choose an owned item below to set your price.</p>')+
-    '<p class="muted tiny">Your listings stay in escrow. NPC buyers may purchase them while you are away; the 5% fee is deducted on sale.</p></section>'+
+    '<p class="muted tiny">Your listings stay in escrow. Simulated buyers have finite budgets. Successful sales deduct the 5% fee.</p></section>'+ 
+    '<section class="panel"><div class="section-eyebrow">TRADER PROFILES</div><h2>Meet the Buyers</h2>'+ 
+    '<p class="muted tiny">Different collectors value different item types and negotiate with varying patience. Budgets are saved and decrease after purchases.</p>'+ 
+    '<div class="market-trader-directory">'+traderDirectory+'</div></section>'+
     '<section class="panel"><div class="row space"><h3>List from Inventory</h3>'+
     '<span class="muted tiny">'+ownable.length+' available</span></div>'+
     (sellShelf?'<div class="cards">'+sellShelf+'</div>':
