@@ -7,17 +7,20 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
 const universalData=fs.readFileSync(path.join(root,'assets/skin-lines/line-data.js'),'utf8');
 const universalRegistry=fs.readFileSync(path.join(root,'market/skin-lines.js'),'utf8');
+const materialProfiles=fs.readFileSync(path.join(root,'assets/skin-lines/paint-profile-data.js'),'utf8');
+assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></script>'));
+
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -1866,5 +1869,100 @@ test('0.5.4 the 48 reel entries have transient cosmetic preview grades but award
   assert.equal(g.state().items[0].wearGrade,reward.wearGrade);
   assert(!JSON.stringify(g.state()).includes('reel-preview-'));
 });
+
+test('0.5.5a all 24 master guns have a real paint mask and synced material profile',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-lines/paint-profiles.json'),'utf8'));
+ assert.equal(Object.keys(p.weapons).length,24);
+ const g=boot();
+ assert.deepEqual(JSON.parse(g.run('JSON.stringify(window.LootHubPaintProfiles)')),p);
+ const names=JSON.parse(g.run('JSON.stringify(window.LootHubSkinLines.modelSlugs)'));
+ assert.equal(Object.keys(names).length,24);
+ for(const [weapon,slug] of Object.entries(names)){
+   assert(p.weapons[slug],'Missing profile '+weapon);
+   const expected='./assets/skin-lines/masks/'+slug+'--paint-main-1600.png';
+   assert.equal(g.run('window.LootHubWearMaterials.maskPath('+JSON.stringify(weapon)+')'),expected);
+   const png=fs.readFileSync(path.join(root,expected.slice(2)));
+   assert.equal(png.toString('hex',0,8),'89504e470d0a1a0a');
+   const w=p.weapons[slug].wear;
+   assert.equal(w.reviewed,false);
+   for(const key of ['metalRects','woodRects','polymerRects','protectedRects'])assert(Array.isArray(w[key]));
+ }
+ assert.equal(g.run('window.LootHubWearMaterials.maskPath("Invalid Gun")'),null);
+});
+test('0.5.5a material classifier never infers rust-safe metal merely from paint',()=>{
+ const g=boot(),api='window.LootHubWearMaterials';
+ const initial=JSON.parse(g.run('JSON.stringify('+api+'.eligibility("AK-47",.95,.95,1))'));
+ assert.equal(initial.material,'other');
+ assert.equal(initial.rust,false,'Paint may cover wood or polymer');
+ assert.equal(initial.finishWear,true);
+ assert.equal(g.run(api+'.materialAt("AWP",.4,.25,1)'),'protected',
+   'Inherit existing protected scope rectangles from skin-line profile');
+ assert.equal(g.run(api+'.eligibility("AWP",.4,.25,1).scratch'),false);
+ const profile='window.LootHubPaintProfiles.weapons["ak-47"].wear';
+ g.run(profile+'.woodRects.push([.2,.2,.4,.4])');
+ g.run(profile+'.polymerRects.push([.7,.75,.9,.9])');
+ g.run(profile+'.metalRects.push([.85,.5,.95,.65])');
+ g.run(profile+'.protectedRects.push([.1,.1,.2,.2])');
+ assert.equal(g.run(api+'.materialAt("AK-47",.3,.3,1)'),'wood');
+ assert.equal(g.run(api+'.eligibility("AK-47",.3,.3,1).rust'),false);
+ assert.equal(g.run(api+'.eligibility("AK-47",.3,.3,1).finishWear'),false);
+ assert.equal(g.run(api+'.materialAt("AK-47",.8,.8,1)'),'other');
+ assert.equal(g.run(api+'.eligibility("AK-47",.8,.8,1).rust'),false);
+ assert.equal(g.run(api+'.materialAt("AK-47",.9,.6,0)'),'metal');
+ assert.equal(g.run(api+'.eligibility("AK-47",.9,.6,0).rust'),true);
+ assert.equal(g.run(api+'.materialAt("AK-47",.15,.15,1)'),'protected');
+ assert.equal(g.run(api+'.eligibility("AK-47",.15,.15,1).grime'),false);
+ assert.equal(g.run(api+'.eligibility("Invalid",.5,.5,1).rust'),false);
+});
+test('0.5.5a mask sampling reads paint opacity without trusting transparent pixels',()=>{
+ const g=boot();
+ const vals=JSON.parse(g.run('JSON.stringify((()=>{'+
+   'const d=Uint8ClampedArray.from([255,255,255,255,128,128,128,255,255,255,255,0,0,0,0,255]);'+
+   'return [window.LootHubWearMaterials.sample(d,2,2,0,0),'+
+   'window.LootHubWearMaterials.sample(d,2,2,1,0),'+
+   'window.LootHubWearMaterials.sample(d,2,2,0,1),'+
+   'window.LootHubWearMaterials.sample(d,2,2,1,1),'+
+   'window.LootHubWearMaterials.sample(d,2,2,-1,.5)]})())'));
+ assert.equal(vals[0],1);
+ assert(Math.abs(vals[1]-128/255)<.001);
+ assert.deepEqual(vals.slice(2),[0,0,0]);
+ const item={id:'metal-map-id',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:4};
+ for(const ctx of ['inventory','reel','inspect']){
+  const art=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(ctx)+')');
+  assert(art.includes('data-paint-mask="./assets/skin-lines/masks/ak-47--paint-main-1600.png"'));
+  assert(art.includes('data-wear-seed="metal-map-id"'));
+ }
+ assert.equal(g.run('window.LootHubMarketCore.estimated('+JSON.stringify(item)+')'),55);
+ assert.equal(g.run('window.LootHubWearMaterials.MAX_DECODED'),6);
+});
+
+
+test('0.5.5a material maps fully cover every weapon silhouette, one surface per pixel',()=>{
+  const g=boot(),p=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-lines/paint-profiles.json'),'utf8'));
+  assert.equal(Object.keys(p.weapons).length,24);
+  for(const slug of Object.keys(p.weapons)){
+    const base=path.join(root,'assets/skin-lines/materials',slug);
+    for(const suffix of ['--silhouette-1600.png','--material-1600.png']){
+      const name=base+suffix;
+      assert(fs.existsSync(name),'Missing generated full-coverage map '+name);
+      assert.equal(fs.readFileSync(name).toString('hex',0,8),'89504e470d0a1a0a');
+    }
+  }
+  for(const weapon of ['AK-47','Glock-18','M1 Garand','Kar98k','FN FAL','RPG-7']){
+    const masks=JSON.parse(g.run('JSON.stringify(({a:window.LootHubWearMaterials.materialPath('+JSON.stringify(weapon)+'),'+
+      'b:window.LootHubWearMaterials.silhouettePath('+JSON.stringify(weapon)+')}))'));
+    assert(masks.a.includes('--material-1600.png'));
+    assert(masks.b.includes('--silhouette-1600.png'));
+  }
+  const pixels=JSON.parse(g.run('JSON.stringify((()=>{'+
+    'const rgba=Uint8ClampedArray.from([255,0,0,255,0,255,0,255,0,0,255,255,0,0,0,0]);'+
+    'return [0,.3,.6,1].map(x=>window.LootHubWearMaterials.sampleMaterial(rgba,4,1,x,0))})())'));
+  assert.deepEqual(pixels,['metal','wood','other','outside']);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("wood",.5,.5,1).rust'),false);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("other",.5,.5,1).rust'),false);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("metal",.5,.5,1).rust'),true);
+  assert.equal(g.run('window.LootHubWearMaterials.eligibility("outside",.5,.5,1).rust'),false);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');

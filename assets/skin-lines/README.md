@@ -45,3 +45,11 @@ Remove `pattern` to apply just a palette. The pattern scales/repeats without cha
 - For now new cases inherit each weapon's existing rarity tier and the game's published tier odds.
 - The browser reads only entries explicitly marked `released:true`.
 - Execute `node tests/core.cjs` and `node tests/smoke.cjs` before merge.
+
+## Full silhouette/material maps (wear 0.5.5a)
+
+Every master must generate both `assets/skin-lines/materials/<slug>--silhouette-1600.png` and `<slug>--material-1600.png`. Metal, wood and other are exhaustive and mutually exclusive inside the exact source alpha. Unknown areas are classified **other**, never metal.
+
+Generate with `python scripts/build_material_maps.py`, then run `python scripts/build_material_maps.py --check`. Keep existing `paint-main` masks separate; those are for coating, not material identity.
+
+Review and correct draft material regions in `paint-profiles.json` before the first skin line is approved. Material-aware rust rendering is a separate upcoming integration, not part of mask generation.

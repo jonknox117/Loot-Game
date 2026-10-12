@@ -910,7 +910,11 @@ function visualArt(item,context='inventory') {
   // Reusable renderer needs only an existing item identity and transparent master image.
   const wearMeta=item&&item.id&&window.LootHubWear.wearable(item)&&
     window.LootHubWear.validGrade(item.wearGrade)?
-    ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"':'';
+    ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"'+
+    (window.LootHubWearMaterials.maskPath(item.weapon)?
+      ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"'+
+      ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
+      ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)){
     const file=window.LootHubSkinLines.imagePath(item,Number(size));
