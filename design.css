@@ -416,3 +416,33 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
   .reveal-art .master-raster {height:185px;min-height:0;}
 }
 @media(max-width:360px) {.item .master-raster{height:74px;}}
+
+
+/* Patch 0.4.1 — listing editor and personal marketplace */
+.listing-price-label{display:block;margin:12px 0 7px;font-size:14px;font-weight:700}
+.listing-editor-art{margin:6px 0 12px;max-width:100%;border-radius:10px;overflow:hidden}
+.listing-editor-art .weapon-art{display:flex;width:100%;height:clamp(145px,28vw,220px)}
+.listing-quick-prices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:10px 0 12px}
+.listing-quick-prices button{min-width:0;font-size:12px;padding:10px 5px;white-space:nowrap}
+.listing-quote{background:#101b29;border:1px solid #354a60;border-radius:12px;padding:10px 13px;margin:12px 0 14px}
+.listing-quote .stat:last-of-type b{color:#79dcb2}
+.listing-quote .tiny{margin:10px 0 2px;line-height:1.45}
+.listing-editor-actions button{min-height:44px}
+.market-listing-row{align-items:center}
+.listing-identity{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.listing-identity .art{flex:none}
+.listing-identity-copy{min-width:0;display:flex;flex-direction:column;gap:5px}
+.listing-identity-copy b{overflow-wrap:anywhere}
+.market-listing-controls{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex:none}
+.market-listing-controls .row{gap:7px}
+.market-listing-controls button{font-size:12px;padding:9px 12px;min-height:40px}
+@media(max-width:600px){
+  .listing-quick-prices{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .listing-quick-prices button{min-height:42px}
+  .listing-editor-art .weapon-art{height:160px}
+  .market-listing-row{align-items:stretch}
+  .listing-identity{width:100%}
+  .market-listing-controls{align-items:stretch;width:100%}
+  .market-listing-controls .row{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .market-listing-controls button{min-height:44px}
+}
