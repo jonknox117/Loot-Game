@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "assetStatus": "first-master-pilot-live",
-  "notes": "Glock-18 Slate Grid has a real transparent WebP raster pilot at 400/800/1600px. Neutral Glock render also exists in assets/renders/masters. Remaining entries use distinct model-specific SVG artwork; the final five-master art pipeline is not yet complete.",
+  "assetStatus": "three-original-raster-pilots-live",
+  "notes": "Three real raster finish pilots are live: Glock-18 Slate Grid, AK-47 Ghostline, AK-47 Crimson Circuit. Both AK finishes share exact silhouette mask. Six other original catalog AK/AWP/etc items remain vector until equally sharp standalone sources exist.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -218,15 +218,27 @@
       "finish": "Ghostline",
       "tier": 2,
       "rarity": "Rare",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/ak-47--ghostline.png",
-      "inspection": "assets/renders/ak-47--ghostline-1600.webp",
-      "inventory": "assets/renders/ak-47--ghostline-640.webp",
-      "thumbnail": "assets/renders/ak-47--ghostline-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/ak-47-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/ak-47--ghostline-1600.webp",
+      "inventory": "assets/renders/finishes/ak-47--ghostline-800.webp",
+      "thumbnail": "assets/renders/finishes/ak-47--ghostline-400.webp",
       "approved": false,
       "vectorModel": "ak-47",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "pilot": true,
+      "renderMode": "static-2d-webp",
+      "provenance": "assets/source/ak-47/provenance.json",
+      "sourceNativePixels": [
+        1774,
+        887
+      ],
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "pilotReviewNote": "Visual pilot from one generated neutral AK-47 silhouette with finish source transferred through paint masks. Model fidelity and live Safari appearance pending final approval."
     },
     {
       "id": "awp--night-watch",
@@ -266,15 +278,27 @@
       "finish": "Crimson Circuit",
       "tier": 3,
       "rarity": "Super Rare",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/ak-47--crimson-circuit.png",
-      "inspection": "assets/renders/ak-47--crimson-circuit-1600.webp",
-      "inventory": "assets/renders/ak-47--crimson-circuit-640.webp",
-      "thumbnail": "assets/renders/ak-47--crimson-circuit-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/ak-47-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/ak-47--crimson-circuit-1600.webp",
+      "inventory": "assets/renders/finishes/ak-47--crimson-circuit-800.webp",
+      "thumbnail": "assets/renders/finishes/ak-47--crimson-circuit-400.webp",
       "approved": false,
       "vectorModel": "ak-47",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "pilot": true,
+      "renderMode": "static-2d-webp",
+      "provenance": "assets/source/ak-47/provenance.json",
+      "sourceNativePixels": [
+        1774,
+        887
+      ],
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "pilotReviewNote": "Visual pilot from one generated neutral AK-47 silhouette with finish source transferred through paint masks. Model fidelity and live Safari appearance pending final approval."
     },
     {
       "id": "awp--eclipse",
@@ -387,6 +411,8 @@
     "status": "integrated"
   },
   "rasterPilots": [
-    "glock-18--slate-grid"
+    "glock-18--slate-grid",
+    "ak-47--ghostline",
+    "ak-47--crimson-circuit"
   ]
 }
