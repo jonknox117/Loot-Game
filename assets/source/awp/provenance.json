@@ -33,5 +33,7 @@
     "2400x1200 working PNG is interpolation from source 1774x887",
     "Final user mobile visual sign-off pending"
   ],
-  "review": "live pilot, not final user-approved art"
+  "review": "live pilot, not final user-approved art",
+  "publishedOrientation": "muzzle-right for all WebP masters and rendered finishes (left-facing generated source is mirrored after material finishing)",
+  "alphaMatchesNeutral": true
 }
