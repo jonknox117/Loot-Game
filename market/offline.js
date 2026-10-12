@@ -80,7 +80,7 @@ function advance(game,catalog,now=Date.now(),random=Math.random){
       if(offer){report.newOffers++;report.changed=true;}
     }
   }
-  const meaningful=report.playerSales.length+report.npcSales+report.expired+
+  const meaningful=steps>0||report.playerSales.length+report.npcSales+report.expired+
     report.restocked+report.newOffers>0;
   if(meaningful){
     m.lastOfflineReport={at:now,elapsedMinutes:report.elapsedMinutes,
