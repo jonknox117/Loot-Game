@@ -183,6 +183,74 @@ const fs = require('fs');
     assert(!afterReload.market.npcListings.some(x=>x.id===cheapestOffer.id),'Purchased listing must not regenerate');
     assert(errors.length===0,'Browser errors after NPC market purchase: '+errors.join('; '));
 
+    // 0.4.3: live buyer-side haggling persists a rejected offer through reload.
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    const bargain=await page.evaluate(()=>{
+      const a=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings;
+      return a.reduce((best,x)=>!best||x.ask<best.ask?x:best,null);
+    });
+    assert(bargain,'Market lost NPC stock during save recovery');
+    const bargainCard=page.locator('.npc-listing').filter({
+      has:page.locator('button[onclick*="'+bargain.id+'"]')
+    });
+    await bargainCard.getByRole('button',{name:'Make offer'}).click();
+    assert(await page.locator('.offer-history').isVisible(),'Negotiation transcript must display');
+    await page.locator('#negotiationAmount').fill('1');
+    await page.getByRole('button',{name:'Send offer'}).click();
+    const sent=await page.evaluate(id=>{
+      const saved=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return saved.market.negotiations.find(x=>x.id==='buy:'+id);
+    },bargain.id);
+    assert(sent.rounds===1,'Submitted offer should use one negotiation attempt');
+    await page.reload({waitUntil:'load'});
+    const bargainAgain=page.locator('.npc-listing').filter({
+      has:page.locator('button[onclick*="'+bargain.id+'"]')
+    });
+    await bargainAgain.getByRole('button',{name:'Make offer'}).click();
+    const reloadedNegotiation=await page.evaluate(id=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.negotiations.find(x=>x.id==='buy:'+id),bargain.id);
+    assert(reloadedNegotiation.rounds===1,'Reload must preserve consumed offers');
+    await page.getByRole('button',{name:/^Accept /}).click();
+    const agreedBuy=await page.evaluate(id=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.negotiations.find(x=>x.id==='buy:'+id),bargain.id);
+    assert(agreedBuy.status==='agreed','Accepting seller counter must create agreement');
+    await page.getByRole('button',{name:'Close negotiation'}).click();
+    await page.getByRole('button',{name:'Earn',exact:true}).click();
+    while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g,''))<agreedBuy.agreedPrice){
+      await page.getByRole('button',{name:/Earn 1 coin/}).click();
+    }
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    const buyAgain=page.locator('.npc-listing').filter({
+      has:page.locator('button[onclick*="'+bargain.id+'"]')
+    });
+    await buyAgain.getByRole('button',{name:'Make offer'}).click();
+    const beforeDeal=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    await page.getByRole('button',{name:/Complete purchase/}).click();
+    const afterDeal=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(afterDeal.coins===beforeDeal.coins-agreedBuy.agreedPrice,'Agreed purchase price must debit wallet');
+    assert(afterDeal.items.some(x=>x.id===bargain.item.id),'Agreed NPC item must transfer exactly once');
+    assert(afterDeal.market.negotiations.find(x=>x.id==='buy:'+bargain.id).status==='completed','Deal must finalize');
+    await page.reload({waitUntil:'load'});
+    assert((await page.locator('#inventoryGrid .item').count())>=1,'Negotiated item must survive reload');
+
+    // 0.4.3: listed player items receive persistent incoming buyer offers.
+    await page.getByRole('button',{name:'Inventory',exact:true}).click();
+    await page.locator('#inventoryGrid .item').first().getByRole('button',{name:'Inspect / trade'}).click();
+    await page.getByRole('button',{name:'List for sale'}).click();
+    await page.locator('#listPrice').fill('40');
+    await page.getByRole('button',{name:'List for sale'}).click();
+    await page.locator('.listing-line').first().getByRole('button',{name:'Review offer'}).click();
+    const incoming=await page.evaluate(()=>{
+      const data=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      const id=data.listings[0].id;
+      return data.market.negotiations.find(x=>x.id==='sell:'+id);
+    });
+    assert(incoming&&incoming.npcOffer>0,'Player listing should receive an NPC buyer offer');
+    await page.getByRole('button',{name:/^Accept /}).click();
+    const preSale=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    await page.getByRole('button',{name:/Complete sale/}).click();
+    const postSale=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(postSale.coins===preSale.coins+Math.max(1,Math.floor(incoming.npcOffer*.95)),'Negotiated sale fee must be 5%');
+    assert(postSale.listings.length===0,'Sold player item must leave escrow');
+    assert(errors.length===0,'Browser errors during haggling: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
