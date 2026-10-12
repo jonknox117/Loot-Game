@@ -3,7 +3,7 @@
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
   "assetStatus": "seven-raster-finish-pilots-live",
-  "notes": "Seven original finish concepts use transparent 400/800/1600 WebPs spanning five weapon masters: Glock-18, AK-47, AWP, M4A4, Karambit. Karambit and M4A4 derive from relatively small generated concept-sheet knives/weapons and are provisional raster art rather than full-native-resolution inspected masters. The remaining 12 finishes use weapon-specific SVG fallbacks.",
+  "notes": "Seven high-quality transparent 2D raster pilots for five weapon models, including renamed Raptor's Gaze. Older Golden Talon save objects map to Raptor's Gaze without reroll or value changes. Knife is an illustrated provisional ~960 native-pixel source with clean 1600-pixel export.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -369,16 +369,16 @@
       "vectorStatus": "implemented"
     },
     {
-      "id": "karambit--golden-talon",
+      "id": "karambit--raptors-gaze",
       "weapon": "Karambit",
-      "finish": "Golden Talon",
+      "finish": "Raptor's Gaze",
       "tier": 4,
       "rarity": "Legendary",
       "status": "raster-pilot-live",
       "master": "assets/renders/masters/karambit-neutral-1600.webp",
-      "inspection": "assets/renders/finishes/karambit--golden-talon-1600.webp",
-      "inventory": "assets/renders/finishes/karambit--golden-talon-800.webp",
-      "thumbnail": "assets/renders/finishes/karambit--golden-talon-400.webp",
+      "inspection": "assets/renders/finishes/karambit--raptors-gaze-1600.webp",
+      "inventory": "assets/renders/finishes/karambit--raptors-gaze-800.webp",
+      "thumbnail": "assets/renders/finishes/karambit--raptors-gaze-400.webp",
       "approved": false,
       "vectorModel": "karambit",
       "vectorSource": "assets/weapon-masters.js",
@@ -395,7 +395,7 @@
         1200
       ],
       "artBrief": "assets/art-briefs/karambit-golden-talon.md",
-      "pilotReviewNote": "Original AI-generated Golden Talon finish concept and neutral drawing from one contact sheet; source native knife width ~960px, inspect 1600px is upsampled. Canonical geometry and alpha are identical between the neutral and final finish. Original eagle eye and feather engraving are simulated 2D relief, not editable 3D embossing. Await user visual and iPhone Safari approval."
+      "pilotReviewNote": "0.3.3G original illustrated 2D redesign. One extended embossed brow across the gold blade and separate dark eyeball near heel following user's sketch; previous carved bird face removed. Shares exact neutral alpha at 400, 800 and 1600. Original AI-generated native subject approximately 960px wide; 1600px inspection is upsampled. Await user/Safari signoff."
     },
     {
       "id": "butterfly-knife--spectrum",
@@ -466,6 +466,6 @@
     "awp--night-watch",
     "awp--eclipse",
     "m4a4--voltage-bloom",
-    "karambit--golden-talon"
+    "karambit--raptors-gaze"
   ]
 }
