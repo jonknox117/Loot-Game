@@ -162,7 +162,22 @@ function safeUpload(data) {
   }
   if(data.market!=null){
     if(!window.LootHubMarketCore.validMarketState(data.market))return false;
-    if(data.market.npcListings.length>100)return false;
+    if(data.market.npcListings.length>100||data.market.negotiations.length>1000)return false;
+    for(const n of data.market.negotiations){
+      if(!n||!['buy','sell'].includes(n.kind)||
+        typeof n.id!=='string'||n.id!==n.kind+':'+n.listingId||
+        typeof n.listingId!=='string'||n.listingId.length>160||
+        typeof n.itemId!=='string'||n.itemId.length>150||
+        !window.LootHubMarketCore.validAsk(n.initialAsk)||
+        !window.LootHubMarketCore.validAsk(n.threshold)||
+        !window.LootHubMarketCore.validAsk(n.npcOffer)||
+        !Number.isSafeInteger(n.rounds)||n.rounds<0||n.rounds>3||
+        !['open','agreed','completed','walked','declined','unavailable'].includes(n.status)||
+        !Array.isArray(n.history)||n.history.length>30||
+        !Number.isFinite(n.createdAt)||!Number.isFinite(n.updatedAt)||
+        (n.status==='agreed'||n.status==='completed')&&
+          !window.LootHubMarketCore.validAsk(n.agreedPrice))return false;
+    }
     const listingIds=new Set();
     for(const l of data.market.npcListings){
       if(!l||typeof l.id!=='string'||l.id.length>150||listingIds.has(l.id)||
