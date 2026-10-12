@@ -1,4 +1,4 @@
-# LootHub — Base Arsenal (Marketplace 0.4.0 Foundation)
+# LootHub — Base Arsenal (Marketplace 0.4.1 Universal Listings)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -36,6 +36,15 @@ This release restructures the existing marketplace without changing gameplay or 
 - Added migration, double-settlement and price-equivalence tests, plus mobile smoke validation.
 - **Zero skins are active or approved.** The new eligibility layer accommodates legacy items and future explicitly approved skins without creating cosmetics.
 - Real multiplayer trading and account-based saving remain out of scope.
+
+## Marketplace 0.4.1 — Universal listings
+
+- All eligible owned cases and base weapons, including saved legacy weapon models, may be listed from inventory or directly from the Market trading desk. The transaction model also accepts cosmetic skin items **only once those skins are separately approved and released**; the active Arsenal Case still has **zero skins**.
+- A mobile-friendly listing editor accepts any whole-coin asking price from 1 through 100,000,000. Quick-price suggestions, the item preview, estimated value, a live 5% fee calculation and net proceeds make each asking price transparent.
+- Active listings now show their ask, estimated reference value, expected net proceeds and date. Sellers can **edit prices without cancelling**; repricing keeps the original listing and item IDs, original creation timestamp, and escrow ownership.
+- Repricing resets the next simulated buyer-check time, so old elapsed intervals cannot be back-applied to a newly lowered price. Cancelling restores the exact item without fees.
+- Every change is journaled and saved using the existing local save key and version 4; old backups and listings remain usable.
+- Existing NPC sale odds, case odds, case pool and dealer offers are unchanged. Browsable NPC weapon listings and advanced haggling are planned for later patches.
 
 ## Economy and progression
 
