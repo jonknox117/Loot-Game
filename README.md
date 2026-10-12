@@ -2,7 +2,21 @@
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
-A mobile-first, browser-based collectible weapon and marketplace game. The collection contains **24 unskinned base weapon models and five owner-approved collectible skins**. Future skins may enter only through the game owner's explicit selection and approval.
+A mobile-first, browser-based collectible weapon and marketplace game. The collection contains **24 unskinned base weapon models and ten owner-approved collectible skins**. Future skins may enter only through the game owner's explicit selection and approval.
+
+## Latest five owner-approved skins — October 12, 2026
+
+Added five new separately obtainable cosmetics from the owner's original supplied images. No neutral base art is modified. All ten approved cosmetics can appear in **Arsenal Case** drops, inventory, and simulated NPC market listings; the original tier odds and 25-coin case cost are unchanged. Each cosmetic has 400/800/1600px transparent WebP artwork with its own model-specific registration.
+
+| Skin | Rarity | Base value (coins) |
+| --- | --- | ---: |
+| Tactical Machete \| Predator | Rare | 260 |
+| Desert Eagle \| Blossom | Super Rare | 950 |
+| Karambit \| Kryptonite | Legendary | 3,800 |
+| SPAS-12 \| Blood Thirsty | Super Rare | 1,100 |
+| AWP \| Crimson Delight | Legendary | 4,200 |
+
+Wear grade effects continue to apply independently per obtained instance. Existing saves, money, inventories, listings and artwork stay in place.
 
 ## Current Arsenal Case — approved collection
 
@@ -14,7 +28,7 @@ A mobile-first, browser-based collectible weapon and marketplace game. The colle
 | Super Rare | AWP, Tactical Tomahawk, RPG-7 |
 | Legendary | Karambit, Butterfly Knife, M134 Minigun, **MAC-10 | Red Devil (approved skin)** |
 
-Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. The 24 base models are unskinned and have no finish/paint, float, pattern, or StatTrak rolls. There are five approved cosmetics, beginning with **MAC-10 | Red Devil**, which is separately obtainable in the Legendary tier and does not overwrite the original MAC-10 model. Artwork in the case, opening reel, inventory, market listings, and inspect screen uses the unskinned master for base weapons and the separately approved Red Devil art only for that specific skin.
+Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. The 24 base models are unskinned and have no finish/paint, float, pattern, or StatTrak rolls. There are ten approved cosmetics, beginning with **MAC-10 | Red Devil**, which is separately obtainable in the Legendary tier and does not overwrite the original MAC-10 model. Artwork in the case, opening reel, inventory, market listings, and inspect screen uses the unskinned master for base weapons and the separately approved Red Devil art only for that specific skin.
 
 
 ## October 12 owner-approved skin update
@@ -39,7 +53,7 @@ All five can drop from the Arsenal Case and are eligible for inventory sales and
 - First approved skin: **MAC-10 | Red Devil**, sourced directly from the user's finished image and kept in `assets/skins/mac-10--red-devil.js`. The unpainted MAC-10 master stays separate.
 - Glock-18, AK-47, AWP, M4A4 and Karambit use the original `assets/renders/masters/<model>-neutral-1600.webp` raster files.
 - `assets/weapon-masters.js` is a neutral-only vector fallback for retired weapon models from older saves. Its colorful procedural finish palettes were removed.
-- Previous unapproved skin art may remain as historical files in the repository, but is **not active, selectable, rolled or rendered**. Five owner-approved finishes are registered.
+- Previous unapproved skin art may remain as historical files in the repository, but is **not active, selectable, rolled or rendered**. Ten owner-approved finishes are registered.
 - Future skins enter only after approval. The supplied Red Devil design is currently assigned Legendary rarity; that placement can be changed without changing its image.
 
 ## Marketplace 0.4.0 — Foundation patch
@@ -50,7 +64,7 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Existing items, market listings, asking prices, coins, saved offers and unique item IDs carry forward. The save uses the same browser key and save version 4, with a new `market.schemaVersion` field and reserved empty collections for later NPC listings, negotiations, traders and price history.
 - Current pricing, case odds, dealer negotiations, the 5% listing-sale fee and sale probabilities are unchanged.
 - Added migration, double-settlement and price-equivalence tests, plus mobile smoke validation.
-- **Five owner-selected skins are active, including MAC-10 | Red Devil.** The eligibility layer continues to support future cosmetics only after explicit approval.
+- **Ten owner-selected skins are active, including MAC-10 | Red Devil.** The eligibility layer continues to support future cosmetics only after explicit approval.
 - Real multiplayer trading and account-based saving remain out of scope.
 
 ## Marketplace 0.4.1 — Universal listings
@@ -64,7 +78,7 @@ The initial marketplace patch restructured the existing marketplace; the current
 
 ## Marketplace 0.4.2 — Browsable simulated NPC market
 
-- The Market now offers 15 **persistent, individually priced NPC listings** drawn only from the game's currently approved drop catalog: 24 base weapon models, the five personally approved skins, and sealed cases. No unapproved or generated finishes enter the marketplace.
+- The Market now offers 15 **persistent, individually priced NPC listings** drawn only from the game's currently approved drop catalog: 24 base weapon models, the ten personally approved skins, and sealed cases. No unapproved or generated finishes enter the marketplace.
 - Each offer has a stable seller, exact item ID, asking price, time posted, and expiration time. Search by weapon, finish, or seller; filter by item type/rarity and sort by price, value, or recency.
 - Inspect a real listing's weapon image, rarity, posted price, reference value and item attributes before buying. A successful purchase debits the exact posted price, transfers the exact listed instance (preserving its identity and fields), removes the NPC listing, and records the event in the save's transaction history.
 - Simulated NPC stock is generated and **saved on the first Market visit**, not regenerated on every page open. Stock replenishes at most once per 20-minute elapsed interval, up to a maximum of 15; unsold listings expire after 24–72 hours. No restocking by switching tabs or refreshing.
@@ -206,7 +220,7 @@ Players earn starter coins through MicroTasks, buy unopened cases, open them, in
 
 ## Save upgrade and safe migration
 
-The game uses the **existing** browser-local key `loothub-arsenal-alpha-v1`, now writing **save version 4**. This release preserves all five approved skins and converts older unapproved skins and listings to their matching **unskinned base weapons**. It **preserves wallet, unique item IDs, item counts, case counts, history, listing escrow, asking prices, negotiation state, reputation, and market value at the conversion moment**. Wear/float/pattern and old finish names are removed from migrated items; the conversion applies their old valuation exactly once. Items from weapon types removed in an earlier catalog change remain accessible as legacy base weapons rather than being destroyed.
+The game uses the **existing** browser-local key `loothub-arsenal-alpha-v1`, now writing **save version 4**. This release preserves all ten approved skins and converts older unapproved skins and listings to their matching **unskinned base weapons**. It **preserves wallet, unique item IDs, item counts, case counts, history, listing escrow, asking prices, negotiation state, reputation, and market value at the conversion moment**. Wear/float/pattern and old finish names are removed from migrated items; the conversion applies their old valuation exactly once. Items from weapon types removed in an earlier catalog change remain accessible as legacy base weapons rather than being destroyed.
 
 The previous raw save is retained as a local snapshot during the first updated save. Older exported saves are accepted and migrated when loaded. Users can download, import, or restore progress from the Saves tab.
 
