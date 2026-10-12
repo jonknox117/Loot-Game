@@ -1,4 +1,4 @@
-/* LootHub 0.4.5 marketplace sale simulation, extracted without rebalancing. */
+/* LootHub 0.4.8 marketplace sale simulation, extracted without rebalancing. */
 (function(root){
 'use strict';
 const core=root.LootHubMarketCore,tx=root.LootHubMarketTransactions;
@@ -16,6 +16,16 @@ function advanceListings(game,now,random=Math.random){
   if(!game||!Array.isArray(game.listings)||!Number.isFinite(now))return {changed,sales};
   for(const listing of [...game.listings]){
     if(!listing||!listing.item)continue;
+    // An accepted buyer offer reserves this exact escrow item for its negotiated deal.
+    // Consume the elapsed listing clock, so a later voided deal cannot backfill sales.
+    const offer=root.LootHubHaggling.get(game,'sell',listing.id);
+    if(offer&&offer.status==='agreed'&&root.LootHubHaggling.stillAvailable(game,offer)){
+      if(!Number.isFinite(listing.checkedAt)||listing.checkedAt<now){
+        listing.checkedAt=now;
+        changed=true;
+      }
+      continue;
+    }
     const start=Number.isFinite(listing.checkedAt)?listing.checkedAt:(listing.createdAt||now);
     const intervals=Math.min(120,Math.floor(Math.max(0,now-start)/60000));
     if(!intervals)continue;

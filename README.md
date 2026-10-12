@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.7)
+# LootHub — Curated Arsenal (Marketplace 0.4.8)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -117,6 +117,16 @@ The initial marketplace patch restructured the existing marketplace; the current
 - The new **Trading Desk** lets you filter saved negotiations by direction (buying/selling) and state (active, agreed, completed, closed/expired). Continue eligible open offers; finished or invalidated deals open a **read-only negotiation transcript**. New negotiations save the item name for future auditability, including after the item leaves the inventory.
 - **Recent Market Activity** displays the existing market-related transaction journal; all historical records remain in the player's existing saved ledger. No new wallet mechanics, trade generation, cosmetic items, or unrelated background operations were introduced.
 - All trading filters are UI-only and do not mutate the game. The approved 24 base models and MAC-10 | Red Devil, market price bands, buyer budgets, successful-sale fees, case odds, offline simulations, current browser save key and save version are preserved.
+
+## Marketplace 0.4.8 — Final balancing and transaction hardening
+
+- Fix save-export/import validation for legitimate **four-offer** negotiations from patient collectors. Invalid or out-of-range attempts still fail validation.
+- Preserve accepted player-listing negotiations against competing automatic sales. The listing's simulated time is consumed while an agreed buyer has the item reserved.
+- Reject purchases of expired NPC offers even when a stale listing remains open on screen.
+- Respect outstanding accepted agreements before debiting an NPC buyer's remaining funds for a different trade. A completed sale cannot spend budget promised to another agreement.
+- Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
+- Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
+- Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
 
 ## Economy and progression
 
