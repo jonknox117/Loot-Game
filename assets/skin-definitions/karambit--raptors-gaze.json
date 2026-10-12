@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "id": "karambit--raptors-gaze",
+  "model": "Karambit",
+  "baseModel": "karambit",
+  "finish": {
+    "signature": "One continuous long raised brow on the gold blade and a distinct near-black eyeball near the blade heel. Do not carve the whole eagle head.",
+    "brow": {
+      "position": "Sweeps from central blade toward its distal tip, terminating thicker above the eye near blade heel",
+      "type": "Long embossed 2D metallic relief on blade face, only one brow line",
+      "startsAtWorkCanvas": [
+        1450,
+        505
+      ],
+      "tapersTo": [
+        1990,
+        714
+      ],
+      "noNewSilhouette": true
+    },
+    "eye": {
+      "position": "Blade face near the base at the user's red spot, not on grip",
+      "centerWorkCanvas": [
+        1497,
+        537
+      ],
+      "material": "Smoky dark inset with subtle gold rim and tiny reflection",
+      "oversized": false
+    },
+    "feathers": {
+      "countRange": [
+        0,
+        0
+      ],
+      "type": "Heavy feathers removed; only naturally inherited neutral metal grain remains",
+      "cuttingEdgeUntouched": true
+    },
+    "materials": {
+      "blade-main": {
+        "material": "satin-brushed deep gold",
+        "colors": [
+          "#e5bf70",
+          "#bf8d36",
+          "#79521e"
+        ]
+      },
+      "blade-edge": {
+        "material": "polished warm gold bevel",
+        "colors": [
+          "#f8e2ae",
+          "#d8af5a"
+        ]
+      },
+      "motif-zone": {
+        "material": "burnished sculpted gold and near-black eye",
+        "colors": [
+          "#a77625",
+          "#f0cc76",
+          "#151515"
+        ]
+      },
+      "handle": {
+        "material": "matte textured charcoal",
+        "colors": [
+          "#10151a",
+          "#2e353a"
+        ]
+      },
+      "ring": {
+        "material": "warm gold structural trim with dark interior",
+        "colors": [
+          "#d0a045",
+          "#21272a"
+        ]
+      },
+      "hardware": {
+        "material": "blackened steel and minimal gold fasteners",
+        "colors": [
+          "#242d34",
+          "#917043"
+        ]
+      }
+    },
+    "maskNames": [
+      "blade-main",
+      "blade-edge",
+      "brow-ridge",
+      "eye-zone",
+      "handle",
+      "ring",
+      "hardware",
+      "edge-highlight",
+      "ao-shadow"
+    ],
+    "alphaParityWithNeutralRequired": true,
+    "newExternalContoursForbidden": true,
+    "decalRules": "No complete carved bird face; only the brow and eyeball should be recognizable."
+  },
+  "rarity": "Legendary",
+  "tier": 4,
+  "status": "raster-pilot-live",
+  "artworkApproved": false,
+  "assetFilesPresent": true,
+  "gameIntegration": "reel, inventory, catalog preview and inspect WebPs",
+  "artBrief": "assets/art-briefs/karambit-golden-talon.md",
+  "masterRequirements": {
+    "orientation": "blade tip right, finger ring left",
+    "projection": "near side-profile orthographic",
+    "nativeSource": "full-frame single object, not collage crop",
+    "workingCanvas": [
+      2400,
+      1200
+    ],
+    "alpha": "true transparent background, clear open ring hole",
+    "colors": "neutral graphite and steel only"
+  },
+  "plannedOutputs": {
+    "source": "assets/source/karambit/neutral-master-2400.png (full editable source archived in Library ZIP; not currently committed as PNG)",
+    "neutral": {
+      "reel": "assets/renders/masters/karambit-neutral-400.webp",
+      "inventory": "assets/renders/masters/karambit-neutral-800.webp",
+      "inspect": "assets/renders/masters/karambit-neutral-1600.webp"
+    },
+    "finish": {
+      "reel": "assets/renders/finishes/karambit--raptors-gaze-400.webp",
+      "inventory": "assets/renders/finishes/karambit--raptors-gaze-800.webp",
+      "inspect": "assets/renders/finishes/karambit--raptors-gaze-1600.webp"
+    }
+  },
+  "exports": {
+    "reel": [
+      400,
+      200
+    ],
+    "inventory": [
+      800,
+      400
+    ],
+    "inspect": [
+      1600,
+      800
+    ]
+  },
+  "qualityGates": [
+    "model-recognizable-unlabeled-at-160px",
+    "single-clean-transparent-source",
+    "brow-eye-sculptural-relief-visible-at-inspect",
+    "neutral-and-finish-alpha-pixel-identical",
+    "all-six-files-verified-before-live-mapping",
+    "save-and-reel-reveal-regressions",
+    "user-visual-approval",
+    "one-long-embossed-brow",
+    "one-visible-eyeball-near-heel",
+    "no-illustrated-eagle-head"
+  ],
+  "notes": "Provisional redraw from exact existing neutral silhouette; legacy Golden Talon owners are migrated at load, preserving attributes and values.",
+  "pilot": true,
+  "sourceNativePixelsApprox": [
+    960,
+    300
+  ],
+  "qualityNote": "Original native knife artwork ~960px wide from generated comparison source, upsampled at inspect 1600px. 2D simulated metal brow, not physical 3D geometry.",
+  "provenance": "assets/source/karambit/provenance.json",
+  "productionScript": "scripts/build_raptors_gaze_2d.py",
+  "sourceBundleLibrary": "/LootHub/loothub-raptors-gaze-master-033G.zip",
+  "alphaParityCheckedAt": [
+    400,
+    800,
+    1600
+  ],
+  "ringApertureAlphaChecked": true,
+  "orientation": "blade-hook-right, finger-ring-left",
+  "finishingMethod": "Neutral blade gold recolor plus one shaded cubic-Bezier raised brow and independent near-heel inset eyeball, both alpha-clipped to unchanged neutral mask.",
+  "displayName": "Raptor's Gaze"
+}
