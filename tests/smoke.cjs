@@ -74,7 +74,8 @@ const fs = require('fs');
       'AK-47|Ghostline':'ak-47--ghostline',
       'AK-47|Crimson Circuit':'ak-47--crimson-circuit',
       'AWP|Night Watch':'awp--night-watch',
-      'AWP|Eclipse':'awp--eclipse'
+      'AWP|Eclipse':'awp--eclipse',
+      'M4A4|Voltage Bloom':'m4a4--voltage-bloom'
     };
     assert(rasterCards.every(x=>x.src?.includes(bitmapCatalog[x.weapon+'|'+x.finish]+'-400.webp')&&bitmapCatalog[x.weapon+'|'+x.finish]),
       'Reel bitmap does not match the correct weapon and finish');
