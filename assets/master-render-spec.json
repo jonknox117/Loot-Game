@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "stage": "Glock, AK and AWP raster master pilots shipped; M4A4 and Karambit still require isolated high-resolution sources",
+  "stage": "Glock, AK and AWP quality pilots plus provisional M4A4 raster delivered; Karambit remains a pending isolated master.",
   "status": "not-rendered",
   "readme": "assets/master-render-spec.md",
   "resolution": {
@@ -192,12 +192,19 @@
       "master": "assets/source/m4a4/neutral-master.blend",
       "license": "assets/source/m4a4/provenance.json",
       "outputs": {
-        "inspect": "assets/renders/masters/m4a4-neutral-1600.webp",
+        "reel": "assets/renders/masters/m4a4-neutral-400.webp",
         "inventory": "assets/renders/masters/m4a4-neutral-800.webp",
-        "reel": "assets/renders/masters/m4a4-neutral-400.webp"
+        "inspect": "assets/renders/masters/m4a4-neutral-1600.webp"
       },
-      "assetStatus": "not-created",
-      "approved": false
+      "assetStatus": "provisional-raster-integrated",
+      "approved": false,
+      "completedFinishes": [
+        "m4a4--voltage-bloom"
+      ],
+      "sourceBundleLibrary": "/LootHub/loothub-m4a4-master-033E.zip",
+      "sharedAlphaConfirmed": true,
+      "orientation": "muzzle-right",
+      "reviewStatus": "Pilot appears crisp at inventory size, but generated comparison-sheet source supplies only ~1110 native horizontal weapon pixels. Needs full-detail approval before marking final."
     },
     {
       "id": "karambit",
