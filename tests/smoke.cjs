@@ -468,6 +468,82 @@ const fs = require('fs');
       'Approved skin assets must use the same mask-based wear engine');
     await page.evaluate(()=>closeDialog());
     assert(errors.length===0,'Procedural wear generated browser exceptions: '+errors.join('; '));
+
+    // 0.5.4 — wear is now visible on cards, filtered market results, listings and reels.
+    await page.evaluate(()=>go('Inventory'));
+    const ownedArt=page.locator('#inventoryGrid .master-raster[data-wear-seed="wear-visual-proof"]');
+    assert(await ownedArt.count()===1,'Inventory art must retain its saved grade and seed');
+    await ownedArt.scrollIntoViewIfNeeded();
+    await ownedArt.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    assert((await ownedArt.locator('canvas.wear-overlay').count())===1,
+      'Inventory card must draw a reusable weathered canvas');
+    const intact=page.locator('#inventoryGrid .master-raster[data-wear-seed="wear-pristine-proof"]');
+    assert(await intact.count()===1,'Pristine collectible must still display its untouched master');
+    await intact.scrollIntoViewIfNeeded();
+    assert(await intact.locator('canvas.wear-overlay').count()===0,
+      'Pristine inventory cards must remain unweathered');
+    await page.locator('#filter').selectOption({label:'Common'});
+    const filtered=page.locator('#inventoryGrid .master-raster[data-wear-seed="wear-visual-proof"]');
+    await filtered.scrollIntoViewIfNeeded();
+    await filtered.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    await page.evaluate(()=>go('Market'));
+    const npcWorn=await page.evaluate(()=>{
+      const listing=s.market.npcListings.find(x=>x.item.kind==='weapon');
+      if(!listing)throw Error('No NPC weapon to test wear');
+      listing.item.wearGrade=4;
+      save();
+      go('Market');
+      return {id:listing.item.id,weapon:listing.item.weapon};
+    });
+    await page.locator('#npcSearch').fill(npcWorn.weapon);
+    const npcCard=page.locator('#npcMarketResults .master-raster[data-wear-seed="'+npcWorn.id+'"]');
+    assert(await npcCard.count()===1,'Filtered NPC marketplace must retain exact item art metadata');
+    await npcCard.scrollIntoViewIfNeeded();
+    await npcCard.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    assert(await npcCard.locator('canvas.wear-overlay').count()===1,
+      'Dynamically filtered NPC listing must receive its visible wear overlay');
+    await page.getByRole('button',{name:'Reset filters'}).click();
+    await page.evaluate(()=>{
+      const made=window.LootHubMarketTransactions.createListing(s,'wear-visual-proof',50,Date.now());
+      if(!made)throw Error('Cannot list wear-proof item');
+      save();
+      go('Market');
+    });
+    const playerArt=page.locator('#market-listings .master-raster[data-wear-seed="wear-visual-proof"]');
+    await playerArt.scrollIntoViewIfNeeded();
+    await playerArt.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    assert(await playerArt.locator('canvas.wear-overlay').count()===1,
+      'Player escrow listings need the same deterministic wear surface');
+    await page.evaluate(()=>{
+      window.LootHubMarketTransactions.cancelListing(s,s.listings.find(x=>x.item.id==='wear-visual-proof').id);
+      s.items.push({id:'reel-visual-case',kind:'case',paid:25});
+      save();
+      openCase('reel-visual-case');
+    });
+    const tiles=page.locator('#track .tile');
+    assert(await tiles.count()===48,'Wear-enabled reel must retain exactly 48 tiles');
+    assert(await page.locator('#track .master-raster[data-wear-seed]').count()===48,
+      'Reel previews and the winning tile must all carry grade/seed information');
+    const reelWinner=await page.locator('#track .tile[data-reel-index="42"] .master-raster').evaluate(el=>({
+      seed:el.dataset.wearSeed,grade:Number(el.dataset.wearGrade)
+    }));
+    const savedWinner=await page.evaluate(()=>s.items.find(x=>x.id===s.pendingReveal));
+    assert(reelWinner.seed===savedWinner.id&&reelWinner.grade===savedWinner.wearGrade,
+      'Actual reel prize must use the exact saved reward condition, not a preview roll');
+    assert(await page.locator('#track .master-raster[data-wear-seed^="reel-preview-"]').count()===47,
+      'Nonwinning reel cards must use transient sample IDs rather than fake saved collectibles');
+    assert(!JSON.stringify(await page.evaluate(()=>s.items)).includes('reel-preview-'),
+      'Temporary cosmetic reel previews may not enter real inventory');
+    await page.getByRole('button',{name:'Skip animation'}).click();
+    const revealedArt=page.locator('.reveal-art .master-raster[data-wear-seed="'+savedWinner.id+'"]');
+    assert(await revealedArt.count()===1,'Reward reveal must keep winning item identity and wear');
+    if(savedWinner.wearGrade>0){
+      await revealedArt.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    }else{
+      assert(await revealedArt.locator('canvas.wear-overlay').count()===0);
+    }
+    await page.evaluate(()=>closeDialog());
+    assert(errors.length===0,'Full wear rollout produced browser errors: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
