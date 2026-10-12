@@ -46,299 +46,157 @@ function boot(store=new LocalStore(),random=()=>0.001){
 function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
-test('Asset manifest exactly maps all catalog items',()=>{
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+
+test('Arsenal Case contains exactly seventeen base weapons, no skins',()=>{
   const g=boot();
-  const catalog=JSON.parse(g.run('JSON.stringify(catalog.map(a=>[a[0],a[1],a[2]]))'));
-  assert.equal(manifest.items.length,catalog.length);
-  assert.equal(new Set(manifest.items.map(x=>x.id)).size,catalog.length);
-  for(const [weapon,finish,tier] of catalog){
-    const item=manifest.items.find(x=>x.weapon===weapon&&x.finish===finish);
-    assert(item,'Missing '+weapon+' '+finish);
-    assert.equal(item.tier,tier);
-    assert.equal(item.approved,false);
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const cat=JSON.parse(g.run('JSON.stringify(catalog)'));
+  assert.equal(cat.length,17);
+  assert.equal(manifest.items.length,17);
+  assert.deepEqual(manifest.approvedSkins,[]);
+  assert.equal(manifest.catalogMode,'base-weapons-only');
+  const weaponNames=new Set();
+  for(const [weapon,tier,base,emoji] of cat){
+    assert.equal(typeof weapon,'string');
+    assert(!weaponNames.has(weapon),'Duplicate weapon '+weapon);
+    weaponNames.add(weapon);
+    assert(Number.isInteger(tier)&&tier>=0&&tier<=4);
+    assert(Number.isFinite(base)&&base>0);
+    const entry=manifest.items.find(x=>x.weapon===weapon);
+    assert(entry,'Missing '+weapon);
+    assert.equal(entry.kind,'weapon');
+    assert.equal(entry.baseValue,base);
+    assert.equal(entry.tier,tier);
+    assert.equal(entry.hasCosmeticSkin,false);
+    assert.equal(entry.skin,null);
+    assert.equal(entry.finish,null);
+  }
+  assert(weaponNames.has('M60')&&weaponNames.has('RPG-7'));
+});
+test('All active weapon masters resolve to neutral WebP art only',()=>{
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  assert.equal(manifest.neutralMasterPipeline.baseModelCount,17);
+  for(const asset of manifest.items){
+    if(asset.renderMode==='transparent-webp-file'){
+      const buf=fs.readFileSync(path.join(root,asset.master));
+      assert.equal(buf.toString('ascii',0,4),'RIFF',asset.weapon);
+      assert.equal(buf.toString('ascii',8,12),'WEBP',asset.weapon);
+    }else{
+      assert.equal(asset.renderMode,'transparent-webp-data-uri');
+      const file=fs.readFileSync(path.join(root,asset.master),'utf8');
+      const sig=file.match(/"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"/);
+      assert(sig,'Missing master exports for '+asset.weapon);
+      for(const data of sig.slice(1)){
+        const buf=Buffer.from(data,'base64');
+        assert.equal(buf.toString('ascii',0,4),'RIFF',asset.weapon);
+        assert.equal(buf.toString('ascii',8,12),'WEBP',asset.weapon);
+      }
+    }
   }
 });
-test('All Arsenal models have distinct, accessible vector artwork',()=>{
+test('M60 and RPG-7 render as neutral masters in reel and inspection',()=>{
   const g=boot();
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  const models=JSON.parse(g.run('JSON.stringify(window.ArsenalMasters.modelNames)'));
-  assert.equal(models.length,17);
-  assert.equal(manifest.vectorFoundation.modelCount,17);
-  const uniqueShapes=new Set();
-  for(const weapon of models){
-    const skin='Factory',tier=0;
-    const data={kind:'skin',weapon,skin,tier};
-    const html=g.run('window.ArsenalMasters.render('+JSON.stringify(data)+')');
-    assert(html.includes('class="arsenal-master"')||html.includes('class="arsenal-master" role='),'Missing SVG master '+weapon);
-    assert(html.includes('viewBox="0 0 640 270"'),'Unexpected artwork scale '+weapon);
-    assert(html.includes('data-weapon-model="'+weapon+'"'),'Incorrect weapon asset '+weapon);
-    assert(html.includes('aria-label='),'Missing accessible weapon title '+weapon);
-    const geometricBody=html.match(/<g transform="translate\(0 0\)"[^>]*>([\s\S]*?)<\/g>/);
-    assert(geometricBody,'Missing art components for '+weapon);
-    uniqueShapes.add(geometricBody[1]);
+  g.run("window.LootHubNeutralArt={'m60':{'400':'UklGR-demo','800':'UklGR-demo','1600':'UklGR-demo'},'rpg-7':{'400':'UklGR-demo','800':'UklGR-demo','1600':'UklGR-demo'}}");
+  for(const weapon of ['M60','RPG-7']){
+    for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+      const html=g.run('visualArt({kind:"weapon",weapon:'+JSON.stringify(weapon)+',tier:2,base:100},'+JSON.stringify(context)+')');
+      assert(html.includes('data-weapon-model="'+weapon+'"'));
+      assert(html.includes('data-resolution="'+size+'"'));
+      assert(html.includes('data-art-status="base"'));
+      assert(html.includes('data:image/webp;base64,'));
+      assert(!html.includes('data-finish='));
+    }
   }
-  assert.equal(uniqueShapes.size,17,'All weapon model silhouettes must be distinct');
-  for(const entry of manifest.items.filter(x=>x.vectorSource)) {
-    assert.equal(entry.vectorStatus,'implemented');
-    assert.equal(entry.vectorSource,'assets/weapon-masters.js');
-    assert.equal(entry.approved,false,'Final skin artwork must not be falsely marked complete');
+});
+test('Old raster finish paths never render in the base-only collection',()=>{
+  const g=boot();
+  const obj={kind:'weapon',weapon:'Glock-18',tier:0,base:6};
+  const img=g.run('visualArt('+JSON.stringify(obj)+',"inspect")');
+  assert(img.includes('glock-18-neutral-1600.webp'));
+  assert(!img.includes('--slate-grid'));
+  assert(!img.includes('data-finish'));
+  const menu=g.run('cases()');
+  assert.equal((menu.match(/View weapon/g)||[]).length,17);
+  assert(menu.includes('Available base weapons'));
+  for(const finish of ['Starfall','Slate Grid','Voltage Bloom','Crimson Circuit','Metro Fade']){
+    assert(!menu.includes(finish),'Retired finish visible: '+finish);
   }
+});
+test('Every rarity tier gives a genuine unskinned base weapon',()=>{
+  for(const [random,tier] of [[.01,0],[.75,1],[.94,2],[.98,3],[.999,4]]){
+    const g=boot(new LocalStore(),()=>random);
+    const x=JSON.parse(g.run('JSON.stringify(roll())'));
+    assert.equal(x.kind,'weapon');
+    assert.equal(x.tier,tier);
+    assert.equal(typeof x.weapon,'string');
+    assert(!('skin' in x));
+    assert(!('float' in x));
+    assert(!('pattern' in x));
+    assert(!('stattrak' in x));
+    assert.equal(g.run('itemName('+JSON.stringify(x)+')'),x.weapon);
+  }
+});
+test('Former skins migrate once without losing inventory, listing, or values',()=>{
+  const store=new LocalStore();
+  const original={coins:900,items:[{id:'skin-A',kind:'skin',weapon:'AK-47',skin:'Crimson Circuit',tier:3,base:100,float:.02,pattern:777,stattrak:true,paid:25}],
+    history:['historic sale preserved'],earned:900,spent:25,sales:0,rep:0,openings:1,serial:5,offers:{},tab:'Inventory',
+    listings:[{id:'listing-skin-B',item:{id:'skin-B',kind:'skin',weapon:'USP-S',skin:'Dustline',tier:0,base:120,float:.6,pattern:99,stattrak:false},ask:240,createdAt:Date.now(),checkedAt:Date.now()}]};
+  store.setItem(KEY,JSON.stringify(original));
+  const game=boot(store);
+  const migrated=game.state();
+  assert.equal(migrated.coins,900);
+  assert.equal(migrated.items.length,1);
+  assert.equal(migrated.items[0].id,'skin-A');
+  assert.equal(migrated.items[0].kind,'weapon');
+  assert.equal(migrated.items[0].weapon,'AK-47');
+  assert.equal(migrated.items[0].base,289);
+  assert(!('skin' in migrated.items[0]));
+  assert(!('float' in migrated.items[0]));
+  assert(!('stattrak' in migrated.items[0]));
+  assert.equal(migrated.listings[0].item.kind,'weapon');
+  assert.equal(migrated.listings[0].item.weapon,'USP-S');
+  assert.equal(migrated.listings[0].item.base,90);
+  assert.equal(migrated.listings[0].ask,240);
+  assert.equal(game.run('estimated(s.items[0])'),289);
+  assert.equal(game.run('itemName(s.items[0])'),'AK-47');
+  const reload=boot(game.store);
+  assert.equal(reload.state().items[0].base,289,'Migration ran more than once');
+  assert.equal(reload.state().listings[0].ask,240);
+});
+test('Previous version save uploads remain importable and normalize on load',()=>{
+  const g=boot();
+  const old=JSON.parse(g.run('JSON.stringify(s)'));
+  old.items=[{id:'a1',kind:'skin',weapon:'Karambit',skin:'Golden Talon',tier:4,base:200,float:.32,pattern:1,stattrak:false}];
+  assert.equal(g.run('safeUpload('+JSON.stringify(old)+')'),true);
+  old.items[0].kind='weapon';delete old.items[0].skin;delete old.items[0].float;delete old.items[0].pattern;
+  assert.equal(g.run('safeUpload('+JSON.stringify(old)+')'),true);
+});
+test('Base-only preview and case prize do not invent finish labels',()=>{
+  const g=boot();
+  g.run('previewCatalogWeapon(11)');
+  const preview=g.byId('overlay').innerHTML;
+  assert(preview.includes('M60'));
+  assert(preview.includes('BASE WEAPON PREVIEW'));
+  assert(!preview.includes(' | '));
+  assert.equal(g.state().items.length,0);
+  g.run('for(let i=0;i<25;i++)clickEarn();buy();openCase(s.items[0].id)');
+  const reward=g.state().items[0];
+  assert.equal(reward.kind,'weapon');
+  assert(!('skin' in reward));
+  const reel=g.byId('overlay').innerHTML;
+  assert(reel.includes('data-reel-index="42"'));
+  assert(reel.includes('data-weapon-model="'+reward.weapon+'"'));
+  g.run('finishOpening()');
+  const final=g.byId('overlay').innerHTML;
+  assert(final.includes(reward.weapon));
+  assert(final.includes('Base weapon · unskinned'));
 });
 
-test('Reel weapon paints use isolated SVG styles instead of globally shared accents',()=>{
-  const g=boot();
-  const a=g.run("window.ArsenalMasters.render({kind:'skin',weapon:'AK-47',skin:'Ghostline',tier:2})");
-  const b=g.run("window.ArsenalMasters.render({kind:'skin',weapon:'AK-47',skin:'Crimson Circuit',tier:3})");
-  const idA=a.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
-  const idB=b.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
-  assert(idA&&idB&&idA!==idB,'Two cards must never share the same SVG root ID');
-  for(const [svg,id] of [[a,idA],[b,idB]]){
-    assert(svg.includes('#'+id+' .finish{fill:url(#'+id+'f)'),
-      'This item must use its own finish gradient');
-    assert(svg.includes('#'+id+' .metal{fill:url(#'+id+'m)'),
-      'This item must use its own metallic shader');
-    assert(!svg.includes('.arsenal-master .finish{'),
-      'Global finish CSS leaks the last rendered skin across all reel cards');
-    const styles=svg.match(/<style>([\s\S]+?)<\/style>/)?.[1];
-    assert(styles,'SVG style block missing');
-    const selectors=[...styles.matchAll(/(?:^|\})\s*([^{}]+)\{/g)].map(m=>m[1].trim());
-    assert(selectors.length>=10,'Expected model component CSS');
-    assert(selectors.every(selector=>selector.startsWith('#'+id+' ')),
-      'All SVG CSS rules must be scoped to their own root, not apply to neighboring items');
-  }
-  assert.notEqual(
-    a.match(/<linearGradient id="[^"]+f"[^>]*><stop stop-color="([^"]+)"/)?.[1],
-    b.match(/<linearGradient id="[^"]+f"[^>]*><stop stop-color="([^"]+)"/)?.[1],
-    'Different finishes should retain their own palettes');
-});
-test('Opening winner reel tile uses the identical saved item as final reward',()=>{
-  const g=boot();
-  g.run('for(let i=0;i<25;i++)clickEarn();buy();openCase(s.items[0].id)');
-  const won=g.state().items[0];
-  assert.equal(won.kind,'skin');
-  const modal=g.byId('overlay').innerHTML;
-  const tile42=modal.split('data-reel-index="42"')[1]?.split('data-reel-index="43"')[0];
-  assert(tile42,'Winning tile missing from reel');
-  assert(tile42.includes('data-weapon-model="'+won.weapon+'"'),'Winning weapon model mismatch');
-  assert(tile42.includes('data-finish="'+won.skin+'"'),'Winning skin finish mismatch');
-  const pilot=(won.weapon==='Glock-18'&&won.skin==='Slate Grid');
-  if(pilot){
-    assert(tile42.includes('glock-18--slate-grid-400.webp'),'Winning reel should show actual 400px bitmap');
-  }else{
-    assert(tile42.includes('viewBox="0 0 640 270"'),'Winning tile must use vector master renderer');
-  }
-  g.run('finishOpening()');
-  const reveal=g.byId('overlay').innerHTML;
-  assert(reveal.includes('data-weapon-model="'+won.weapon+'"'),'Final reward changed model');
-  assert(reveal.includes('data-finish="'+won.skin+'"'),'Final reward changed finish');
-  if(pilot)assert(reveal.includes('glock-18--slate-grid-1600.webp'),'Inspect image should use actual 1600px bitmap');
-  assert.equal(g.state().items[0].id,won.id,'Winning item identity must remain unchanged');
-});
-test('Glock-18 Slate Grid pilot chooses correct 2D image size and retains SVG fallback',()=>{
-  const g=boot();
-  const model={kind:'skin',weapon:'Glock-18',skin:'Slate Grid',tier:0};
-  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
-    const html=g.run('visualArt('+JSON.stringify(model)+','+JSON.stringify(context)+')');
-    assert(html.includes('glock-18--slate-grid-'+size+'.webp'),'Wrong image for '+context);
-    assert(html.includes('class="art weapon-art master-raster"'),'Raster wrapper missing');
-    assert(html.includes('class="raster-fallback"'),'SVG fallback missing');
-    assert(html.includes('class="arsenal-master"'),'Fallback must use accurate existing model');
-  }
-  const files=['400','800','1600'].map(n=>path.join(root,'assets','renders','finishes','glock-18--slate-grid-'+n+'.webp'));
-  for(const name of files){
-    const bytes=fs.readFileSync(name);
-    assert.equal(bytes.toString('ascii',0,4),'RIFF','Invalid WebP RIFF signature: '+name);
-    assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid WebP format: '+name);
-    assert(bytes.length>10000,'Unusually tiny/truncated artwork: '+name);
-  }
-});
-test('Catalog full-size art preview shows raster without granting or consuming inventory',()=>{
-  const g=boot();
-  const before=g.state();
-  g.run("previewCatalogFinish('Glock-18','Slate Grid')");
-  const html=g.byId('overlay').innerHTML;
-  assert(html.includes('glock-18--slate-grid-1600.webp'),'Catalog preview must use actual master image');
-  assert(html.includes('Glock-18 | Slate Grid'),'Preview has wrong finish');
-  assert.equal(g.state().coins,before.coins,'Catalog preview must never charge coins');
-  assert.deepEqual(g.state().items,before.items,'Catalog preview must not alter inventory');
-});
-test('AK raster masters share exact geometry and show matching reel-to-inspect finishes',()=>{
-  const g=boot();
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  for(const [skin,slug,tier] of [['Ghostline','ghostline',2],['Crimson Circuit','crimson-circuit',3]]){
-    const obj={kind:'skin',weapon:'AK-47',skin,tier};
-    const entry=manifest.items.find(x=>x.weapon==='AK-47'&&x.finish===skin);
-    assert(entry,'Missing AK pilot manifest entry '+skin);
-    assert.equal(entry.renderMode,'static-2d-webp');
-    for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
-      const html=g.run('visualArt('+JSON.stringify(obj)+','+JSON.stringify(context)+')');
-      assert(html.includes('ak-47--'+slug+'-'+size+'.webp'),'Wrong AK image for '+context);
-      assert(html.includes('data-weapon-model="AK-47"'),'Bitmap metadata did not track its actual model');
-      assert(html.includes('data-finish="'+skin+'"'),'Bitmap metadata did not track the actual finish');
-      assert(html.includes('class="raster-fallback"'),'Fallback SVG absent');
-      const file=fs.readFileSync(path.join(root,'assets/renders/finishes','ak-47--'+slug+'-'+size+'.webp'));
-      assert.equal(file.toString('ascii',0,4),'RIFF','Invalid asset header');
-      assert.equal(file.toString('ascii',8,12),'WEBP','Invalid WebP format');
-      assert(file.length>10000,'Bitmap appears truncated');
-    }
-  }
-  for(const size of [400,800,1600]){
-    const file=fs.readFileSync(path.join(root,'assets/renders/masters','ak-47-neutral-'+size+'.webp'));
-    assert.equal(file.toString('ascii',8,12),'WEBP','Neutral AK master invalid');
-  }
-});
-test('AWP bitmap masters load correct original Night Watch/Eclipse artwork at three sizes',()=>{
-  const g=boot();
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  for(const [skin,slug,tier] of [['Night Watch','night-watch',2],['Eclipse','eclipse',3]]){
-    const item={kind:'skin',weapon:'AWP',skin,tier};
-    const entry=manifest.items.find(x=>x.weapon==='AWP'&&x.finish===skin);
-    assert(entry&&entry.pilot===true,'Missing live AWP bitmap entry '+skin);
-    assert.equal(entry.approved,false,'Unreviewed pilot must not be called final-approved');
-    assert.equal(entry.renderMode,'static-2d-webp');
-    for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
-      const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
-      assert(html.includes('awp--'+slug+'-'+size+'.webp'),'Wrong AWP finish source in '+context);
-      assert(html.includes('data-weapon-model="AWP"'),'The rendered AWP weapon metadata is wrong');
-      assert(html.includes('data-finish="'+skin+'"'),'AWP finish changes between contexts');
-      assert(html.includes('class="raster-fallback"'),'AWP preview missing fallback');
-      const bitmap=fs.readFileSync(path.join(root,'assets/renders/finishes','awp--'+slug+'-'+size+'.webp'));
-      assert.equal(bitmap.toString('ascii',0,4),'RIFF','Invalid WebP header');
-      assert.equal(bitmap.toString('ascii',8,12),'WEBP','Invalid WebP payload');
-      assert(bitmap.length>9000,'Suspiciously small WebP render');
-    }
-  }
-  for(const size of [400,800,1600]){
-    const src=fs.readFileSync(path.join(root,'assets/renders/masters','awp-neutral-'+size+'.webp'));
-    assert.equal(src.toString('ascii',8,12),'WEBP','Neutral AWP master missing');
-  }
-});
-test('M4A4 Voltage Bloom pilot preserves actual model and finish across all image sizes',()=>{
-  const g=boot();
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  const entry=manifest.items.find(x=>x.id==='m4a4--voltage-bloom');
-  assert(entry && entry.pilot===true && entry.approved===false,'M4 pilot must be registered without false final approval');
-  assert.equal(entry.renderMode,'static-2d-webp');
-  assert.equal(entry.master,'assets/renders/masters/m4a4-neutral-1600.webp');
-  const item={kind:'skin',weapon:'M4A4',skin:'Voltage Bloom',tier:2};
-  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
-    const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
-    assert(html.includes('m4a4--voltage-bloom-'+size+'.webp'),'Wrong bitmap for '+context);
-    assert(html.includes('data-weapon-model="M4A4"'),'Wrong model in bitmap metadata');
-    assert(html.includes('data-finish="Voltage Bloom"'),'Wrong skin in bitmap metadata');
-    assert(html.includes('class="raster-fallback"'),'Raster art must preserve SVG fallback');
-    for(const file of ['m4a4--voltage-bloom','m4a4-neutral']){
-      const filename=path.join(root,'assets/renders',file==='m4a4-neutral'?'masters':'finishes',file+'-'+size+'.webp');
-      const bytes=fs.readFileSync(filename);
-      assert.equal(bytes.toString('ascii',0,4),'RIFF','Invalid bitmap RIFF');
-      assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid bitmap format');
-      assert(bytes.length>10000,'Truncated or unusually tiny bitmap '+filename);
-    }
-  }
-  const recipe=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/m4a4--voltage-bloom.json'),'utf8'));
-  assert.equal(recipe.weapon,'M4A4');
-  assert.equal(recipe.finish,'Voltage Bloom');
-  assert.equal(recipe.approved,false);
-});
-test("Karambit Starfall uses same neutral geometry across contexts",()=>{
-  const g=boot();
-  const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  const entry=catalog.items.find(x=>x.id==='karambit--starfall');
-  assert(entry && entry.weapon==='Karambit' && entry.finish==="Starfall");
-  assert.equal(entry.rarity,'Legendary');
-  assert.equal(entry.tier,4);
-  assert.equal(entry.pilot,true);
-  assert.equal(entry.approved,false,'Generated-source pilot must not be marked approved');
-  assert.equal(entry.renderMode,'static-2d-webp');
-  assert.equal(entry.provenance,'assets/source/karambit/provenance.json');
-  const item={kind:'skin',weapon:'Karambit',skin:"Starfall",tier:4};
-  const production=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/karambit--starfall.json'),'utf8'));
-  assert.equal(production.assetFilesPresent,true);
-  assert.equal(production.artworkApproved,false);
-  assert.deepEqual(production.exportDimensions.inspect,[1600,800]);
-  const prov=JSON.parse(fs.readFileSync(path.join(root,'assets/source/karambit/provenance.json'),'utf8'));
-  assert.equal(prov.artworkGuarantees.alphaIdentityAtAllThreeSizes,true);
-  assert.equal(prov.native1600SourceDetail,false);
-  assert(fs.existsSync(path.join(root,'scripts/build_starfall_2d.py')),'Production source missing');
-  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
-    const actual=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
-    assert(actual.includes('karambit--starfall-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
-    assert(actual.includes('data-weapon-model="Karambit"'),'Incorrect Golden Talon weapon identity');
-    assert(actual.includes("data-finish=\"Starfall\""),'Incorrect Golden Talon finish identity');
-    assert(actual.includes('class="raster-fallback"'),'Karambit fallback SVG missing');
-    for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--starfall']]){
-      const bytes=fs.readFileSync(path.join(root,'assets/renders',part,filename+'-'+size+'.webp'));
-      assert.equal(bytes.toString('ascii',0,4),'RIFF','Missing or corrupt WebP data');
-      assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid image format');
-      assert(bytes.length>10000,'Truncated or placeholder Golden Talon '+size+' bitmap');
-    }
-  }
-});
-test('Golden Talon legacy inventory and marketplace items retain their attributes after rename',()=>{
-  const storage=new LocalStore();
-  const owned={id:'legacy-owned',kind:'skin',weapon:'Karambit',skin:'Golden Talon',tier:4,base:1900,float:0.121234,pattern:777,stattrak:true,paid:25};
-  const listed={...owned,id:'legacy-listed',skin:"Raptor's Gaze",pattern:44,stattrak:false};
-  const old={coins:463,items:[owned],listings:[{id:'listing-legacy',item:listed,price:2575,ask:2575,createdAt:Date.now(),checkedAt:Date.now()}],
-    history:[],earned:463,spent:0,sales:0,rep:0,openings:2,serial:8,offers:{},ledger:[],tab:'Inventory',lastMarketCheck:Date.now()};
-  storage.setItem(KEY,JSON.stringify(old));
-  const g=boot(storage);
-  assert.equal(g.run('safeUpload('+JSON.stringify(old)+')'),true,'Old save exports should remain importable');
-  const state=g.state();
-  assert.equal(state.items[0].skin,"Starfall");
-  assert.equal(state.listings[0].item.skin,"Starfall");
-  assert.equal(state.items[0].id,'legacy-owned');
-  assert.equal(state.listings[0].item.id,'legacy-listed');
-  assert.equal(state.items[0].float,0.121234);
-  assert.equal(state.items[0].pattern,777);
-  assert.equal(state.coins,463);
-  assert.equal(state.listings[0].price,2575);
-  assert.equal(g.run('itemName(s.items[0])'),"Karambit | Starfall");
-  assert(g.run('save()'),'Normal save should preserve valid migrated items');
-  const saved=g.persisted();
-  assert.equal(saved.items[0].skin,"Starfall");
-  assert.equal(saved.listings[0].item.skin,"Starfall");
-  assert.equal(saved.coins,463);
-});
-test('Starfall catalog preview uses stable numeric handler and exact 1600px image',()=>{
-  const g=boot();
-  const html=g.run('cases()');
-  assert(html.includes('previewCatalogFinish(9)'));
-  assert(!html.includes("previewCatalogFinish('Karambit','Starfall"),'Do not put names in onclick JS');
-  const prior=g.state();
-  g.run('previewCatalogFinish(9)');
-  const modal=g.byId('overlay').innerHTML;
-  assert(modal.includes('karambit--starfall-1600.webp'));
-  assert(modal.includes('Karambit | Starfall'));
-  assert.equal(g.state().coins,prior.coins);
-  assert.deepEqual(g.state().items,prior.items);
-});
-test('Ten approved neutral master WebP assets and selected case families',()=>{
-  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  const g=boot();
-  const allowed=new Set(['Glock-18','AK-47','AWP','M4A4','Karambit','Butterfly Knife','12 Gauge Pump Shotgun','Desert Eagle','Colt .45 Revolver','Tactical Machete','Tactical Tomahawk','SPAS-12','MP5','MAC-10','Tec-9']);
-  const catalog=JSON.parse(g.run('JSON.stringify(catalog)'));
-  assert.equal(catalog.length,21);
-  for(const row of catalog)assert(allowed.has(row[0]),'Unapproved weapon in case: '+row[0]);
-  const newModels=manifest.neutralMasterPipeline.models;
-  assert.equal(newModels.length,10);
-  for(const slug of newModels){
-    const js=fs.readFileSync(path.join(root,'assets/neutral-art',slug+'.js'),'utf8');
-    assert(js.includes('window.LootHubNeutralArt['+JSON.stringify(slug)+']'));
-    const matches=js.match(/"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"/);
-    assert(matches,'Missing WebP sizes for '+slug);
-    for(const encoded of matches.slice(1)){
-      const buf=Buffer.from(encoded,'base64');
-      assert.equal(buf.toString('ascii',0,4),'RIFF');
-      assert.equal(buf.toString('ascii',8,12),'WEBP');
-    }
-  }
-});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
   assert.equal(g.persisted().coins,0);
-  assert.equal(g.persisted().version,3);
+  assert.equal(g.persisted().version,4);
   assert.equal(typeof g.persisted().revision,'string');
 });
 test('Legacy alpha progress migrates without losing items or cash',()=>{
@@ -351,7 +209,7 @@ test('Legacy alpha progress migrates without losing items or cash',()=>{
   assert.equal(g.state().coins,45);
   assert.equal(g.state().items[0].id,'old-case');
   assert.equal(g.state().history[0],'previous transaction');
-  assert.equal(g.persisted().version,3);
+  assert.equal(g.persisted().version,4);
   assert.deepEqual(JSON.parse(JSON.stringify(g.persisted().listings)),[]);
 });
 test('Earn, buy, open once, and keep the reward across reload',()=>{
@@ -363,7 +221,7 @@ test('Earn, buy, open once, and keep the reward across reload',()=>{
   g.run('openCase(s.items[0].id)');
   const opened=g.state();
   assert.equal(opened.items.length,1);
-  assert.equal(opened.items[0].kind,'skin');
+  assert.equal(opened.items[0].kind,'weapon');
   assert.equal(opened.openings,1);
   assert.equal(opened.pendingReveal,opened.items[0].id);
   const reloaded=boot(g.store);
