@@ -163,6 +163,10 @@ function safeUpload(data) {
   if(data.market!=null){
     if(!window.LootHubMarketCore.validMarketState(data.market)||
        !window.LootHubEconomy.validHistory(data.market.priceHistory))return false;
+    const report=data.market.lastOfflineReport;
+    if(report!=null&&(!report||typeof report!=='object'||!Number.isFinite(report.at)||
+      !['elapsedMinutes','processedMinutes','playerSales','npcSales','expired','restocked','newOffers']
+        .every(k=>Number.isSafeInteger(report[k])&&report[k]>=0&&report[k]<=100000000)))return false;
     if(data.market.npcListings.length>100||data.market.negotiations.length>1000||
        data.market.traders.length>100)return false;
     const traderIds=new Set();
@@ -260,14 +264,18 @@ function saveHub(){
 }
 function listingChance(ratio){return window.LootHubMarketSimulation.listingChance(ratio)}
 function marketTick(){
-  if(!isSaveCurrent()||!s||!Array.isArray(s.listings))return;
-  const result=window.LootHubMarketSimulation.advanceListings(s,Date.now(),Math.random);
-  for(const sale of result.sales){
+  if(!isSaveCurrent()||!s||!Array.isArray(s.listings))return null;
+  const result=window.LootHubOffline.advance(s,dropCatalog,Date.now(),Math.random);
+  for(const sale of result.playerSales){
     recordActivity(s,'Marketplace sale: '+itemName(sale.item)+' for '+sale.net+
       ' coins ('+sale.fee+' fee)');
   }
-  if(window.LootHubHaggling.resolveUnavailable(s,Date.now()))save();
-  else if(result.changed)save();
+  if(result.npcSales>0){
+    recordActivity(s,result.npcSales+' NPC-to-NPC marketplace trade'+
+      (result.npcSales===1?'':'s')+' completed');
+  }
+  if(result.changed)save();
+  return result;
 }
 function marketAction(name,id){return name+'('+escapeHTML(JSON.stringify(String(id)))+')'}
 function listingItemName(item){
@@ -599,12 +607,6 @@ function marketPulse(){
     '<p class="muted tiny">At most six completed trades per collectible per day affect prices. Refreshing the page cannot move the index.</p></section>';
 }
 function enhancedMarket(){
-  if(isSaveCurrent()){
-    window.LootHubTraders.ensure(s);
-    window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
-    for(const l of s.listings.slice(0,100))window.LootHubHaggling.begin(s,'sell',l.id);
-    window.LootHubHaggling.resolveUnavailable(s,Date.now());
-  }
   const listingItems=(s.listings||[]).map(l=>{
     const offer=window.LootHubHaggling.get(s,'sell',l.id);
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
@@ -639,7 +641,18 @@ function enhancedMarket(){
   const view=npcMarketView;
   const select=(a,b)=>a===b?' selected':'';
   const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
-  return marketPulse()+'<section class="panel npc-market-section">'+
+  const offline=s.market.lastOfflineReport;
+  const offlineText=offline&&typeof offline==='object'&&Number.isFinite(offline.at)?
+    '<section class="panel offline-report"><div class="section-eyebrow">WHILE YOU WERE AWAY</div>'+
+    '<h3>Market activity</h3><p class="muted tiny">Last processed '+new Date(offline.at).toLocaleString()+
+    ' · '+offline.processedMinutes+' of '+offline.elapsedMinutes+' elapsed minutes simulated</p>'+
+    '<div class="offline-figures">'+
+    [['Your sales',offline.playerSales],['NPC trades',offline.npcSales],
+     ['Offers received',offline.newOffers],['Expired listings',offline.expired],
+     ['New NPC listings',offline.restocked]].map(([label,n])=>
+      '<div class="stat"><span>'+label+'</span><b>'+n+'</b></div>').join('')+'</div>'+
+    '<p class="muted tiny">Offline catch-up is capped at 8 hours per return. Skipped time cannot be replayed by refreshing.</p></section>':'';
+  return offlineText+marketPulse()+'<section class="panel npc-market-section">'+
     '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
     '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
       count+' listings</span></div>'+
