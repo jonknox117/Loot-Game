@@ -285,6 +285,37 @@ const fs = require('fs');
     assert(buyerBefore&&buyerAfter&&buyerAfter.wallet===buyerBefore.wallet-incoming.npcOffer,
       'Buyer budget must be debited exactly once when the deal completes');
     assert(errors.length===0,'Browser errors during haggling: '+errors.join('; '));
+    // 0.4.6: reopening after long inactivity processes only bounded elapsed time.
+    const balanceBeforeOffline=postSale.coins;
+    await page.evaluate(()=>{
+      s.market.lastSimulatedAt=Date.now()-20*3600000;
+      save();
+    });
+    await page.reload({waitUntil:'load'});
+    const afterOffline=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    const report=afterOffline.market.lastOfflineReport;
+    assert(report&&report.processedMinutes===480,'Catch-up must simulate only eight hours');
+    assert(report.elapsedMinutes>=1199,'Long offline interval should be recognized');
+    assert(afterOffline.coins===balanceBeforeOffline,'NPC-only offline activity must not mint player coins');
+    assert(await page.locator('.offline-report').count()===1,'Offline market activity report must be visible');
+    const afterOfflineCopy=JSON.stringify(afterOffline.market.priceHistory);
+    await page.reload({waitUntil:'load'});
+    const reopened=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(JSON.stringify(reopened.market.priceHistory)===afterOfflineCopy,
+      'Reloading immediately cannot replay historical NPC trades');
+    const removed=await page.evaluate(()=>{
+      const id=s.market.npcListings[0].id;
+      s.market.npcListings[0].expiresAt=Date.now()-1;
+      s.market.lastNpcRefreshAt=Date.now()-3600000;
+      save();
+      return id;
+    });
+    await page.reload({waitUntil:'load'});
+    const refreshed=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(!refreshed.market.npcListings.some(x=>x.id===removed),'Expired NPC listing must disappear');
+    assert(refreshed.market.npcListings.length===15,'Expired NPC stock should restock without duplicate IDs');
+    assert(refreshed.market.lastOfflineReport.expired>=1,'Expiration must be included in report');
+    assert(errors.length===0,'Browser errors after simulated offline return: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
