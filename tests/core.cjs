@@ -241,6 +241,40 @@ test('M4A4 Voltage Bloom pilot preserves actual model and finish across all imag
   assert.equal(recipe.finish,'Voltage Bloom');
   assert.equal(recipe.approved,false);
 });
+test('Karambit Golden Talon uses same original raster artwork through reel, card and inspect',()=>{
+  const g=boot();
+  const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const entry=catalog.items.find(x=>x.id==='karambit--golden-talon');
+  assert(entry && entry.weapon==='Karambit' && entry.finish==='Golden Talon');
+  assert.equal(entry.rarity,'Legendary');
+  assert.equal(entry.tier,4);
+  assert.equal(entry.pilot,true);
+  assert.equal(entry.approved,false,'Generated-source pilot must not be marked approved');
+  assert.equal(entry.renderMode,'static-2d-webp');
+  assert.equal(entry.provenance,'assets/source/karambit/provenance.json');
+  const item={kind:'skin',weapon:'Karambit',skin:'Golden Talon',tier:4};
+  const production=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/karambit--golden-talon.json'),'utf8'));
+  assert.equal(production.assetFilesPresent,true);
+  assert.equal(production.artworkApproved,false);
+  assert.equal(production.orientation,'blade-hook-right, finger-ring-left');
+  const prov=JSON.parse(fs.readFileSync(path.join(root,'assets/source/karambit/provenance.json'),'utf8'));
+  assert.equal(prov.artworkGuarantees.alphaIdentityAtAllThreeSizes,true);
+  assert.equal(prov.native1600SourceDetail,false);
+  assert(fs.existsSync(path.join(root,'scripts/build_karambit_2d.py')),'Production source missing');
+  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+    const actual=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
+    assert(actual.includes('karambit--golden-talon-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
+    assert(actual.includes('data-weapon-model="Karambit"'),'Incorrect Golden Talon weapon identity');
+    assert(actual.includes('data-finish="Golden Talon"'),'Incorrect Golden Talon finish identity');
+    assert(actual.includes('class="raster-fallback"'),'Karambit fallback SVG missing');
+    for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--golden-talon']]){
+      const bytes=fs.readFileSync(path.join(root,'assets/renders',part,filename+'-'+size+'.webp'));
+      assert.equal(bytes.toString('ascii',0,4),'RIFF','Missing or corrupt WebP data');
+      assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid image format');
+      assert(bytes.length>10000,'Truncated or placeholder Golden Talon '+size+' bitmap');
+    }
+  }
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
