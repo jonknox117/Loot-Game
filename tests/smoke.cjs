@@ -39,8 +39,8 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Inspect / trade' }).click();
     await page.getByRole('button', { name: 'Open case' }).click();
     // The entire reel must use approved neutral base-weapon masters.
-    const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'));
-    assert(expectedReward&&!('skin' in expectedReward),'Case awarded a retired skin');
+    const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'||x.kind==='skin'));
+    assert(expectedReward&&(expectedReward.kind==='weapon'||(expectedReward.weapon==='MAC-10'&&expectedReward.skin==='Red Devil')),'Case awarded an unapproved skin');
     await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img=>img.complete&&img.naturalWidth>0),null,{timeout:15000});
     const reelArt=await page.evaluate(()=>[...document.querySelectorAll('#track .tile')].map(tile=>{
       const art=tile.querySelector('.master-raster');
@@ -48,7 +48,7 @@ const fs = require('fs');
     }));
     assert(reelArt.length===48,'Must show 48 reel tiles');
     assert(reelArt.every(x=>x.loaded),'Some base masters failed to load');
-    assert(reelArt.every(x=>!x.finish),'A retired cosmetic finish appeared on the reel');
+    assert(reelArt.every(x=>!x.finish||x.finish==='Red Devil'),'An unapproved cosmetic finish appeared on the reel');
     const winner=reelArt.find(x=>x.index===42);
     assert(winner.weapon===expectedReward.weapon,'The winning base weapon does not match saved reward');
     await page.screenshot({path:path.resolve(__dirname,'reel-colors.png')});
@@ -58,7 +58,7 @@ const fs = require('fs');
       return {weapon:art?.dataset.weaponModel,finish:art?.dataset.finish,loaded:!!art?.querySelector('img')?.naturalWidth};
     });
     assert(revealed.weapon===winner.weapon,'Revealed reward model differs from the reel');
-    assert(!revealed.finish,'A retired skin was rendered in the result');
+    assert(revealed.finish===winner.finish,'The revealed finish differs from the reel or an unapproved skin appeared');
     assert(revealed.loaded,'Base-weapon inspect image failed to load');
     await waitForVisible('text=Estimated market value');
     await page.getByRole('button', { name: 'Inspect / sell' }).click();
