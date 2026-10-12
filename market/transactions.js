@@ -126,7 +126,7 @@ function settleListing(game,listingId,negotiatedPrice){
   const negotiated=negotiatedPrice===undefined?null:
     root.LootHubHaggling.get(game,'sell',listing.id);
   if(negotiated&&negotiated.traderId&&
-    !root.LootHubTraders.canFund(game,negotiated.traderId,price))return null;
+    !root.LootHubTraders.canSettleOffer(game,negotiated,price))return null;
   const net=core.netProceeds(price);
   if(!Number.isSafeInteger(game.coins+net)||
      !Number.isSafeInteger(game.sales+net)||
