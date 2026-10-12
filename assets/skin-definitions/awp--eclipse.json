@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "awp--eclipse",
+  "baseModel": "awp",
+  "weapon": "AWP",
+  "finish": "Eclipse",
+  "rarity": "Super Rare",
+  "tier": 3,
+  "finishVersion": "033D-pilot-1",
+  "neutralSource": "assets/renders/masters/awp-neutral-1600.webp",
+  "exports": {
+    "reel": "assets/renders/finishes/awp--eclipse-400.webp",
+    "inventory": "assets/renders/finishes/awp--eclipse-800.webp",
+    "inspect": "assets/renders/finishes/awp--eclipse-1600.webp"
+  },
+  "palette": [
+    "#161920",
+    "#c18a39",
+    "#f5d69b"
+  ],
+  "method": "deterministic masked surface pigment and engraved pattern on source AWP silhouette",
+  "maskRegions": [
+    "olive-chassis",
+    "paint-main",
+    "paint-secondary",
+    "scope-housing"
+  ],
+  "sourceBundleLibrary": "/LootHub/loothub-awp-master-033D.zip",
+  "sourceScript": "scripts/build_awp_2d.py",
+  "approved": false
+}
