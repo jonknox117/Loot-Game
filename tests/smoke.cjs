@@ -34,6 +34,15 @@ const fs = require('fs');
     const initialTraders=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.traders);
     assert(initialTraders.length===16&&new Set(initialTraders.map(t=>t.style)).size===6,
       'Trader identities and all six temperaments must be saved');
+    const baselineWear=await page.evaluate(()=>{
+      const game=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return {schema:game.wearSchemaVersion,items:game.market.npcListings.map(x=>({
+        kind:x.item.kind,hasGrade:Object.prototype.hasOwnProperty.call(x.item,'wearGrade'),grade:x.item.wearGrade
+      }))};
+    });
+    assert(baselineWear.schema===1,'Wear data schema must exist in saved progress');
+    assert(baselineWear.items.every(x=>x.kind==='case'?!x.hasGrade:x.grade===0),
+      'New marketplace stock should be pristine; sealed cases should remain ungraded');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
@@ -69,6 +78,8 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Inventory', exact: true }).click();
     await waitForVisible('.item');
     assert(await page.locator('.item').count() === 1, 'Purchase must create one owned sealed case');
+    const sealed=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items[0]);
+    assert(!Object.prototype.hasOwnProperty.call(sealed,'wearGrade'),'Sealed case must not have a wear grade');
 
     await page.reload({ waitUntil: 'load' });
     assert(await page.locator('.item').count() === 1, 'Case ownership must survive page reload');
@@ -78,6 +89,7 @@ const fs = require('fs');
     // The entire reel must use approved neutral base-weapon masters.
     const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'||x.kind==='skin'));
     assert(expectedReward&&(expectedReward.kind==='weapon'||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish'].includes(expectedReward.skin)),'Case awarded an unapproved skin');
+    assert(expectedReward.wearGrade===0,'Fresh reward must have persistent pristine metadata');
     await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img=>img.complete&&img.naturalWidth>0),null,{timeout:15000});
     const reelArt=await page.evaluate(()=>[...document.querySelectorAll('#track .tile')].map(tile=>{
       const art=tile.querySelector('.master-raster');
@@ -110,6 +122,8 @@ const fs = require('fs');
     const after = Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, ''));
     assert(after === cash, 'Wallet must persist after reload');
     assert(await page.locator('.item').count() === 0, 'Sold item must not reappear after reload');
+    assert((await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).wearSchemaVersion))===1,
+      'Condition foundation must persist on reload');
     assert(errors.length === 0, 'Browser console errors: ' + errors.join('; '));
 
 
