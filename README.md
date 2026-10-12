@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Full Wear Visuals 0.5.4)
+# LootHub — Curated Arsenal (Complete Material Maps 0.5.5a)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -141,6 +141,19 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
+
+## Wear overhaul 0.5.5a — Complete silhouette and material maps
+
+All 24 base masters now have two **generated, source-aligned 1600×800 PNG maps** in `assets/skin-lines/materials/`:
+
+- `<model>--silhouette-1600.png` is the complete alpha of the approved source master, including anti-aliased edges.
+- `<model>--material-1600.png` has the **identical alpha** and assigns every visible pixel **exactly one** RGB material label: red = METAL, green = WOOD, blue = OTHER (polymer, rubber, glass, fabric, mixed/uncertain). There are no unlabeled or multiply labeled visible pixels.
+
+Profiles for all 24 masters contain conservative normalized metal, wood, and polymer/other zones in `paint-profiles.json`. The generator (`scripts/build_material_maps.py`) uses the original full-resolution alpha, applies the explicit region priorities and makes the entire remainder safe **OTHER**. These are *initial machine-assisted drafts*, not visually approved per-pixel material annotations; `reviewed:false` remains until the relevant maps are reviewed and corrected. Wood, polymer and unknown are not rust-eligible. The previous paint-main PNG is still for finish/skin eligibility, never proof that a surface is metal.
+
+The browser API (`market/wear-materials.js`) loads the real material map on demand with a small cache. The app exposes its path on weapon art. This patch creates/verifies maps and the material API **without changing the existing visual wear renderer or releasing any skin line**. The next renderer patch must use these material channels to limit metal-only rust; existing wear visuals remain unchanged for now.
+
+To generate and validate: `python scripts/build_material_maps.py` then `python scripts/build_material_maps.py --check`. Weapon art, inventories, odds, values, condition grades and approved custom skins are unchanged.
 
 ## Wear overhaul 0.5.4 — Wear everywhere
 
