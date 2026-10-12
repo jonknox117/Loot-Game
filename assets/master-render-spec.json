@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "stage": "Glock, AK and AWP quality pilots plus provisional M4A4 raster delivered; Karambit remains a pending isolated master.",
+  "stage": "Five anchor weapon masters have at least one live raster finish. M4A4 and Karambit remain provisional native-detail sources; final user visual approval pending. Other 12 finishes remain vector.",
   "status": "not-rendered",
   "readme": "assets/master-render-spec.md",
   "resolution": {
@@ -230,15 +230,23 @@
       "master": "assets/source/karambit/neutral-master.blend",
       "license": "assets/source/karambit/provenance.json",
       "outputs": {
-        "inspect": "assets/renders/masters/karambit-neutral-1600.webp",
+        "reel": "assets/renders/masters/karambit-neutral-400.webp",
         "inventory": "assets/renders/masters/karambit-neutral-800.webp",
-        "reel": "assets/renders/masters/karambit-neutral-400.webp"
+        "inspect": "assets/renders/masters/karambit-neutral-1600.webp"
       },
-      "assetStatus": "not-created",
+      "assetStatus": "provisional-raster-integrated",
       "approved": false,
       "designBrief": "assets/art-briefs/karambit-golden-talon.md",
       "firstFinishRecipe": "assets/skin-definitions/karambit--golden-talon.json",
-      "designStatus": "source prompt and manufacturing checklist locked; source art not yet generated"
+      "designStatus": "Artwork generated, geometry normalized, eight masks exported and WebPs shipped; still provisional, not final approved.",
+      "completedFinishes": [
+        "karambit--golden-talon"
+      ],
+      "sourceBundleLibrary": "/LootHub/loothub-karambit-master-033F.zip",
+      "sharedAlphaConfirmed": true,
+      "orientation": "hook right, ring left",
+      "productionScript": "scripts/build_karambit_2d.py",
+      "reviewStatus": "Live pilot. Native knife source approximately 960px wide from generated contact sheet. 1600px inspect is resampled. User visual and Safari QA required for final art signoff."
     }
   ]
 }
