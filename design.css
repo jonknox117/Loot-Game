@@ -446,3 +446,38 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
   .market-listing-controls .row{width:100%;display:grid;grid-template-columns:1fr 1fr}
   .market-listing-controls button{min-height:44px}
 }
+
+
+/* Patch 0.4.2 — persistent, browsable simulated NPC market */
+.npc-market-section{overflow:hidden}
+.npc-market-filters{display:grid;grid-template-columns:minmax(200px,2fr) repeat(3,minmax(125px,1fr));gap:12px;margin:18px 0 16px}
+.npc-market-filters label{display:flex;flex-direction:column;gap:7px;color:#aabbd0;font-size:12px;font-weight:650;min-width:0}
+.npc-market-filters .field{width:100%;min-height:44px;min-width:0;font-size:14px}
+.npc-market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;align-items:stretch}
+.npc-listing{display:flex;flex-direction:column;min-width:0;overflow:hidden;background:linear-gradient(160deg,#202d40,#121c2a);border:1px solid #39495e;border-radius:12px}
+.npc-listing-art{display:flex;align-items:center;justify-content:center;width:100%;min-height:125px;background:#162237;border-bottom:1px solid #304158}
+.npc-listing-art .master-raster,.npc-listing-art .weapon-master{width:100%;height:126px;border:0;border-radius:0}
+.npc-listing-body{display:flex;flex:1;flex-direction:column;gap:8px;padding:12px;min-width:0}
+.npc-listing-body .tag{align-self:flex-start}
+.npc-listing-body h4{margin:0;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.npc-listing-cost{display:flex;flex-direction:column;gap:4px;margin-top:auto}
+.npc-listing-cost b{font-size:19px;letter-spacing:.2px}
+.npc-listing-buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:5px}
+.npc-listing-buttons button{min-width:0;min-height:44px;padding:9px 6px;font-size:13px}
+@media(max-width:920px){
+  .npc-market-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .npc-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:540px){
+  .npc-market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .npc-listing-art{min-height:96px}
+  .npc-listing-art .master-raster,.npc-listing-art .weapon-master{height:100px}
+  .npc-listing-body{padding:9px;gap:6px}
+  .npc-listing-body h4{font-size:13px}
+  .npc-listing-cost b{font-size:17px}
+  .npc-listing-buttons{grid-template-columns:1fr}
+  .npc-listing-buttons button{min-height:42px}
+}
+@media(max-width:340px){
+  .npc-market-grid{grid-template-columns:1fr}
+}
