@@ -1,4 +1,4 @@
-/* LootHub 0.4.3 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.4 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -75,6 +75,7 @@ function buyNpcListing(game,listingId,negotiatedPrice){
   game.spent+=price;
   item.paid=price;
   game.items.push(item);
+  root.LootHubTraders.finishPurchase(game,listing.seller,price);
   return {item,price,seller:listing.seller,listingId};
 }
 function cancelListing(game,listingId){
@@ -96,11 +97,17 @@ function settleListing(game,listingId,negotiatedPrice){
   const price=negotiatedPrice===undefined?listing.ask:
     permittedPrice(game,'sell',listing,negotiatedPrice);
   if(!core.validAsk(price))return null;
+  const negotiated=negotiatedPrice===undefined?null:
+    root.LootHubHaggling.get(game,'sell',listing.id);
+  if(negotiated&&negotiated.traderId&&
+    !root.LootHubTraders.canFund(game,negotiated.traderId,price))return null;
   const net=core.netProceeds(price);
   game.listings.splice(index,1);
   game.coins+=net;
   game.sales+=net;
   game.rep+=1;
+  if(negotiated&&negotiated.traderId)
+    root.LootHubTraders.finishSale(game,negotiated.traderId,price);
   return {item:listing.item,ask:price,net,fee:price-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
