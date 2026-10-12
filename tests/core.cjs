@@ -69,7 +69,7 @@ test('All Arsenal models have distinct, accessible vector artwork',()=>{
   const uniqueShapes=new Set();
   for(const [weapon,skin,tier] of catalog){
     const data={kind:'skin',weapon,skin,tier};
-    const html=g.run('visualArt('+JSON.stringify(data)+')');
+    const html=g.run('window.ArsenalMasters.render('+JSON.stringify(data)+')');
     assert(html.includes('class="arsenal-master"')||html.includes('class="arsenal-master" role='),'Missing SVG master '+weapon);
     assert(html.includes('viewBox="0 0 640 270"'),'Unexpected artwork scale '+weapon);
     assert(html.includes('data-weapon-model="'+weapon+'"'),'Incorrect weapon asset '+weapon);
@@ -122,12 +122,36 @@ test('Opening winner reel tile uses the identical saved item as final reward',()
   assert(tile42,'Winning tile missing from reel');
   assert(tile42.includes('data-weapon-model="'+won.weapon+'"'),'Winning weapon model mismatch');
   assert(tile42.includes('data-finish="'+won.skin+'"'),'Winning skin finish mismatch');
-  assert(tile42.includes('viewBox="0 0 640 270"'),'Winning tile must use final weapon master renderer');
+  const pilot=(won.weapon==='Glock-18'&&won.skin==='Slate Grid');
+  if(pilot){
+    assert(tile42.includes('glock-18--slate-grid-400.webp'),'Winning reel should show actual 400px bitmap');
+  }else{
+    assert(tile42.includes('viewBox="0 0 640 270"'),'Winning tile must use vector master renderer');
+  }
   g.run('finishOpening()');
   const reveal=g.byId('overlay').innerHTML;
   assert(reveal.includes('data-weapon-model="'+won.weapon+'"'),'Final reward changed model');
   assert(reveal.includes('data-finish="'+won.skin+'"'),'Final reward changed finish');
+  if(pilot)assert(reveal.includes('glock-18--slate-grid-1600.webp'),'Inspect image should use actual 1600px bitmap');
   assert.equal(g.state().items[0].id,won.id,'Winning item identity must remain unchanged');
+});
+test('Glock-18 Slate Grid pilot chooses correct 2D image size and retains SVG fallback',()=>{
+  const g=boot();
+  const model={kind:'skin',weapon:'Glock-18',skin:'Slate Grid',tier:0};
+  for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+    const html=g.run('visualArt('+JSON.stringify(model)+','+JSON.stringify(context)+')');
+    assert(html.includes('glock-18--slate-grid-'+size+'.webp'),'Wrong image for '+context);
+    assert(html.includes('class="art weapon-art master-raster"'),'Raster wrapper missing');
+    assert(html.includes('class="raster-fallback"'),'SVG fallback missing');
+    assert(html.includes('class="arsenal-master"'),'Fallback must use accurate existing model');
+  }
+  const files=['400','800','1600'].map(n=>path.join(root,'assets','renders','finishes','glock-18--slate-grid-'+n+'.webp'));
+  for(const name of files){
+    const bytes=fs.readFileSync(name);
+    assert.equal(bytes.toString('ascii',0,4),'RIFF','Invalid WebP RIFF signature: '+name);
+    assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid WebP format: '+name);
+    assert(bytes.length>10000,'Unusually tiny/truncated artwork: '+name);
+  }
 });
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
