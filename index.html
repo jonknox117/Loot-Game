@@ -143,7 +143,7 @@ function universalCases(){
       escapeHTML(line.description)+'</p><p class="muted tiny">'+lineCatalogs[line.id].length+
       ' weapon variants · '+line.casePrice+' coins</p><button onclick="previewSkinLine(\''+
       line.id+'\')">View collection</button><button class="primary" onclick="buySkinLineCase(\''+
-      line.id+'\')">Purchase case</button></div>';
+      line.id+'\')">Buy '+escapeHTML(line.name)+' Case</button></div>';
   }).join('');
   return cases()+'<section class="panel"><h2>Universal skin-line cases</h2>'+
     '<p class="muted">Each case contains only its own skin line; standard rarity odds and persistent condition grades still apply.</p>'+
