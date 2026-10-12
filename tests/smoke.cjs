@@ -25,7 +25,7 @@ const fs = require('fs');
 
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
     await page.getByRole('button', { name: 'Purchase case' }).click();
-    await waitForVisible('text=Sealed Arsenal Case');
+    await page.getByRole('heading', { name: 'Sealed Arsenal Case', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
     assert((await page.locator('#wallet').textContent()).includes('0'), 'Case purchase must debit wallet');
 
     await page.getByRole('button', { name: 'Keep item' }).click();
@@ -88,6 +88,8 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'List for sale' }).click();
     assert(await page.getByText('My Market Listings').count() === 1, 'Listing must show in marketplace');
     assert((await page.locator('.listing-line').count())===1,'Listed case must be escrowed');
+    const marketFoundation=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market);
+    assert(marketFoundation?.schemaVersion===1&&Array.isArray(marketFoundation.npcListings),'Marketplace schema missing from saved game');
     await page.reload({ waitUntil: 'load' });
     await waitForVisible('.listing-line');
     assert(await page.locator('.listing-line').count()===1, 'Listings survive reload');

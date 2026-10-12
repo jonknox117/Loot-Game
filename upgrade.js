@@ -1,5 +1,6 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
+function ensureMarketData(data){return window.LootHubMarketCore.ensureMarketState(data)}
 let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null, lastPersistedSnapshot=null, saveRevisionSequence=0;
 function isSaveCurrent(){
   if(saveConflict||recoveryRequired||saveFailure)return false;
@@ -82,7 +83,9 @@ function loadGame(key) {
   lastPersistedRevision=typeof data.revision==='string'?data.revision:null;
   lastPersistedSnapshot=raw;
   // Do not write automatically; the next valid save handles migration and backup.
-  return migrateLegacyFinishData(data);
+  const migrated=migrateLegacyFinishData(data);
+  ensureMarketData(migrated);
+  return migrated;
 }
 function updateSaveIndicator(){
   const node=document.getElementById('saveStatus');
@@ -151,6 +154,7 @@ function safeUpload(data) {
        !Number.isFinite(item.float)||item.float<0||item.float>1||
        !Number.isFinite(item.pattern)||item.pattern<0))return false;
   }
+  if(data.market!=null&&!window.LootHubMarketCore.validMarketState(data.market))return false;
   return true;
 }
 function exportProgress() {
@@ -201,41 +205,17 @@ function saveHub(){
   '<label class="file-picker">Import saved progress (JSON)<input type="file" id="saveUpload" accept=".json,application/json" onchange="importProgress(this)"></label>'+
   '<p class="muted tiny">Important: this is local browser storage, not account/cloud synchronization. Clearing site data or switching phones can remove this save unless you exported and imported it. Do not use Private Browsing for long-term progress.</p></section>';
 }
-function listingChance(ratio) {
-  if(ratio<=.85)return .65;
-  if(ratio<=1)return .38;
-  if(ratio<=1.12)return .2;
-  if(ratio<=1.3)return .08;
-  if(ratio<=1.6)return .015;
-  return 0;
-}
-function marketTick() {
-  if(!isSaveCurrent()||!s || !Array.isArray(s.listings))return;
-  const now=Date.now();
-  let changed=false;
-  for(const listing of [...s.listings]) {
-    if(!listing||!listing.item)continue;
-    const start=Number.isFinite(listing.checkedAt)?listing.checkedAt:(listing.createdAt||now);
-    const intervals=Math.min(120,Math.floor(Math.max(0,now-start)/60000));
-    if(!intervals)continue;
-    listing.checkedAt=start+intervals*60000;
-    changed=true;
-    const ratio=listing.ask/Math.max(1,estimated(listing.item));
-    const chance=listingChance(ratio);
-    let sold=false;
-    for(let n=0;n<intervals;n++)if(Math.random()<chance){sold=true;break}
-    if(sold){
-      const net=Math.max(1,Math.floor(listing.ask*.95));
-      s.listings=s.listings.filter(v=>v.id!==listing.id);
-      s.coins+=net;
-      s.sales+=net;
-      s.rep+=1;
-      recordActivity(s,'Marketplace sale: '+itemName(listing.item)+' for '+net+' coins ('+(listing.ask-net)+' fee)');
-    }
+function listingChance(ratio){return window.LootHubMarketSimulation.listingChance(ratio)}
+function marketTick(){
+  if(!isSaveCurrent()||!s||!Array.isArray(s.listings))return;
+  const result=window.LootHubMarketSimulation.advanceListings(s,Date.now(),Math.random);
+  for(const sale of result.sales){
+    recordActivity(s,'Marketplace sale: '+itemName(sale.item)+' for '+sale.net+
+      ' coins ('+sale.fee+' fee)');
   }
-  if(changed)save();
+  if(result.changed)save();
 }
-function submitListing(k) {
+function submitListing(k){
   if(!canMutate())return;
   const item=s.items.find(v=>v.id===k),input=document.getElementById('listPrice');
   if(!item||!input)return;
@@ -243,9 +223,8 @@ function submitListing(k) {
   if(!Number.isSafeInteger(ask)||ask<1||ask>100000000){
     alert('Enter a whole-coin asking price between 1 and 100,000,000.');return;
   }
-  if(!Array.isArray(s.listings))s.listings=[];
-  s.items=s.items.filter(v=>v.id!==k);
-  s.listings.push({id:'listing-'+k,item,ask,createdAt:Date.now(),checkedAt:Date.now()});
+  const listing=window.LootHubMarketTransactions.createListing(s,k,ask,Date.now());
+  if(!listing)return;
   recordActivity(s,'Listed '+itemName(item)+' for '+ask+' coins');
   save();
   closeDialog();
@@ -262,12 +241,10 @@ function listItem(k) {
   '<p class="muted tiny">Higher asking prices usually take longer and may never sell.</p>'+
   '<div class="row"><button class="primary" onclick="submitListing(\''+escapeHTML(k)+'\')">List for sale</button><button onclick="inspect(\''+escapeHTML(k)+'\')">Back</button></div>');
 }
-function cancelListing(k) {
+function cancelListing(k){
   if(!canMutate())return;
-  const listing=(s.listings||[]).find(v=>v.id===k);
+  const listing=window.LootHubMarketTransactions.cancelListing(s,k);
   if(!listing)return;
-  s.listings=s.listings.filter(v=>v.id!==k);
-  s.items.push(listing.item);
   recordActivity(s,'Cancelled listing: '+itemName(listing.item));
   save();render();
 }

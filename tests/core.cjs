@@ -7,11 +7,13 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
+const marketModules=['core','transactions','simulation'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['core','transactions','simulation'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
-const script=masters+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -284,6 +286,52 @@ test('A stale second tab cannot overwrite newer wallet changes',()=>{
   assert.equal(first.state().coins,0);
   assert.equal(first.run('saveConflict'),true);
   assert(first.alerts.length>=1);
+});
+test('Marketplace state migration preserves legacy listing, offers and item identities',()=>{
+  const store=new LocalStore();
+  const now=Date.now();
+  const old={coins:79,items:[{id:'owned-case',kind:'case',paid:25}],
+    listings:[{id:'listing-other',item:{id:'other',kind:'case',paid:25},ask:30,createdAt:now,checkedAt:now}],
+    history:[],earned:79,spent:25,sales:0,rep:0,openings:0,serial:2,
+    offers:{'sale-owned-case':{limit:24,attempts:1}},tab:'Market'};
+  store.setItem(KEY,JSON.stringify(old));
+  const g=boot(store),state=g.state();
+  assert.equal(state.market.schemaVersion,1);
+  assert.deepEqual(state.market.npcListings,[]);
+  assert.equal(state.items[0].id,'owned-case');
+  assert.equal(state.listings[0].item.id,'other');
+  assert.equal(state.listings[0].ask,30);
+  assert.equal(state.offers['sale-owned-case'].attempts,1);
+  assert.equal(state.coins,79);
+  assert(g.run('save()'));
+  assert.equal(boot(store).state().market.schemaVersion,1);
+  assert.equal(boot(store).state().listings[0].item.id,'other');
+});
+test('Market modules retain base weapon valuation and old sale odds',()=>{
+  const g=boot();
+  assert.equal(g.run("estimated({kind:'case'})"),25);
+  assert.equal(g.run("estimated({kind:'weapon',base:135})"),135);
+  assert.equal(g.run("estimated({kind:'skin',base:80})"),80);
+  assert.equal(g.run('listingChance(.84)'),.65);
+  assert.equal(g.run('listingChance(1.2)'),.08);
+  assert.equal(g.run('listingChance(1.7)'),0);
+});
+test('Market transaction helper rejects a duplicate escrow settlement',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  const id=g.state().items[0].id;
+  g.byId('listPrice').value='30';
+  g.run('submitListing(s.items[0].id)');
+  assert.equal(g.state().items.length,0);
+  assert.equal(g.state().listings.length,1);
+  const listingId='listing-'+id;
+  assert.equal(g.run("window.LootHubMarketTransactions.createListing(s,"+JSON.stringify(id)+",30,Date.now())"),null);
+  g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+")");
+  assert.equal(g.state().coins,28);
+  assert.equal(g.state().sales,28);
+  assert.equal(g.state().listings.length,0);
+  assert.equal(g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+")"),null);
+  assert.equal(g.state().coins,28);
 });
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
