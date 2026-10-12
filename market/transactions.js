@@ -1,4 +1,4 @@
-/* LootHub 0.4.5 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.6 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -79,6 +79,26 @@ function buyNpcListing(game,listingId,negotiatedPrice){
   root.LootHubEconomy.recordTrade(game,item,price,'buy');
   return {item,price,seller:listing.seller,listingId};
 }
+function settleNpcTrade(game,listingId,buyerId,now){
+  if(!game||!game.market||!Array.isArray(game.market.npcListings)||
+    !Number.isFinite(now)||typeof buyerId!=='string')return null;
+  const offers=game.market.npcListings;
+  const idx=offers.findIndex(x=>x&&x.id===listingId);
+  if(idx<0)return null;
+  const listing=offers[idx],price=listing.ask;
+  if(!core.validAsk(price)||!core.eligible(listing.item)||
+    !(listing.expiresAt>now)||!root.LootHubTraders.canFund(game,buyerId,price)||
+    buyerId===listing.seller||!root.LootHubTraders.get(game,buyerId)||
+    root.LootHubTraders.get(game,buyerId).role!=='buyer'||
+    game.market.negotiations.some(n=>n&&n.kind==='buy'&&n.listingId===listingId&&
+      n.status==='agreed'))return null;
+  // Atomic between the NPC wallets and listed escrow. No player wallet transfer.
+  if(!root.LootHubTraders.finishSale(game,buyerId,price))return null;
+  offers.splice(idx,1);
+  root.LootHubTraders.finishPurchase(game,listing.seller,price);
+  root.LootHubEconomy.recordTrade(game,listing.item,price,'buy',now);
+  return {item:listing.item,price,buyer:buyerId,seller:listing.seller,listingId};
+}
 function cancelListing(game,listingId){
   if(!Array.isArray(game.listings)||!Array.isArray(game.items))return null;
   const index=game.listings.findIndex(x=>x.id===listingId);
@@ -113,6 +133,6 @@ function settleListing(game,listingId,negotiatedPrice){
   return {item:listing.item,ask:price,net,fee:price-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
-  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing,buyNpcListing
+  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing,buyNpcListing,settleNpcTrade
 });
 })(window);
