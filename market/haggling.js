@@ -14,7 +14,9 @@ function locate(game,kind,listingId){
   return Array.isArray(arr)?arr.find(x=>x&&x.id===listingId):null;
 }
 function get(game,kind,listingId){
-  return game.market.negotiations.find(x=>x&&x.id===kind+':'+listingId)||null;
+  const listing=locate(game,kind,listingId);
+  const id=kind+':'+listingId+(kind==='sell'&&listing?':'+listing.createdAt:'');
+  return game.market.negotiations.find(x=>x&&x.id===id)||null;
 }
 function begin(game,kind,listingId,now=Date.now()){
   if(!game||!game.market||!Array.isArray(game.market.negotiations)||!Number.isFinite(now))return null;
@@ -28,7 +30,8 @@ function begin(game,kind,listingId,now=Date.now()){
     Math.max(1,Math.round(listing.ask*(.85+ratio*.20))):
     Math.max(1,Math.min(listing.ask,Math.round(listing.ask*(.79+ratio*.14))));
   const npcOffer=buyer?Math.max(1,Math.min(threshold,Math.round(listing.ask*(.69+ratio*.15)))):listing.ask;
-  const deal={id:kind+':'+listing.id,kind,listingId:listing.id,itemId:listing.item.id,
+  const deal={id:kind+':'+listing.id+(kind==='sell'?':'+listing.createdAt:''),kind,listingId:listing.id,itemId:listing.item.id,
+    listingCreatedAt:listing.createdAt,
     initialAsk:listing.ask,threshold,npcOffer,rounds:0,status:'open',agreedPrice:null,
     seller:buyer?'Interested Collector':listing.seller,createdAt:now,updatedAt:now,
     history:[{by:'npc',amount:npcOffer,at:now}]};
@@ -38,7 +41,7 @@ function begin(game,kind,listingId,now=Date.now()){
 function stillAvailable(game,deal){
   const listing=locate(game,deal.kind,deal.listingId);
   return listing&&listing.item&&listing.item.id===deal.itemId&&
-    listing.ask===deal.initialAsk;
+    listing.ask===deal.initialAsk&&listing.createdAt===deal.listingCreatedAt;
 }
 function submit(game,kind,listingId,amount,now=Date.now()){
   const n=get(game,kind,listingId);
@@ -94,9 +97,12 @@ function resolveUnavailable(game,now=Date.now()){
   return count;
 }
 function closeForListing(game,kind,listingId,now=Date.now()){
-  const n=get(game,kind,listingId);
-  if(n&&(n.status==='open'||n.status==='agreed')){
-    n.status='unavailable';n.updatedAt=now;
+  if(!game||!game.market||!Array.isArray(game.market.negotiations))return;
+  for(const n of game.market.negotiations){
+    if(n&&n.kind===kind&&n.listingId===listingId&&
+      (n.status==='open'||n.status==='agreed')){
+      n.status='unavailable';n.updatedAt=now;
+    }
   }
 }
 root.LootHubHaggling=Object.freeze({
