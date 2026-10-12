@@ -275,6 +275,31 @@ test("Karambit Raptor's Gaze uses same neutral geometry across contexts",()=>{
     }
   }
 });
+test('Golden Talon legacy inventory and marketplace items retain their attributes after rename',()=>{
+  const storage=new LocalStore();
+  const owned={id:'legacy-owned',kind:'skin',weapon:'Karambit',skin:'Golden Talon',tier:4,base:1900,float:0.121234,pattern:777,stattrak:true,paid:25};
+  const listed={...owned,id:'legacy-listed',pattern:44,stattrak:false};
+  const old={coins:463,items:[owned],listings:[{id:'listing-legacy',item:listed,price:2575,ask:2575,createdAt:Date.now(),checkedAt:Date.now()}],
+    history:[],earned:463,spent:0,sales:0,rep:0,openings:2,serial:8,offers:{},ledger:[],tab:'Inventory',lastMarketCheck:Date.now()};
+  storage.setItem(KEY,JSON.stringify(old));
+  const g=boot(storage);
+  assert.equal(g.run('safeUpload('+JSON.stringify(old)+')'),true,'Old save exports should remain importable');
+  const state=g.state();
+  assert.equal(state.items[0].skin,"Raptor's Gaze");
+  assert.equal(state.listings[0].item.skin,"Raptor's Gaze");
+  assert.equal(state.items[0].id,'legacy-owned');
+  assert.equal(state.listings[0].item.id,'legacy-listed');
+  assert.equal(state.items[0].float,0.121234);
+  assert.equal(state.items[0].pattern,777);
+  assert.equal(state.coins,463);
+  assert.equal(state.listings[0].price,2575);
+  assert.equal(g.run('itemName(s.items[0])'),"Karambit | Raptor's Gaze");
+  assert(g.run('save()'),'Normal save should preserve valid migrated items');
+  const saved=g.persisted();
+  assert.equal(saved.items[0].skin,"Raptor's Gaze");
+  assert.equal(saved.listings[0].item.skin,"Raptor's Gaze");
+  assert.equal(saved.coins,463);
+});
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
   assert.equal(g.state().coins,0);
