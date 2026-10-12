@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "id": "karambit--golden-talon",
+  "model": "Karambit",
+  "baseModel": "karambit",
+  "finish": {
+    "signature": "sculpted eagle brow ridge with small recessed dark eye at the blade-to-hilt junction",
+    "brow": {
+      "position": "blade heel immediately forward of pivot",
+      "type": "metallic embossed relief under existing outer contour",
+      "lengthBladeFraction": [
+        0.1,
+        0.18
+      ],
+      "noNewSilhouette": true
+    },
+    "eye": {
+      "position": "immediately beneath brow, facing hook direction",
+      "material": "smoky obsidian or black enamel inset",
+      "totalKnifeWidthFraction": [
+        0.02,
+        0.03
+      ],
+      "oversized": false
+    },
+    "feathers": {
+      "countRange": [
+        3,
+        5
+      ],
+      "type": "fine shallow metal engraving",
+      "flow": "rearward from brow toward upper handle",
+      "cuttingEdgeUntouched": true
+    },
+    "materials": {
+      "blade-main": {
+        "material": "satin-brushed deep gold",
+        "colors": [
+          "#e5bf70",
+          "#bf8d36",
+          "#79521e"
+        ]
+      },
+      "blade-edge": {
+        "material": "polished warm gold bevel",
+        "colors": [
+          "#f8e2ae",
+          "#d8af5a"
+        ]
+      },
+      "motif-zone": {
+        "material": "burnished sculpted gold and near-black eye",
+        "colors": [
+          "#a77625",
+          "#f0cc76",
+          "#151515"
+        ]
+      },
+      "handle": {
+        "material": "matte textured charcoal",
+        "colors": [
+          "#10151a",
+          "#2e353a"
+        ]
+      },
+      "ring": {
+        "material": "warm gold structural trim with dark interior",
+        "colors": [
+          "#d0a045",
+          "#21272a"
+        ]
+      },
+      "hardware": {
+        "material": "blackened steel and minimal gold fasteners",
+        "colors": [
+          "#242d34",
+          "#917043"
+        ]
+      }
+    },
+    "maskNames": [
+      "blade-main",
+      "blade-edge",
+      "motif-zone",
+      "handle",
+      "ring",
+      "hardware",
+      "edge-highlight",
+      "ao-shadow"
+    ],
+    "alphaParityWithNeutralRequired": true,
+    "newExternalContoursForbidden": true,
+    "decalRules": "No printed bird graphic; relief should appear carved/embossed in the metal, not a sticker"
+  },
+  "rarity": "Legendary",
+  "tier": 4,
+  "status": "design-locked-awaiting-artwork",
+  "artworkApproved": false,
+  "assetFilesPresent": false,
+  "gameIntegration": "not-yet-enabled",
+  "artBrief": "assets/art-briefs/karambit-golden-talon.md",
+  "masterRequirements": {
+    "orientation": "blade tip right, finger ring left",
+    "projection": "near side-profile orthographic",
+    "nativeSource": "full-frame single object, not collage crop",
+    "workingCanvas": [
+      2400,
+      1200
+    ],
+    "alpha": "true transparent background, clear open ring hole",
+    "colors": "neutral graphite and steel only"
+  },
+  "plannedOutputs": {
+    "source": "assets/source/karambit/neutral-master-2400.png",
+    "neutral": {
+      "reel": "assets/renders/masters/karambit-neutral-400.webp",
+      "inventory": "assets/renders/masters/karambit-neutral-800.webp",
+      "inspect": "assets/renders/masters/karambit-neutral-1600.webp"
+    },
+    "finish": {
+      "reel": "assets/renders/finishes/karambit--golden-talon-400.webp",
+      "inventory": "assets/renders/finishes/karambit--golden-talon-800.webp",
+      "inspect": "assets/renders/finishes/karambit--golden-talon-1600.webp"
+    }
+  },
+  "exports": {
+    "reel": [
+      400,
+      200
+    ],
+    "inventory": [
+      800,
+      400
+    ],
+    "inspect": [
+      1600,
+      800
+    ]
+  },
+  "qualityGates": [
+    "model-recognizable-unlabeled-at-160px",
+    "single-clean-transparent-source",
+    "brow-eye-sculptural-relief-visible-at-inspect",
+    "3-to-5-feather-cuts",
+    "neutral-and-finish-alpha-pixel-identical",
+    "all-six-files-verified-before-live-mapping",
+    "save-and-reel-reveal-regressions",
+    "user-visual-approval"
+  ],
+  "notes": "Design metadata and filenames are future production targets. No Karambit raster is delivered by adding this recipe."
+}
