@@ -7,8 +7,8 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['core','transactions','simulation','npc','haggling'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['core','transactions','simulation','npc','haggling'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['core','transactions','simulation','npc','traders','haggling'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['core','transactions','simulation','npc','traders','haggling'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
@@ -747,6 +747,128 @@ test('Cancelling and relisting the same item creates a separate buyer negotiatio
   assert.equal(g.state().listings.length,0);
   assert.equal(g.state().market.negotiations.find(x=>x.id===first.id).status,'unavailable');
   assert.equal(g.state().market.negotiations.find(x=>x.id===second.id).status,'completed');
+});
+test('NPCs retain 16 individual wallets, preferences and all six trading styles',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const arr=g.state().market.traders;
+  assert.equal(arr.length,16);
+  assert.equal(new Set(arr.map(t=>t.id)).size,16);
+  assert.equal(arr.filter(t=>t.role==='buyer').length,6);
+  assert.equal(arr.filter(t=>t.role==='seller').length,10);
+  assert.equal(new Set(arr.map(t=>t.style)).size,6);
+  assert(arr.some(t=>t.focus.includes('skin')&&t.wallet>10000));
+  assert(arr.every(t=>Number.isSafeInteger(t.wallet)&&t.wallet>0));
+  const next=boot(g.store);
+  assert.deepEqual(next.state().market.traders,arr);
+  next.run("go('Inventory');go('Market')");
+  assert.deepEqual(next.state().market.traders,arr);
+});
+test('Identical collectibles get different floors and patience from distinct sellers',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const names=['NightShift','The Quartermaster','VaultKeeper'];
+  const result=names.map(name=>JSON.parse(g.run(
+    'JSON.stringify(window.LootHubTraders.terms(s,"buy",{id:"same-listing",seller:'+JSON.stringify(name)+
+    ',ask:100,item:{id:"same-weapon",kind:"weapon",weapon:"MAC-10",tier:0,base:8},createdAt:1}))')));
+  assert.deepEqual(result.map(x=>x.maxRounds),[2,3,4]);
+  assert.equal(new Set(result.map(x=>x.threshold)).size,3);
+  assert.equal(new Set(result.map(x=>x.concession)).size,3);
+  assert.equal(new Set(result.map(x=>x.persona)).size,3);
+});
+test('Collector specialties change which buyer wants an item',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const fixtures=[
+    {id:'knife-offer',ask:450,item:{id:'knife',kind:'weapon',weapon:'Karambit',tier:4,base:1900}},
+    {id:'rifle-offer',ask:450,item:{id:'rifle',kind:'weapon',weapon:'AK-47',tier:2,base:85}},
+    {id:'case-offer',ask:30,item:{id:'case',kind:'case'}}
+  ];
+  const chosen=fixtures.map(x=>JSON.parse(g.run(
+    'JSON.stringify(window.LootHubTraders.chooseBuyer(s,'+JSON.stringify(x)+'))')));
+  assert(chosen.every(Boolean));
+  assert(new Set(chosen.map(x=>x.id)).size>=2);
+  assert(chosen[0].focus.includes('knife'));
+  assert(chosen[1].focus.includes('rifle'));
+  assert(chosen[2].focus.includes('case'));
+});
+test('Impatient seller walks after two rejected offers without a reset exploit',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const l=g.state().market.npcListings.find(x=>x.seller==='NightShift');
+  assert(l&&l.ask>1);
+  g.run('negotiateNpcListing('+JSON.stringify(l.id)+')');
+  const initial=g.state().market.negotiations.find(x=>x.id==='buy:'+l.id);
+  assert.equal(initial.maxRounds,2);
+  for(let i=0;i<2;i++){
+    g.byId('negotiationAmount').value='1';
+    g.run("sendNegotiationOffer('buy',"+JSON.stringify(l.id)+")");
+  }
+  assert.equal(g.state().market.negotiations.find(x=>x.id===initial.id).status,'walked');
+  const again=boot(g.store);
+  again.run('negotiateNpcListing('+JSON.stringify(l.id)+')');
+  assert.equal(again.state().market.negotiations.find(x=>x.id===initial.id).rounds,2);
+  assert.equal(again.state().market.negotiations.find(x=>x.id===initial.id).status,'walked');
+});
+test('Completing a negotiated player sale debits the buyer wallet exactly once',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  g.byId('listPrice').value='40';
+  g.run('submitListing(s.items[0].id)');
+  const l=g.state().listings[0],offer=g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===l.id);
+  assert(offer&&offer.traderId);
+  const before=g.state().market.traders.find(x=>x.id===offer.traderId).wallet;
+  g.run("reviewBuyerOffer("+JSON.stringify(l.id)+")");
+  g.run("acceptMarketCounter('sell',"+JSON.stringify(l.id)+")");
+  assert.equal(g.state().market.traders.find(x=>x.id===offer.traderId).wallet,before);
+  const price=g.state().market.negotiations.find(x=>x.id===offer.id).agreedPrice;
+  g.run("completeMarketNegotiation('sell',"+JSON.stringify(l.id)+")");
+  const after=g.state().market.traders.find(x=>x.id===offer.traderId);
+  assert.equal(after.wallet,before-price);
+  assert.equal(after.bought,1);
+  const reload=boot(g.store);
+  reload.run("completeMarketNegotiation('sell',"+JSON.stringify(l.id)+")");
+  assert.equal(reload.state().market.traders.find(x=>x.id===offer.traderId).wallet,after.wallet);
+});
+test('A buyer without funds cannot settle an agreed price',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  g.byId('listPrice').value='40';
+  g.run('submitListing(s.items[0].id)');
+  const l=g.state().listings[0],offer=g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===l.id);
+  g.run("acceptMarketCounter('sell',"+JSON.stringify(l.id)+")");
+  const coins=g.state().coins;
+  g.run('s.market.traders.find(x=>x.id==='+JSON.stringify(offer.traderId)+').wallet=0;save()');
+  g.run("completeMarketNegotiation('sell',"+JSON.stringify(l.id)+")");
+  assert.equal(g.state().coins,coins);
+  assert.equal(g.state().listings.length,1);
+  assert.equal(g.state().market.negotiations.find(x=>x.id===offer.id).status,'agreed');
+});
+test('NPC vendor wallets gain the amount paid for an approved inventory item',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const l=g.state().market.npcListings.find(x=>x.ask<50);
+  const vendor=g.state().market.traders.find(t=>t.name===l.seller);
+  g.run('s.coins=10000;save()');
+  g.run("buyNpcListing("+JSON.stringify(l.id)+")");
+  const updated=g.state().market.traders.find(t=>t.id===vendor.id);
+  assert.equal(updated.wallet,vendor.wallet+l.ask);
+  assert.equal(updated.sold,1);
+  assert.equal(g.run('catalog.length'),24);
+  assert.equal(g.run('approvedSkins.length'),1);
+});
+test('Legacy negotiations retain agreed terms if personality fields were absent',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const l=g.state().market.npcListings.find(x=>x.ask>=6);
+  g.run("negotiateNpcListing("+JSON.stringify(l.id)+")");
+  g.run('delete s.market.negotiations[0].persona;delete s.market.negotiations[0].traderId;delete s.market.negotiations[0].maxRounds;delete s.market.negotiations[0].concession;save()');
+  const n=g.state().market.negotiations[0];
+  g.run("negotiateNpcListing("+JSON.stringify(l.id)+")");
+  assert.equal(g.state().market.negotiations[0].threshold,n.threshold);
+  assert.equal(g.state().market.negotiations[0].npcOffer,n.npcOffer);
+  assert.equal(g.state().market.negotiations[0].rounds,0);
+  assert.equal(g.run('window.LootHubHaggling.MAX_ROUNDS'),3);
 });
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');

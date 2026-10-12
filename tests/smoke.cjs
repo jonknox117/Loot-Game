@@ -20,6 +20,10 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Market', exact: true }).click();
     await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});
     assert(await page.locator('.npc-listing').count()===15,'Initial NPC market stock should contain 15 listings');
+    assert(await page.locator('.market-trader-profile').count()===6,'The buyer directory must display all six specialists');
+    const initialTraders=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.traders);
+    assert(initialTraders.length===16&&new Set(initialTraders.map(t=>t.style)).size===6,
+      'Trader identities and all six temperaments must be saved');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     assert(approvedOriginal?.item.skin==='Red Devil','NPC inventory used an unapproved cosmetic');
@@ -227,6 +231,10 @@ const fs = require('fs');
     const afterDeal=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(afterDeal.coins===beforeDeal.coins-agreedBuy.agreedPrice,'Agreed purchase price must debit wallet');
     assert(afterDeal.items.some(x=>x.id===bargain.item.id),'Agreed NPC item must transfer exactly once');
+    const traderBefore=beforeDeal.market.traders.find(t=>t.id===bargain.seller);
+    const traderAfter=afterDeal.market.traders.find(t=>t.id===bargain.seller);
+    assert(traderAfter.wallet===traderBefore.wallet+agreedBuy.agreedPrice,
+      'NPC vendor must receive the exact purchase proceeds');
     assert(afterDeal.market.negotiations.find(x=>x.id==='buy:'+bargain.id).status==='completed','Deal must finalize');
     await page.reload({waitUntil:'load'});
     assert((await page.locator('#inventoryGrid .item').count())>=1,'Negotiated item must survive reload');
@@ -250,6 +258,10 @@ const fs = require('fs');
     const postSale=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(postSale.coins===preSale.coins+Math.max(1,Math.floor(incoming.npcOffer*.95)),'Negotiated sale fee must be 5%');
     assert(postSale.listings.length===0,'Sold player item must leave escrow');
+    const buyerBefore=preSale.market.traders.find(t=>t.id===incoming.traderId);
+    const buyerAfter=postSale.market.traders.find(t=>t.id===incoming.traderId);
+    assert(buyerBefore&&buyerAfter&&buyerAfter.wallet===buyerBefore.wallet-incoming.npcOffer,
+      'Buyer budget must be debited exactly once when the deal completes');
     assert(errors.length===0,'Browser errors during haggling: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');

@@ -500,3 +500,12 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .npc-listing-buttons{grid-template-columns:1fr}
  .npc-listing-buttons button:nth-child(3){grid-column:auto}
 }
+
+
+/* Patch 0.4.4: permanent trader directory */
+.market-trader-directory{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.market-trader-profile{display:flex;flex-direction:column;gap:6px;padding:13px;border:1px solid #3a5067;border-radius:11px;background:#19283a;min-width:0}
+.market-trader-profile b{font-size:14px;overflow-wrap:anywhere}
+.market-trader-profile span{line-height:1.4}
+@media(max-width:800px){.market-trader-directory{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:450px){.market-trader-directory{grid-template-columns:1fr}}
