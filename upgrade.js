@@ -430,6 +430,111 @@ function buyNpcListing(k){
   tab='Inventory';
   render();
 }
+function negotiateNpcListing(k){openMarketNegotiation('buy',k)}
+function reviewBuyerOffer(k){openMarketNegotiation('sell',k)}
+function openMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const negotiation=window.LootHubHaggling.begin(s,kind,k,Date.now());
+  if(!negotiation)return;
+  save();
+  renderMarketNegotiation(kind,k);
+}
+function renderMarketNegotiation(kind,k){
+  const n=window.LootHubHaggling.get(s,kind,k);
+  if(!n)return;
+  if((n.status==='open'||n.status==='agreed')&&!window.LootHubHaggling.stillAvailable(s,n)){
+    n.status='unavailable';n.updatedAt=Date.now();save();
+  }
+  const buy=kind==='buy',listing=(buy?s.market.npcListings:s.listings).find(x=>x.id===k);
+  const item=listing?.item || (s.items.find(x=>x.id===n.itemId));
+  const itemLabel=item?listingItemName(item):'Listing no longer available';
+  const status=n.status,initial=buy?n.initialAsk:n.npcOffer;
+  const history=n.history.slice(-9).map(e=>
+    '<div class="offer-message '+(e.by==='player'?'offer-player':'offer-trader')+'">'+
+      '<span class="muted tiny">'+(e.by==='player'?'You':escapeHTML(n.seller))+'</span>'+
+      '<span>'+(e.amount!=null?money(e.amount)+' coins':'')+
+      (e.message?' · '+escapeHTML(e.message):'')+'</span></div>').join('');
+  const stateCopy=status==='agreed'?
+    '<p class="notice">Deal agreed at <b>'+money(n.agreedPrice)+' coins</b>. Complete the trade to transfer the item and coins.</p>':
+    status==='walked'?'<p class="notice">This trader walked away. The same listing cannot be renegotiated.</p>':
+    status==='declined'?'<p class="notice">You ended this negotiation. Its history is saved.</p>':
+    status==='completed'?'<p class="notice">Trade completed. The item and coins have already transferred.</p>':
+    status==='unavailable'?'<p class="notice">This listing is no longer available at its negotiated price.</p>':'';
+  const roundLeft=Math.max(0,window.LootHubHaggling.MAX_ROUNDS-n.rounds);
+  const suggest=buy?Math.max(1,Math.round(n.npcOffer*.9)):Math.min(100000000,Math.round(n.npcOffer*1.1));
+  const controls=status==='open'?
+    '<label for="negotiationAmount">'+(buy?'Your purchase offer':'Your counter asking price')+
+    '</label><input id="negotiationAmount" aria-label="Your offer" class="field" type="number" min="1" max="'+
+      (buy?n.initialAsk:100000000)+'" step="1" inputmode="numeric" value="'+suggest+'">'+
+    '<div class="row offer-actions"><button class="primary" onclick="'+marketActionWithKind('sendNegotiationOffer',kind,k)+'">Send offer</button>'+
+    '<button onclick="'+marketActionWithKind('acceptMarketCounter',kind,k)+'">Accept '+
+      money(n.npcOffer)+' ◈</button>'+
+    '<button onclick="'+marketActionWithKind('leaveMarketNegotiation',kind,k)+'">Walk away</button></div>':
+    status==='agreed'?
+    '<button class="primary" onclick="'+marketActionWithKind('completeMarketNegotiation',kind,k)+'">'+
+      (buy?'Complete purchase':'Complete sale')+' · '+money(n.agreedPrice)+' ◈</button>':'';
+  dialog('<div class="section-eyebrow">'+(buy?'NEGOTIATE WITH SELLER':'REVIEW BUYER OFFER')+'</div>'+
+    '<h2>'+escapeHTML(itemLabel)+'</h2>'+
+    '<p class="muted tiny">Trader: '+escapeHTML(n.seller)+' · Original asking price: '+
+      money(n.initialAsk)+' coins · '+roundLeft+' offer'+(roundLeft===1?'':'s')+' remaining</p>'+
+    '<div class="offer-history">'+history+'</div>'+
+    stateCopy+controls+'<div class="row"><button onclick="closeDialog()">Close negotiation</button></div>');
+}
+function marketActionWithKind(fn,kind,k){
+  return fn+'('+escapeHTML(JSON.stringify(kind))+','+escapeHTML(JSON.stringify(k))+')';
+}
+function sendNegotiationOffer(kind,k){
+  if(!canMutate())return;
+  const input=document.getElementById('negotiationAmount');
+  if(!input)return;
+  const value=Number(input.value);
+  if(!window.LootHubMarketCore.validAsk(value)){
+    alert('Enter a whole-coin offer between 1 and 100,000,000.');return;
+  }
+  const outcome=window.LootHubHaggling.submit(s,kind,k,value,Date.now());
+  if(!outcome){alert('The offer is not valid for this negotiation.');return}
+  save();
+  renderMarketNegotiation(kind,k);
+}
+function acceptMarketCounter(kind,k){
+  if(!canMutate())return;
+  const outcome=window.LootHubHaggling.acceptCounter(s,kind,k,Date.now());
+  if(!outcome)return;
+  save();renderMarketNegotiation(kind,k);
+}
+function leaveMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const outcome=window.LootHubHaggling.walkAway(s,kind,k,Date.now());
+  if(!outcome)return;
+  save();renderMarketNegotiation(kind,k);
+}
+function completeMarketNegotiation(kind,k){
+  if(!canMutate())return;
+  const n=window.LootHubHaggling.get(s,kind,k);
+  if(!n||n.status!=='agreed')return;
+  if(!window.LootHubHaggling.stillAvailable(s,n)){
+    n.status='unavailable';n.updatedAt=Date.now();
+    save();renderMarketNegotiation(kind,k);return;
+  }
+  if(kind==='buy'&&s.coins<n.agreedPrice){
+    alert('Not enough coins to complete this deal. Earn coins or sell another item.');return;
+  }
+  const result=kind==='buy'?
+    window.LootHubMarketTransactions.buyNpcListing(s,k,n.agreedPrice):
+    window.LootHubMarketTransactions.settleListing(s,k,n.agreedPrice);
+  if(!result){alert('Trade could not be completed. Review your wallet and saved listings.');return}
+  n.status='completed';
+  n.updatedAt=Date.now();
+  n.history.push({by:'system',amount:n.agreedPrice,at:n.updatedAt,message:'Trade completed'});
+  recordActivity(s,kind==='buy'?
+    'Negotiated purchase of '+listingItemName(result.item)+' from '+result.seller+
+      ' for '+n.agreedPrice+' coins':
+    'Negotiated marketplace sale of '+listingItemName(result.item)+' for '+
+      result.net+' coins ('+result.fee+' fee)');
+  save();closeDialog();
+  tab=kind==='buy'?'Inventory':'Market';
+  render();
+}
 function enhancedMarket(){
   if(isSaveCurrent()){
     window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
