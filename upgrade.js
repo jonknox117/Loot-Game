@@ -192,7 +192,9 @@ function safeUpload(data) {
         !window.LootHubMarketCore.validAsk(n.initialAsk)||
         !window.LootHubMarketCore.validAsk(n.threshold)||
         !window.LootHubMarketCore.validAsk(n.npcOffer)||
-        !Number.isSafeInteger(n.rounds)||n.rounds<0||n.rounds>3||
+        !Number.isSafeInteger(n.rounds)||n.rounds<0||n.rounds>4||
+        (n.maxRounds!=null&&(!Number.isSafeInteger(n.maxRounds)||
+          n.maxRounds<1||n.maxRounds>4||n.rounds>n.maxRounds))||
         !['open','agreed','completed','walked','declined','unavailable'].includes(n.status)||
         !Array.isArray(n.history)||n.history.length>30||
         !Number.isFinite(n.createdAt)||!Number.isFinite(n.updatedAt)||
