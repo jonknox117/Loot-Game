@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build reusable skin-line WebPs from the actual 24 Loot Hub neutral masters."""
-import argparse,base64,hashlib,io,json,math,random,re,shutil
+import argparse,base64,io,json,re,shutil
 from pathlib import Path
 from PIL import Image,ImageChops,ImageDraw,ImageOps
 ROOT=Path(__file__).resolve().parents[1]
@@ -37,55 +37,58 @@ def paint_mask(image,profile):
         draw.rectangle(tuple(round(n*image.size[i%2]) for i,n in enumerate(coords)),fill=0)
     return mask
 def recolor(source,mask,line):
-    colors={'crimson':('#190608','#e22c44'),'kryptonite':('#071611','#129f57'),
-            'bloom':('#30181b','#e8b7ad')}
-    if line['type'] not in colors: raise ValueError('Unknown pattern type '+line['type'])
-    gradient=line.get('palette') or colors[line['type']]
-    if len(gradient)!=2: raise ValueError('Skin palette needs shadow and highlight colors')
-    paint=ImageOps.colorize(ImageOps.grayscale(source),*gradient).convert('RGBA')
+    """Apply user-defined material palette, retaining source shadows and silhouette."""
+    palette=line['palette']
+    if not isinstance(palette,list) or len(palette)!=2:
+        raise ValueError('Expected two-color palette: shadow and highlight')
+    paint=ImageOps.colorize(ImageOps.grayscale(source),*palette).convert('RGBA')
     paint.putalpha(source.getchannel('A'))
     result=Image.composite(paint,source,mask)
     result.putalpha(source.getchannel('A'))
     return result
-def pattern(size,kind,seed):
-    rng=random.Random(int(hashlib.sha256(seed.encode()).hexdigest()[:16],16))
-    w,h=size;s=w/1600
-    im=Image.new('RGBA',size,(0,0,0,0));d=ImageDraw.Draw(im,'RGBA')
-    if kind=='crimson':
-        for _ in range(44):
-            x,y=rng.randrange(w),rng.randrange(int(.28*h),int(.82*h))
-            radius=rng.randrange(max(6,round(13*s)),max(10,round(35*s)))
-            direction=rng.choice((-1,1))
-            start,end=(20,300) if direction>0 else (185,470)
-            d.arc((x-radius,y-radius,x+radius,y+radius),start,end,
-                  fill=(220,226,230,rng.randrange(85,155)),width=max(1,round(2*s)))
-            d.line((x,y,x+direction*radius,y-radius//2),fill=(236,236,239,118),width=max(1,round(s)))
-    elif kind=='kryptonite':
-        for _ in range(22):
-            x,y=rng.randrange(w),rng.randrange(int(.2*h),int(.8*h))
-            pts=[(x,y)]
-            for _ in range(rng.randrange(4,10)):
-                x+=rng.randint(-26,42)*s;y+=rng.randint(-30,30)*s
-                pts.append((int(x),int(y)))
-            d.line(pts,fill=(13,255,112,72),width=max(3,round(7*s)),joint='curve')
-            d.line(pts,fill=(138,255,177,207),width=max(1,round(2*s)),joint='curve')
-    elif kind=='bloom':
-        for _ in range(84):
-            x,y=rng.randrange(w),rng.randrange(int(.17*h),int(.86*h))
-            r=rng.randrange(max(3,round(4*s)),max(6,round(10*s)))
-            d.line((x-2*r,y+r,x+r,y-r),fill=(115,67,65,118),width=max(1,round(2*s)))
-            for k in range(5):
-                angle=k*2*math.pi/5+.21
-                px=x+math.cos(angle)*r;py=y+math.sin(angle)*r
-                d.ellipse((px-r*.52,py-r*.52,px+r*.52,py+r*.52),fill=(255,201,215,166))
-            d.ellipse((x-r*.32,y-r*.32,x+r*.32,y+r*.32),fill=(250,219,137,214))
-    return im
+
+def pattern(size,line):
+    """Repeat an artist-provided transparent texture. Never invent decorative art."""
+    spec=line.get('pattern')
+    output=Image.new('RGBA',size,(0,0,0,0))
+    if not spec:return output
+    path=spec.get('texture')
+    if not isinstance(path,str) or not path.startswith('assets/skin-lines/textures/'):
+        raise ValueError('Pattern texture must live in assets/skin-lines/textures/')
+    texture_path=(ROOT/path).resolve()
+    if not texture_path.is_relative_to((ROOT/'assets/skin-lines/textures').resolve()):
+        raise ValueError('Texture path escapes asset directory')
+    source=Image.open(texture_path).convert('RGBA')
+    tile_width=int(spec.get('tileWidth',384))
+    if not 24<=tile_width<=1600:raise ValueError('Tile width must be 24–1600')
+    tile_height=max(1,round(source.height*tile_width/source.width))
+    tile=source.resize((tile_width,tile_height),Image.Resampling.LANCZOS)
+    offset_x=int(spec.get('offsetX',0))%tile_width
+    offset_y=int(spec.get('offsetY',0))%tile_height
+    for y in range(offset_y-tile_height,size[1],tile_height):
+        for x in range(offset_x-tile_width,size[0],tile_width):
+            output.alpha_composite(tile,(x,y))
+    opacity=float(spec.get('opacity',1))
+    if not 0<=opacity<=1:raise ValueError('Pattern opacity must be 0–1')
+    output.putalpha(output.getchannel('A').point(lambda v:round(v*opacity)))
+    return output
+
 def target(line,slug,width):
     return ROOT/'assets/renders/lines'/line/f'{slug}--{line}-{width}.webp'
 def sources():
     manifest=json.loads((ROOT/'assets/manifest.json').read_text())
     definitions=json.loads((ROOT/'assets/skin-lines/lines.json').read_text())
     profiles=json.loads((ROOT/'assets/skin-lines/paint-profiles.json').read_text())['weapons']
+    if definitions.get('schemaVersion')!=1:raise ValueError('Unexpected skin line schema')
+    ids=set()
+    for line in definitions['lines']:
+        if not isinstance(line.get('id'),str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',line['id']):
+            raise ValueError('Invalid skin-line id')
+        if line['id'] in ids:raise ValueError('Duplicate skin line id')
+        ids.add(line['id'])
+        if line.get('released'):
+            if not line.get('name') or not isinstance(line.get('palette'),list) or len(line['palette'])!=2:
+                raise ValueError('Released lines need a name and two-color palette')
     return manifest['items'],definitions,profiles
 def build():
     items,defs,profiles=sources()
@@ -111,13 +114,18 @@ def build():
                 master_file=ROOT/'assets/renders/masters'/f'{slug}-neutral-{width}.webp'
                 master_file.parent.mkdir(parents=True,exist_ok=True)
                 neutral(item,width).save(master_file,'WEBP',quality=94,method=4,exact=True,alpha_quality=100)
-        mask=paint_mask(source,profiles[slug])
         path=ROOT/'assets/skin-lines/masks'/f'{slug}--paint-main-1600.png'
-        path.parent.mkdir(parents=True,exist_ok=True);mask.save(path,optimize=True)
+        if path.is_file():
+            mask=Image.open(path).convert('L')
+            if mask.size!=source.size:raise ValueError('Existing mask has wrong dimensions: '+str(path))
+        else:
+            mask=paint_mask(source,profiles[slug])
+            path.parent.mkdir(parents=True,exist_ok=True)
+            mask.save(path,optimize=True)
         for line in defs['lines']:
             if not line['released']:continue
             out=recolor(source,mask,line)
-            marks=pattern(source.size,line['type'],slug+':'+line['id'])
+            marks=pattern(source.size,line)
             marks.putalpha(ImageChops.multiply(marks.getchannel('A'),mask))
             out=Image.alpha_composite(out,marks);out.putalpha(source.getchannel('A'))
             for size in SIZES:
@@ -131,6 +139,9 @@ def build():
     return count
 def verify():
     items,defs,_=sources();count=0
+    valid_ids={line['id'] for line in defs['lines'] if line.get('released')}
+    for file in (ROOT/'assets/renders/lines').glob('**/*.webp'):
+        if file.parent.name not in valid_ids:raise AssertionError('Unregistered artwork: '+str(file))
     for item in items:
         slug=item.get('modelSlug') or item['id'].removesuffix('--base')
         if item['renderMode']=='transparent-webp-data-uri':
@@ -151,8 +162,23 @@ def verify():
                     raise AssertionError('Image has no proper transparent background: '+str(path))
                 count+=1
     return count
+def self_test():
+    # No published line or files needed: validate user-supplied recipe machinery.
+    original=Image.new('RGBA',(160,80),(40,55,60,0))
+    ImageDraw.Draw(original).rectangle((20,20,140,60),fill=(100,110,120,255))
+    alpha=original.getchannel('A')
+    mask=alpha.copy()
+    colored=recolor(original,mask,{'palette':['#14191e','#f4cc66']})
+    assert ImageChops.difference(colored.getchannel('A'),alpha).getbbox() is None
+    assert colored.getpixel((40,40))!=original.getpixel((40,40))
+    assert pattern((160,80),{'pattern':None}).getchannel('A').getextrema()==(0,0)
+    return 'Generic recipe self-test passed'
+
 if __name__=='__main__':
     cli=argparse.ArgumentParser();cli.add_argument('--check',action='store_true')
+    cli.add_argument('--self-test',action='store_true')
     args=cli.parse_args()
-    count=verify() if args.check else build()
-    print(('Validated' if args.check else 'Generated'),count,'transparent skin-line images')
+    if args.self_test:print(self_test())
+    else:
+        count=verify() if args.check else build()
+        print(('Validated' if args.check else 'Generated'),count,'transparent skin-line images')

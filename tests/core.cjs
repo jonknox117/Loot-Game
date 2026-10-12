@@ -53,30 +53,25 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Three reusable lines register 24 stable skins each without modifying Arsenal drops',()=>{
+test('Universal skin-line engine ships without speculative skin lines',()=>{
   const g=boot();
-  const lines=JSON.parse(g.run('JSON.stringify(window.LootHubSkinLines.lines)'));
-  assert.equal(lines.length,3);
-  assert.equal(g.run('catalog.length'),24);
-  const originalCount=g.run('dropCatalog.length');
-  assert.equal(originalCount,24+g.run('approvedSkins.length'));
-  for(const line of lines){
-    const skins=JSON.parse(g.run('JSON.stringify(lineCatalogs['+JSON.stringify(line.id)+'])'));
-    assert.equal(skins.length,24);
-    for(const item of skins){
-      assert.equal(item.kind,'skin');
-      assert.equal(item.skinLine,line.id);
-      assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
-      const path=g.run('window.LootHubSkinLines.imagePath('+JSON.stringify(item)+',400)');
-      assert(path.endsWith('.webp'));
-    }
-    const drop=JSON.parse(g.run('JSON.stringify(roll('+JSON.stringify(line.id)+'))'));
-    assert.equal(drop.skinLine,line.id);
-    assert(Number.isInteger(drop.wearGrade));
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
+  assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
+  assert.equal(g.run('dropCatalog.length'),24+g.run('approvedSkins.length'));
+  const neutral=JSON.parse(g.run('JSON.stringify(catalog)'));
+  const blank=Object.create(null);
+  const win={LootHubSkinLineData:{schemaVersion:1,lines:[{
+    id:'test-line',name:'Test Line',released:true,multiplier:2,
+    palette:['#000000','#ffffff'],casePrice:25
+  }]}};
+  vm.runInNewContext(universalRegistry,{window:win,Object,Map,Number,Math});
+  const variants=win.LootHubSkinLines.variants(neutral,'test-line');
+  assert.equal(variants.length,24);
+  for(const variant of variants){
+    assert(win.LootHubSkinLines.isRegistered(variant));
+    assert(win.LootHubSkinLines.imagePath(variant,800).endsWith('.webp'));
   }
-  assert.equal(g.run('dropCatalog.length'),originalCount,'Original Arsenal case changed');
-  const fake={kind:'skin',weapon:'AWP',skin:'Unregistered',skinLine:'crimson-beauty'};
-  assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(fake)+')'),false);
+  assert.equal(g.run('universalCases()'),g.run('cases()'),'Empty line catalog changed existing case UI');
 });
 test('Arsenal Case contains 24 supplied base weapons and ten owner-approved skins',()=>{
   const g=boot();
