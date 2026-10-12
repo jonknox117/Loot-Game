@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "assetId": "karambit-master-033F",
+  "model": "Karambit",
+  "finish": "Golden Talon",
+  "renderDate": "2026-10-11",
+  "sourceCategory": "Original AI-generated 2D weapon design board, independently generated neutral and decorated subjects; cropped and geometry-conformed to one canonical knife mask.",
+  "sourceIllustrationNativePixels": [
+    1774,
+    887
+  ],
+  "subjectNativeHorizontalPixelsApprox": 960,
+  "finalWorkingCanvas": [
+    2400,
+    1200
+  ],
+  "exports": [
+    [
+      400,
+      200
+    ],
+    [
+      800,
+      400
+    ],
+    [
+      1600,
+      800
+    ]
+  ],
+  "native1600SourceDetail": false,
+  "qualityStatus": "pilot awaiting visual acceptance; not high-native-resolution final",
+  "originalSourceBundleLibrary": "/LootHub/loothub-karambit-master-033F.zip",
+  "buildScript": "scripts/build_karambit_2d.py",
+  "materialSource": "Two 2D renders from the same original AI-generated concept image, not licensed game textures, not production CAD; a background-clipped photo illustration.",
+  "method": "Crop both illustrated subjects; segment one neutral outline including ring aperture; warp golden eye/feather surfaces to neutral shape; use the neutral alpha for both at every resolution; mirror both so ring is on left and blade tip on right.",
+  "artworkGuarantees": {
+    "alphaIdentityAtAllThreeSizes": true,
+    "ringHoleOpen": true,
+    "svgFallbackPreserved": true,
+    "correctWeaponAndFinishId": true
+  },
+  "artworkLimitations": [
+    "Not native 1600px knife detail: source subject about 960px wide",
+    "Embossed eagle brow and dark eye are high-detail illustration/texture, not a real 3D displacement mesh",
+    "Model silhouette is based on AI-generated karambit-like illustration; manufacturer mechanical accuracy not verified",
+    "No independent iPhone Safari visual signoff"
+  ],
+  "originalArtwork": "Project-original AI-generated imagery created for this task; no assertion that name or concept is globally unique."
+}
