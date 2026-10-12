@@ -94,7 +94,7 @@
   },
   "rarity": "Legendary",
   "tier": 4,
-  "status": "raster-pilot-live",
+  "status": "legacy-artwork-superseded",
   "artworkApproved": false,
   "assetFilesPresent": true,
   "gameIntegration": "reel, inventory, catalog preview and inspect WebPs",
@@ -147,7 +147,7 @@
     "save-and-reel-reveal-regressions",
     "user-visual-approval"
   ],
-  "notes": "This recipe was designed before source creation; live artwork is registered by the manifest and exact raster URL mapping.",
+  "notes": "Legacy Golden Talon art kept for provenance only. Raptor's Gaze has replaced the one live Legendary Karambit catalog entry. Previously saved Golden Talon instances are aliased and retain the same attributes.",
   "pilot": true,
   "sourceNativePixelsApprox": [
     960,
@@ -164,5 +164,7 @@
   ],
   "ringApertureAlphaChecked": true,
   "orientation": "blade-hook-right, finger-ring-left",
-  "finishingMethod": "2D generated gold relief aligned to neutral blade geometry, alpha clipped to exact neutral mask and mirrored"
+  "finishingMethod": "2D generated gold relief aligned to neutral blade geometry, alpha clipped to exact neutral mask and mirrored",
+  "liveCatalogItem": false,
+  "supersededBy": "karambit--raptors-gaze"
 }
