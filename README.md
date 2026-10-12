@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Wear Display & Pricing 0.5.2)
+# LootHub — Curated Arsenal (Procedural Wear Engine 0.5.3)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -127,6 +127,17 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
+
+## Wear overhaul 0.5.3 — Reusable procedural weathering engine
+
+`market/wear-renderer.js` creates **four increasingly worn surface treatments** with deterministic scratches, dirt patina, and spot corrosion. No new, duplicate, recolored, or compressed weapon image assets were created.
+
+- **Pristine:** the unchanged original art with no wear canvas. The other four grades increase the number and intensity of scuffs, dark grime, and brown surface corrosion.
+- **Automatic clipping:** each effect is drawn to a transparent canvas and then masked using the alpha pixels of the existing 1600-resolution weapon/skin image (`destination-in`). Wear cannot appear on transparent padding or surrounding card backgrounds. **No per-gun manual outline or material mask is needed.**
+- **Permanent appearance:** a seeded pseudo-random generator derives every wear mark from an item's saved unique ID. A grade and ID yield the same wear marks across reloads, browsers, trades, and inspections. No game randomness or save fields are consumed by rendering.
+- **iPhone-friendly:** weathering is generated on-demand, limited to a 1,100-pixel longest canvas side, device pixel ratio capped at 2, and loaded only after the image is ready. If canvas rendering is unavailable, the unmodified master remains visible. Source WebP art is never overwritten or recompressed.
+- **Initial preview integration:** weapon/skin inspection panels, listing-editor large previews and case-opening reward details automatically show the wear overlay. Inventory tiles, small marketplace cards, and case-opening reel tiles will be integrated in **0.5.4** once the high-resolution mask and texture quality are validated.
+- **Regression testing:** deterministic pattern density per grade, different shapes for different collectible IDs, zero overlay for Pristine, retina iPhone canvas coverage, alpha-clipped transparent regions, stable appearance after reload, and approved-skin compatibility.
 
 ## Wear overhaul 0.5.2 — Visible condition and adjusted market prices
 
