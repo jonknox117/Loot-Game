@@ -531,3 +531,32 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 .offline-report .offline-figures .stat{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:#15283a;border:1px solid #344b64;padding:12px;border-radius:10px}
 .offline-report .offline-figures b{font-size:20px}
 @media(max-width:650px){.offline-report .offline-figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Patch 0.4.7 — compact touch-friendly trading workspace */
+.market-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:3px 0 16px}
+.market-shortcuts button{min-width:0;min-height:48px;padding:10px 7px;font-weight:700;font-size:13px;border:1px solid #47617d;border-radius:10px;background:#20364f}
+.market-shortcuts button:focus-visible,.market-reset:focus-visible,.market-more:focus-visible{outline:2px solid #86d9ef;outline-offset:3px}
+#market-browse,#market-listings,#market-offers,#market-sell{scroll-margin-top:12px}
+.market-reset{min-height:42px;padding:8px 15px;margin:0 0 14px;border-radius:9px;border:1px solid #4c6982;background:#182a3b;font-size:13px}
+.market-owned-controls,.trading-tools-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:13px 0 15px}
+.trading-tools-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+.market-owned-controls label,.trading-tools-controls label{display:flex;flex-direction:column;gap:7px;min-width:0;color:#aabbd0;font-size:12px;font-weight:650}
+.market-owned-controls .field,.trading-tools-controls .field{min-width:0;width:100%;min-height:44px;font-size:14px}
+.market-more{display:block;width:100%;min-height:46px;margin:12px 0 0;font-weight:700}
+.trade-center-results{display:flex;flex-direction:column;gap:8px;margin-bottom:23px}
+.trade-record{display:flex;align-items:center;justify-content:space-between;gap:11px;min-width:0;padding:12px;background:#19293b;border:1px solid #354d65;border-radius:11px}
+.trade-record-body{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.trade-record-body b{font-size:14px;overflow-wrap:anywhere}
+.trade-record-body span{line-height:1.45;overflow-wrap:anywhere}
+.trade-record-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}
+.trade-record-actions button{min-height:42px;font-size:12px;padding:9px 12px}
+.trade-status{display:inline-block;text-transform:capitalize;font-size:11px;letter-spacing:.2px;padding:4px 8px;border-radius:6px;background:#324254;color:#d8e1ea;font-weight:750}
+.trade-status.status-open{color:#a5daf8;background:#214663}
+.trade-status.status-agreed{color:#8eedd0;background:#1b5045}
+.trade-status.status-completed{color:#a0e6a6;background:#21503d}
+.trade-journal{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow-y:auto}
+.trade-journal .stat{gap:14px}
+.trade-journal .stat span{overflow-wrap:anywhere}
+@media(max-width:720px){.market-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.market-owned-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.market-owned-controls label:first-child{grid-column:span 2}}
+@media(max-width:480px){.market-shortcuts button{min-height:46px}.trading-tools-controls{grid-template-columns:1fr}.trade-record{align-items:stretch;flex-direction:column}.trade-record-actions{flex-direction:row;align-items:center;justify-content:space-between;width:100%}.trade-record-actions button{min-width:120px;min-height:44px}.trade-journal .stat{align-items:flex-start;flex-direction:column;gap:6px}}

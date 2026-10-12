@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.6)
+# LootHub — Curated Arsenal (Marketplace 0.4.7)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -93,6 +93,15 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Offline processing uses 15-minute market intervals and is capped at **8 simulated hours per return**, with at most two NPC-to-NPC trades and the existing 120-minute cap on unattended player listing sales. Excess time is deliberately skipped, rather than replayed on repeated refreshes. Going backward on the device clock cannot produce additional market events.
 - The **While You Were Away** market panel summarizes how much time was simulated, completed player/NPC sales, offers, expired inventory, and restocks. The latest summary is saved with the market state and protected by import validation.
 - All activity is local browser simulation, not actual background execution or live cross-device trading. Client-side time limitations reduce farming and accidental runaway effects but cannot reliably prevent intentional device-clock tampering; authoritative validation would require a server in a future version.
+
+## Marketplace 0.4.7 — Mobile trading workspace
+
+- The Market begins with **touch-friendly section shortcuts** for NPC browsing, your listings, the offers/history desk, and selling from your inventory. Jump buttons scroll to the corresponding section without changing your saved game.
+- NPC search, rarity, item-type, and price sorting now include an **affordability** filter (only listings your wallet can afford) and an **at-or-below-market** filter, plus a clear Reset Filters control. Filtering does not reroll persistent offers, prices, or item IDs.
+- The **List from Inventory** section now searches *every eligible owned collectible*, not just the first six. Filter by weapon/case/approved skin, sort by market value or name, and use **Show more** to page through large inventories in groups of 12. Listing and cancellation still operate on the exact selected item and its escrow ID.
+- The new **Trading Desk** lets you filter saved negotiations by direction (buying/selling) and state (active, agreed, completed, closed/expired). Continue eligible open offers; finished or invalidated deals open a **read-only negotiation transcript**. New negotiations save the item name for future auditability, including after the item leaves the inventory.
+- **Recent Market Activity** displays the existing market-related transaction journal; all historical records remain in the player's existing saved ledger. No new wallet mechanics, trade generation, cosmetic items, or unrelated background operations were introduced.
+- All trading filters are UI-only and do not mutate the game. The approved 24 base models and MAC-10 | Red Devil, market price bands, buyer budgets, successful-sale fees, case odds, offline simulations, current browser save key and save version are preserved.
 
 ## Economy and progression
 

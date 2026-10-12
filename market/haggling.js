@@ -1,4 +1,4 @@
-/* LootHub 0.4.4: persistent two-way NPC negotiations.
+/* LootHub 0.4.7: persistent two-way NPC negotiations.
    One fixed budget per listing, three offers maximum, no reroll on reload. */
 (function(root){
 'use strict';
@@ -27,7 +27,10 @@ function begin(game,kind,listingId,now=Date.now()){
   const terms=root.LootHubTraders.terms(game,kind,listing);
   if(!terms)return null;
   const {threshold,npcOffer,traderId,persona,description,focus,maxRounds,concession}=terms;
-  const deal={id:kind+':'+listing.id+(kind==='sell'?':'+listing.createdAt:''),kind,listingId:listing.id,itemId:listing.item.id,
+  const item=listing.item;
+  const itemName=item.kind==='case'?'Sealed Arsenal Case':
+    String(item.weapon||'Collectible')+(item.kind==='skin'&&item.skin?' | '+item.skin:'');
+  const deal={id:kind+':'+listing.id+(kind==='sell'?':'+listing.createdAt:''),kind,listingId:listing.id,itemId:listing.item.id,itemName,
     listingCreatedAt:listing.createdAt,
     initialAsk:listing.ask,threshold,npcOffer,rounds:0,status:'open',agreedPrice:null,
     traderId,persona,description,focus,maxRounds,concession,

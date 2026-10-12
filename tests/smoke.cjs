@@ -20,6 +20,12 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'Market', exact: true }).click();
     await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});
     assert(await page.locator('.npc-listing').count()===15,'Initial NPC market stock should contain 15 listings');
+    assert(await page.locator('.market-shortcuts button').count()===4,'Mobile market needs four section shortcuts');
+    assert(await page.locator('#marketOwnedSearch').count()===1,'Inventory trading search must exist');
+    await page.locator('#npcAffordability').selectOption('affordable');
+    assert(await page.locator('.npc-listing').count()===0,'Zero-coin player cannot afford initial NPC offers');
+    await page.getByRole('button',{name:'Reset filters'}).click();
+    assert(await page.locator('.npc-listing').count()===15,'Reset must restore all NPC listings');
     assert(await page.locator('.market-pulse-item').count()===8,'Market Pulse needs eight index cards');
     assert((await page.locator('.market-pulse-section').textContent()).includes('Base '),'Price index should show base estimates');
     const firstHistory=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.priceHistory);
@@ -284,6 +290,13 @@ const fs = require('fs');
     const buyerAfter=postSale.market.traders.find(t=>t.id===incoming.traderId);
     assert(buyerBefore&&buyerAfter&&buyerAfter.wallet===buyerBefore.wallet-incoming.npcOffer,
       'Buyer budget must be debited exactly once when the deal completes');
+    assert(await page.locator('.trade-record').count()>=2,'Trade Desk must show persisted negotiations');
+    await page.locator('#tradeStatusFilter').selectOption('complete');
+    assert(await page.locator('.trade-record').count()>=2,'Completed trade filter should retain purchase and sale');
+    await page.locator('.trade-record').first().getByRole('button',{name:'View history'}).click();
+    assert(await page.getByText('SAVED NEGOTIATION HISTORY').count()===1,'Closed deal must have readable history');
+    await page.getByRole('button',{name:'Close history'}).click();
+    await page.locator('#tradeStatusFilter').selectOption('all');
     assert(errors.length===0,'Browser errors during haggling: '+errors.join('; '));
     // 0.4.6: reopening after long inactivity processes only bounded elapsed time.
     const balanceBeforeOffline=postSale.coins;
@@ -306,7 +319,7 @@ const fs = require('fs');
     const removed=await page.evaluate(()=>{
       const id=s.market.npcListings[0].id;
       s.market.npcListings[0].expiresAt=Date.now()-1;
-      s.market.lastNpcRefreshAt=Date.now()-3600000;
+      s.market.lastNpcRefreshAt=Date.now()-24*3600000;
       save();
       return id;
     });
@@ -314,8 +327,40 @@ const fs = require('fs');
     const refreshed=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(!refreshed.market.npcListings.some(x=>x.id===removed),'Expired NPC listing must disappear');
     assert(refreshed.market.npcListings.length===15,'Expired NPC stock should restock without duplicate IDs');
+    assert(new Set(refreshed.market.npcListings.map(x=>x.item.id)).size===15,
+      'Restocked market items must preserve unique identities');
     assert(refreshed.market.lastOfflineReport.expired>=1,'Expiration must be included in report');
     assert(errors.length===0,'Browser errors after simulated offline return: '+errors.join('; '));
+    // 0.4.7: full-inventory Market listing, search and pagination.
+    await page.evaluate(()=>{
+      for(let i=0;i<20;i++){
+        s.items.push({id:'mobile-owned-'+i,kind:'weapon',weapon:'MP5',tier:1,base:12+i});
+      }
+      save();
+    });
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    await page.locator('#marketOwnedSearch').fill('MP5');
+    assert(await page.locator('#marketOwnedResults .item').count()===12,'Sell shelf should initially show 12 matched items');
+    assert(await page.locator('#marketOwnedMore').count()===1,'Show more needed for larger inventory');
+    await page.getByRole('button',{name:/Show more/}).click();
+    assert(await page.locator('#marketOwnedResults .item').count()===20,'Show more must reveal the entire matching inventory');
+    await page.locator('#marketOwnedResults .item').last().getByRole('button',{name:'List item'}).click();
+    await page.locator('#listPrice').fill('35');
+    await page.getByRole('button',{name:'List for sale'}).click();
+    const listed=await page.evaluate(()=>{
+      const data=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return data.listings.find(x=>x.item.id.startsWith('mobile-owned-'));
+    });
+    assert(listed&&listed.ask===35,'Full-inventory Market action must list the selected exact item');
+    await page.locator('.listing-line').filter({
+      has:page.locator('button[onclick*="'+listed.id+'"]')
+    }).getByRole('button',{name:'Cancel'}).click();
+    const restoredItem=await page.evaluate(id=>{
+      const data=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return data.items.find(x=>x.id===id);
+    },listed.item.id);
+    assert(restoredItem&&restoredItem.base===listed.item.base,'Cancellation must return the original inventory item');
+    assert(errors.length===0,'Mobile trading tools caused a browser exception: '+errors.join('; '));
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
