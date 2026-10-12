@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "stage": "spec-only",
+  "stage": "AK-47 pilot completed; AWP M4A4 Karambit need isolated high-quality neutral source images",
   "status": "not-rendered",
   "readme": "assets/master-render-spec.md",
   "resolution": {
@@ -116,8 +116,15 @@
         "inventory": "assets/renders/masters/ak-47-neutral-800.webp",
         "reel": "assets/renders/masters/ak-47-neutral-400.webp"
       },
-      "assetStatus": "not-created",
-      "approved": false
+      "assetStatus": "pilot-rendered-integrated",
+      "approved": false,
+      "completedFinishes": [
+        "ak-47--ghostline",
+        "ak-47--crimson-circuit"
+      ],
+      "sourceBundleLibrary": "/LootHub/loothub-ak-master-033C.zip",
+      "sharedAlphaConfirmed": true,
+      "reviewStatus": "Awaiting physical model/source geometry approval and mobile Safari screenshot"
     },
     {
       "id": "awp",
