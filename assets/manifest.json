@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "assetStatus": "three-original-raster-pilots-live",
-  "notes": "Three real raster finish pilots are live: Glock-18 Slate Grid, AK-47 Ghostline, AK-47 Crimson Circuit. Both AK finishes share exact silhouette mask. Six other original catalog AK/AWP/etc items remain vector until equally sharp standalone sources exist.",
+  "assetStatus": "five-raster-finish-pilots-live",
+  "notes": "Glock-18 Slate Grid, AK-47 Ghostline/Crimson Circuit, AWP Night Watch/Eclipse have genuine transparent 400/800/1600px WebP assets. Other 14 finishes still use individually styled SVG artwork. New AWP finishes use deterministic paint masks from one original AWP base.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -246,15 +246,27 @@
       "finish": "Night Watch",
       "tier": 2,
       "rarity": "Rare",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/awp--night-watch.png",
-      "inspection": "assets/renders/awp--night-watch-1600.webp",
-      "inventory": "assets/renders/awp--night-watch-640.webp",
-      "thumbnail": "assets/renders/awp--night-watch-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/awp-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/awp--night-watch-1600.webp",
+      "inventory": "assets/renders/finishes/awp--night-watch-800.webp",
+      "thumbnail": "assets/renders/finishes/awp--night-watch-400.webp",
       "approved": false,
       "vectorModel": "awp",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "pilot": true,
+      "renderMode": "static-2d-webp",
+      "provenance": "assets/source/awp/provenance.json",
+      "sourceNativePixels": [
+        1774,
+        887
+      ],
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "pilotReviewNote": "Isolated high-resolution AWP-style original transparent 2D master, paint-region shaders clipped to one canonical alpha silhouette; user artwork acceptance pending."
     },
     {
       "id": "desert-eagle--solar-ash",
@@ -306,15 +318,27 @@
       "finish": "Eclipse",
       "tier": 3,
       "rarity": "Super Rare",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/awp--eclipse.png",
-      "inspection": "assets/renders/awp--eclipse-1600.webp",
-      "inventory": "assets/renders/awp--eclipse-640.webp",
-      "thumbnail": "assets/renders/awp--eclipse-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/awp-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/awp--eclipse-1600.webp",
+      "inventory": "assets/renders/finishes/awp--eclipse-800.webp",
+      "thumbnail": "assets/renders/finishes/awp--eclipse-400.webp",
       "approved": false,
       "vectorModel": "awp",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "pilot": true,
+      "renderMode": "static-2d-webp",
+      "provenance": "assets/source/awp/provenance.json",
+      "sourceNativePixels": [
+        1774,
+        887
+      ],
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "pilotReviewNote": "Isolated high-resolution AWP-style original transparent 2D master, paint-region shaders clipped to one canonical alpha silhouette; user artwork acceptance pending."
     },
     {
       "id": "m4a1-s--prism-burn",
@@ -413,6 +437,8 @@
   "rasterPilots": [
     "glock-18--slate-grid",
     "ak-47--ghostline",
-    "ak-47--crimson-circuit"
+    "ak-47--crimson-circuit",
+    "awp--night-watch",
+    "awp--eclipse"
   ]
 }
