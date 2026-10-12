@@ -1,78 +1,162 @@
 {
   "schemaVersion": 1,
-  "note": "One profile per approved existing master. Exact alpha is the authoritative silhouette. Automatic material masks are reviewable and may be corrected per weapon without changing line artwork.",
+  "note": "Paint-main masks identify coating eligibility, NOT guaranteed material. Wear material zones are explicit normalized rectangles; unclassified pixels must not be assumed rust-safe. Silhouette alpha remains authoritative.",
   "weapons": {
     "glock-18": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "mp5": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "mac-10": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "tec-9": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "pump-shotgun": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "desert-eagle": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "colt-45-revolver": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "spas-12": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "ak-47": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "m4a4": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "machete": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 0.7,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "m60": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "awp": {
       "paint": "auto-material",
@@ -91,73 +175,157 @@
           0.98,
           0.48
         ]
-      ]
+      ],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "tactical-tomahawk": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "rpg-7": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "karambit": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 0.7,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "butterfly-knife": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 0.7,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "m1911": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "thompson-smg": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "m1-garand": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "kar98k": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "fn-scar-l": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "fn-fal": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     },
     "m134-minigun": {
       "paint": "auto-material",
       "protectDarkBelow": 16,
       "patternScale": 1,
-      "protectedRects": []
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [],
+        "woodRects": [],
+        "polymerRects": [],
+        "protectedRects": [],
+        "reviewed": false
+      }
     }
   }
 }
