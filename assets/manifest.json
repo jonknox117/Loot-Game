@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "assetStatus": "six-raster-finish-pilots-live",
-  "notes": "Six item finishes have 400/800/1600 transparent WebP pilots (Glock, AK, AWP, M4A4); remaining 13 use model-specific vector masters. M4A4 is a provisional source-resolution pilot awaiting higher-resolution dedicated art if necessary.",
+  "assetStatus": "seven-raster-finish-pilots-live",
+  "notes": "Seven original finish concepts use transparent 400/800/1600 WebPs spanning five weapon masters: Glock-18, AK-47, AWP, M4A4, Karambit. Karambit and M4A4 derive from relatively small generated concept-sheet knives/weapons and are provisional raster art rather than full-native-resolution inspected masters. The remaining 12 finishes use weapon-specific SVG fallbacks.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -374,15 +374,28 @@
       "finish": "Golden Talon",
       "tier": 4,
       "rarity": "Legendary",
-      "status": "vector-foundation-live; finish-art-not-yet-approved",
-      "master": "assets/source/karambit--golden-talon.png",
-      "inspection": "assets/renders/karambit--golden-talon-1600.webp",
-      "inventory": "assets/renders/karambit--golden-talon-640.webp",
-      "thumbnail": "assets/renders/karambit--golden-talon-320.webp",
+      "status": "raster-pilot-live",
+      "master": "assets/renders/masters/karambit-neutral-1600.webp",
+      "inspection": "assets/renders/finishes/karambit--golden-talon-1600.webp",
+      "inventory": "assets/renders/finishes/karambit--golden-talon-800.webp",
+      "thumbnail": "assets/renders/finishes/karambit--golden-talon-400.webp",
       "approved": false,
       "vectorModel": "karambit",
       "vectorSource": "assets/weapon-masters.js",
-      "vectorStatus": "implemented"
+      "vectorStatus": "implemented",
+      "pilot": true,
+      "renderMode": "static-2d-webp",
+      "provenance": "assets/source/karambit/provenance.json",
+      "sourceNativePixelsApprox": [
+        960,
+        300
+      ],
+      "exportCanvas": [
+        2400,
+        1200
+      ],
+      "artBrief": "assets/art-briefs/karambit-golden-talon.md",
+      "pilotReviewNote": "Original AI-generated Golden Talon finish concept and neutral drawing from one contact sheet; source native knife width ~960px, inspect 1600px is upsampled. Canonical geometry and alpha are identical between the neutral and final finish. Original eagle eye and feather engraving are simulated 2D relief, not editable 3D embossing. Await user visual and iPhone Safari approval."
     },
     {
       "id": "butterfly-knife--spectrum",
@@ -452,6 +465,7 @@
     "ak-47--crimson-circuit",
     "awp--night-watch",
     "awp--eclipse",
-    "m4a4--voltage-bloom"
+    "m4a4--voltage-bloom",
+    "karambit--golden-talon"
   ]
 }
