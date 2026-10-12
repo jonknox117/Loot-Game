@@ -285,6 +285,16 @@ const lootHubBitmapArt=Object.freeze({
     reel:'assets/renders/finishes/ak-47--crimson-circuit-400.webp',
     inventory:'assets/renders/finishes/ak-47--crimson-circuit-800.webp',
     inspect:'assets/renders/finishes/ak-47--crimson-circuit-1600.webp'
+  }),
+  'AWP|Night Watch':Object.freeze({
+    reel:'assets/renders/finishes/awp--night-watch-400.webp',
+    inventory:'assets/renders/finishes/awp--night-watch-800.webp',
+    inspect:'assets/renders/finishes/awp--night-watch-1600.webp'
+  }),
+  'AWP|Eclipse':Object.freeze({
+    reel:'assets/renders/finishes/awp--eclipse-400.webp',
+    inventory:'assets/renders/finishes/awp--eclipse-800.webp',
+    inspect:'assets/renders/finishes/awp--eclipse-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {
