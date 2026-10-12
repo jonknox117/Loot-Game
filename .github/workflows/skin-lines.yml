@@ -1,7 +1,7 @@
 name: Build universal weapon skin lines
 on:
   push:
-    branches: [main, feature/universal-skin-lines, wear-material-profiles-0.5.5a]
+    branches: [main, feature/universal-skin-lines, wear-material-map-refinement-0.5.5c]
   workflow_dispatch:
 concurrency:
   group: skin-line-${{ github.ref }}
@@ -31,6 +31,15 @@ jobs:
           python scripts/export_paint_profiles.py --check
           python scripts/build_material_maps.py
           python scripts/build_material_maps.py --check
+      - name: Audit semantic material regions and render 24-weapon comparison
+        run: python scripts/audit_material_maps.py --output tests/material-review-sheet.png
+      - name: Upload mask review contact sheet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: material-map-review
+          path: tests/material-review-sheet.png
+          if-no-files-found: ignore
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
