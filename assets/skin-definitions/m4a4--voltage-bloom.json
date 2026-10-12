@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "m4a4--voltage-bloom",
+  "weapon": "M4A4",
+  "baseModel": "m4a4",
+  "finish": "Voltage Bloom",
+  "rarity": "Rare",
+  "tier": 2,
+  "finishVersion": "033E-pilot-1",
+  "status": "provisional-art-live",
+  "assets": {
+    "neutral": "assets/renders/masters/m4a4-neutral-1600.webp",
+    "reel": "assets/renders/finishes/m4a4--voltage-bloom-400.webp",
+    "inventory": "assets/renders/finishes/m4a4--voltage-bloom-800.webp",
+    "inspect": "assets/renders/finishes/m4a4--voltage-bloom-1600.webp"
+  },
+  "paintMain": {
+    "color": "#1e6eba",
+    "opacity": 0.38
+  },
+  "paintSecondary": {
+    "color": "#2457c0",
+    "opacity": 0.34
+  },
+  "stock": {
+    "color": "#2264a9",
+    "opacity": 0.3
+  },
+  "magazine": {
+    "color": "#288fce",
+    "opacity": 0.36
+  },
+  "grip": {
+    "color": "#4439b2",
+    "opacity": 0.34
+  },
+  "pattern": "Original cyan lightning vines, electric seven-petal blooms, and violet edge accents clipped to component masks",
+  "maskGroups": [
+    "paint-main",
+    "paint-secondary",
+    "stock",
+    "magazine",
+    "grip",
+    "metal-exposed",
+    "ao-shadow"
+  ],
+  "productionScript": "scripts/build_m4a4_2d.py",
+  "sourceBundleLibrary": "/LootHub/loothub-m4a4-master-033E.zip",
+  "nativeResolutionNote": "Master source ~1110 native weapon pixels inside generated contact sheet; exported 1600px inspect image is resampled, not native-detail",
+  "approved": false
+}
