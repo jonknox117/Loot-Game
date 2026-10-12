@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.5)
+# LootHub — Curated Arsenal (Marketplace 0.4.6)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -83,6 +83,16 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Manipulation guardrails: market multipliers are clamped to 70–135% of the base, a single trade changes momentum only modestly, at most six trades **per item type per day** may move prices, recent samples are bounded, clock rollback cannot trigger a new daily quota, and momentum decays over time. Listing scarcity contributes at most ±8%.
 - Opening the marketplace, changing filters, reloading, or re-listing cannot themselves create a completed-trade signal. Only successful exchange of coins/items changes transaction-based momentum; old item IDs, save keys, dealer offers, active skin approval, and case odds remain unchanged.
 - New saves retain market signals in \`market.priceHistory\`. Existing version 4 saves with empty price history work as-is; imports reject corrupt or unbounded history. This remains a **single-player simulated economy**, not a network-wide exchange or independent live market data.
+
+## Marketplace 0.4.6 — Offline market simulation
+
+- Leaving the game and returning now processes **elapsed marketplace activity**, regardless of which screen was previously selected. The same state engine also handles periodic market checks while playing.
+- Player-owned escrow listings continue to use their original buyer probabilities and 5% sale fee. Expired NPC listings disappear; supply replenishes gradually from the owner-approved catalog. Pending negotiations for expired/sold items become unavailable.
+- Simulated NPC buyers can autonomously buy up to **two existing NPC listings per catch-up pass**. These trades debit the finite buyer budget, credit the seller, remove the exact item from NPC escrow, and register an executed-market trade for dynamic pricing. They **never charge the player or add phantom inventory**. Already-agreed player–NPC purchases are protected from competing NPCs until expiry.
+- NPC collectors may discover existing player listings while the player is away; offers are saved against the exact listing lifecycle, use trader preferences/budgets, and do not reroll on reload.
+- Offline processing uses 15-minute market intervals and is capped at **8 simulated hours per return**, with at most two NPC-to-NPC trades and the existing 120-minute cap on unattended player listing sales. Excess time is deliberately skipped, rather than replayed on repeated refreshes. Going backward on the device clock cannot produce additional market events.
+- The **While You Were Away** market panel summarizes how much time was simulated, completed player/NPC sales, offers, expired inventory, and restocks. The latest summary is saved with the market state and protected by import validation.
+- All activity is local browser simulation, not actual background execution or live cross-device trading. Client-side time limitations reduce farming and accidental runaway effects but cannot reliably prevent intentional device-clock tampering; authoritative validation would require a server in a future version.
 
 ## Economy and progression
 
