@@ -1,7 +1,7 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 function isApprovedSkin(item){
-  return !!(item&&item.kind==='skin'&&approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin));
+  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
 }
 function ensureMarketData(data){return window.LootHubMarketCore.ensureMarketState(data)}
 let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null, lastPersistedSnapshot=null, saveRevisionSequence=0;
@@ -275,7 +275,7 @@ function saveHub(){
 function listingChance(ratio){return window.LootHubMarketSimulation.listingChance(ratio)}
 function marketTick(){
   if(!isSaveCurrent()||!s||!Array.isArray(s.listings))return null;
-  const result=window.LootHubOffline.advance(s,dropCatalog,Date.now(),Math.random);
+  const result=window.LootHubOffline.advance(s,allMarketCatalog,Date.now(),Math.random);
   for(const sale of result.playerSales){
     recordActivity(s,'Marketplace sale: '+itemName(sale.item)+' for '+sale.net+
       ' coins ('+sale.fee+' fee)');
@@ -740,7 +740,7 @@ function jumpMarketSection(id){
   if(node&&typeof node.scrollIntoView==='function')node.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function marketPulse(){
-  const models=[{kind:'case'},...dropCatalog];
+  const models=[{kind:'case'},...allMarketCatalog];
   const tracked=models.map(item=>({item,...window.LootHubEconomy.priceInfo(s,item)}))
     .sort((a,b)=>b.volume-a.volume||Math.abs(b.multiplier-1)-Math.abs(a.multiplier-1)||
       a.key.localeCompare(b.key));
@@ -911,6 +911,13 @@ function visualArt(item,context='inventory') {
   const wearMeta=item&&item.id&&window.LootHubWear.wearable(item)&&
     window.LootHubWear.validGrade(item.wearGrade)?
     ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"':'';
+  // Universal finishes are generated from the exact approved neutral silhouette.
+  if(window.LootHubSkinLines?.isRegistered(item)){
+    const file=window.LootHubSkinLines.imagePath(item,Number(size));
+    return '<div class="art weapon-art master-raster approved-skin universal-skin" data-weapon-model="'+safeAttr(item.weapon)+
+      '" data-finish="'+safeAttr(item.skin)+'" data-art-status="universal-skin" data-resolution="'+size+'"'+wearMeta+'>'+
+      '<img src="'+safeAttr(file)+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+' universal finish" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+  }
   // Only explicitly approved skins have separate paint art; neutral masters remain unchanged.
   if(isApprovedSkin(item)){
     const art=typeof window!=='undefined'&&window.LootHubSkinArt&&window.LootHubSkinArt[item.weapon+'|'+item.skin];

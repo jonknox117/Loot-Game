@@ -13,7 +13,11 @@ const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8')
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
-const script=masters+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
+const universalData=fs.readFileSync(path.join(root,'assets/skin-lines/line-data.js'),'utf8');
+const universalRegistry=fs.readFileSync(path.join(root,'market/skin-lines.js'),'utf8');
+assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
+assert(html.includes('<script src="./market/skin-lines.js"></script>'));
+const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -49,6 +53,28 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
+test('Universal skin-line engine ships without speculative skin lines',()=>{
+  const g=boot();
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
+  assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
+  assert.equal(g.run('dropCatalog.length'),24+g.run('approvedSkins.length'));
+  const neutral=JSON.parse(g.run('JSON.stringify(catalog)'));
+  const blank=Object.create(null);
+  const win={LootHubSkinLineData:{schemaVersion:1,lines:[{
+    id:'test-line',name:'Test Line',released:true,multiplier:2,
+    palette:['#000000','#ffffff'],casePrice:25
+  }]}};
+  vm.runInNewContext(universalRegistry,{window:win,Object,Map,Number,Math});
+  const variants=win.LootHubSkinLines.variants(neutral,'test-line');
+  assert.equal(variants.length,24);
+  for(const variant of variants){
+    assert(win.LootHubSkinLines.isRegistered(variant));
+    assert(win.LootHubSkinLines.imagePath(variant,800).endsWith('.webp'));
+  }
+  const emptyCatalogView=g.run('universalCases()');
+  assert(emptyCatalogView.includes('Arsenal Case'),'Original case was hidden');
+  assert(!emptyCatalogView.includes('Universal skin-line cases'),'Unapproved themed cases visible');
+});
 test('Arsenal Case contains 24 supplied base weapons and ten owner-approved skins',()=>{
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));

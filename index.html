@@ -52,6 +52,8 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 <script src="./assets/skins/karambit--kryptonite.js"></script>
 <script src="./assets/skins/spas-12--blood-thirsty.js"></script>
 <script src="./assets/skins/awp--crimson-delight.js"></script>
+<script src="./assets/skin-lines/line-data.js"></script>
+<script src="./market/skin-lines.js"></script>
 <script src="./market/wear.js"></script>
 <script src="./market/wear-renderer.js"></script>
 <script src="./market/core.js"></script>
@@ -104,16 +106,21 @@ const approvedSkins=[['MAC-10','Red Devil',4,1800,'🔫'],
 ['SPAS-12','Blood Thirsty',3,1100,'🔫'],
 ['AWP','Crimson Delight',4,4200,'🎯']];
 const dropCatalog=catalog.map(a=>({kind:'weapon',weapon:a[0],tier:a[1],base:a[2],emoji:a[3]})).concat(approvedSkins.map(a=>({kind:'skin',weapon:a[0],skin:a[1],tier:a[2],base:a[3],emoji:a[4]})));
+const universalSkinLines=window.LootHubSkinLines;
+const lineCatalogs=Object.fromEntries(universalSkinLines.lines.map(line=>[line.id,universalSkinLines.variants(catalog,line.id)]));
+const allMarketCatalog=dropCatalog.concat(...Object.values(lineCatalogs));
 let s=loadGame(KEY);if(!s||!Array.isArray(s.items))s={coins:0,items:[],history:[],earned:0,spent:0,sales:0,rep:0,openings:0,serial:0,offers:{},tab:'Home'};if(!Array.isArray(s.listings))s.listings=[];if(!Array.isArray(s.ledger))s.ledger=[];if(!s.preferences)s.preferences={fastOpen:false};window.LootHubMarketCore.ensureMarketState(s);window.LootHubWear.ensureGame(s);
 let tab=s.tab||'Home',busy=false, pending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
-const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?'Sealed Arsenal Case':x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=()=>({id:id(),kind:'case',paid:25}), rng=n=>Math.floor(Math.random()*n);
-function roll(){
+const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?(x.caseId&&universalSkinLines.getLine(x.caseId)?'Sealed '+universalSkinLines.getLine(x.caseId).name+' Case':'Sealed Arsenal Case'):x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=(caseId='arsenal')=>({id:id(),kind:'case',paid:25,...(caseId==='arsenal'?{}:{caseId})}), rng=n=>Math.floor(Math.random()*n);
+function roll(caseId='arsenal'){
+  const lootPool=caseId==='arsenal'?dropCatalog:lineCatalogs[caseId];
+  if(!lootPool||!lootPool.length)throw Error('Unregistered case '+caseId);
   const r=Math.random()*100;
   let tally=0;
   for(let tier=0;tier<odds.length;tier++){
     tally+=odds[tier];
     if(r<tally){
-      const pool=dropCatalog.filter(x=>x.tier===tier);
+      const pool=lootPool.filter(x=>x.tier===tier);
       if(!pool.length)throw Error('Empty weapon tier '+tier);
       const item={id:id(),...pool[rng(pool.length)],paid:25};
       window.LootHubWear.assignRolled(item,Math.random);
@@ -122,11 +129,41 @@ function roll(){
   }
   throw Error('Drop table invalid');
 }
-function render(){marketTick();document.getElementById('wallet').textContent=money(s.coins);document.getElementById('nav').innerHTML=['Home','Cases','Market','Inventory','Earn','Portfolio','Saves'].map(t=>'<button class="'+(t===tab?'active':'')+'" onclick="go(\''+t+'\')">'+t+'</button>').join('');document.getElementById('stats').innerHTML=[['Cash',money(s.coins)],['Assets value',money(s.items.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x),0)+s.listings.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x.item),0))],['Net worth',money(s.coins+s.items.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x),0)+s.listings.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x.item),0))],['Cases opened',s.openings],['Reputation',s.rep]].map(a=>'<div class="stat"><span class="muted">'+a[0]+'</span><b>'+a[1]+'</b></div>').join('');document.getElementById('feed').innerHTML=s.history.length?s.history.slice(0,18).map(h=>'<div class="stat">'+escapeHTML(h)+'</div>').join(''):'<p class="muted">Your transactions appear here.</p>';let el=document.getElementById('main');window.LootHubWearRenderer.release(el);el.innerHTML=({Home:home,Cases:cases,Market:market,Inventory:inventory,Earn:earn,Portfolio:portfolio,Saves:saveHub})[tab]();window.LootHubWearRenderer.attach(el);save()}
+function render(){marketTick();document.getElementById('wallet').textContent=money(s.coins);document.getElementById('nav').innerHTML=['Home','Cases','Market','Inventory','Earn','Portfolio','Saves'].map(t=>'<button class="'+(t===tab?'active':'')+'" onclick="go(\''+t+'\')">'+t+'</button>').join('');document.getElementById('stats').innerHTML=[['Cash',money(s.coins)],['Assets value',money(s.items.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x),0)+s.listings.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x.item),0))],['Net worth',money(s.coins+s.items.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x),0)+s.listings.reduce((a,x)=>a+window.LootHubEconomy.marketValue(s,x.item),0))],['Cases opened',s.openings],['Reputation',s.rep]].map(a=>'<div class="stat"><span class="muted">'+a[0]+'</span><b>'+a[1]+'</b></div>').join('');document.getElementById('feed').innerHTML=s.history.length?s.history.slice(0,18).map(h=>'<div class="stat">'+escapeHTML(h)+'</div>').join(''):'<p class="muted">Your transactions appear here.</p>';let el=document.getElementById('main');window.LootHubWearRenderer.release(el);el.innerHTML=({Home:home,Cases:universalCases,Market:market,Inventory:inventory,Earn:earn,Portfolio:portfolio,Saves:saveHub})[tab]();window.LootHubWearRenderer.attach(el);save()}
 function escapeHTML(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function go(t){if(busy)return;tab=t;render()}
 function home(){return '<section class="panel hero"><div class="case-art">'+visualArt({kind:'case'})+'</div><div><div class="tag Legendary">COLLECTION 001</div><h1>Arsenal Case</h1><p class="muted">One case. Twenty-four base weapons and ten personally approved skins.</p><div class="price">25 coins</div><div class="row" style="margin-top:15px"><button class="primary" onclick="buy()">Buy sealed case</button><button onclick="go(\'Cases\')">Inspect odds</button></div></div></section><section class="panel"><h2>Make your first trade</h2><p class="muted">Start from zero. Earn coins, buy a sealed case, decide whether to open it or resell it, then negotiate for the best price. Every base weapon has its own market estimate.</p><button onclick="go(\'Earn\')">Earn starting coins →</button></section>'}
 function cases(){return '<section class="panel hero"><div class="case-art">'+visualArt({kind:'case'})+'</div><div><div class="tag Legendary">ARSENAL CASE · 001</div><h1>Arsenal Case</h1><p class="muted">Sealed case · 24 base weapons · 10 approved skins</p><div class="price">25 coins</div><div class="row"><button class="primary" onclick="buy()">Purchase case</button><button onclick="go(\'Inventory\')">My inventory</button></div></div></section><section class="panel"><h3>Published drop odds</h3>'+tiers.map((t,i)=>'<div class="stat"><span class="'+cls(t)+'">'+t+' <small class="muted">('+labels[i]+')</small></span><b>'+odds[i]+'%</b></div>').join('')+'<p class="muted tiny">Each tier roll is independent. Only personally approved skins can be included; Five owner-approved skins are active.</p></section><section class="panel"><h3>Available base weapons</h3><div class="cards">'+catalog.map((x,i)=>'<div class="item">'+visualArt({kind:'weapon',weapon:x[0],tier:x[1],base:x[2]})+'<h4>'+escapeHTML(x[0])+'</h4><div class="tag '+cls(tiers[x[1]])+'">'+tiers[x[1]]+'</div><button onclick="previewCatalogWeapon('+i+')">View weapon</button></div>').join('')+'</div></section><section class="panel"><h3>Approved skin finishes</h3><p class="muted">Each released skin is chosen and approved by the game owner.</p><div class="cards">'+approvedSkins.map((x,i)=>'<div class="item">'+visualArt({kind:'skin',weapon:x[0],skin:x[1],tier:x[2],base:x[3]})+'<h4>'+escapeHTML(x[0]+' | '+x[1])+'</h4><div class="tag '+cls(tiers[x[2]])+'">'+tiers[x[2]]+'</div><button onclick="previewApprovedSkin('+i+')">View skin</button></div>').join('')+'</div></section>'}
+
+function universalCases(){
+  if(!universalSkinLines.lines.length)return cases();
+  const extra=universalSkinLines.lines.map(line=>{
+    const sample=lineCatalogs[line.id].find(x=>x.weapon==='AK-47')||lineCatalogs[line.id][0];
+    return '<div class="item">'+visualArt(sample)+
+      '<h4>'+escapeHTML(line.name)+' Case</h4><p class="muted tiny">'+
+      escapeHTML(line.description)+'</p><p class="muted tiny">'+lineCatalogs[line.id].length+
+      ' weapon variants · '+line.casePrice+' coins</p><button onclick="previewSkinLine(\''+
+      line.id+'\')">View collection</button><button class="primary" onclick="buySkinLineCase(\''+
+      line.id+'\')">Buy '+escapeHTML(line.name)+' Case</button></div>';
+  }).join('');
+  return cases()+'<section class="panel"><h2>Universal skin-line cases</h2>'+
+    '<p class="muted">Each case contains only its own skin line; standard rarity odds and persistent condition grades still apply.</p>'+
+    '<div class="cards">'+extra+'</div></section>';
+}
+function previewSkinLine(lineId){
+  const line=universalSkinLines.getLine(lineId);
+  if(!line)return;
+  const skins=lineCatalogs[lineId]||[];
+  dialog('<div class="section-eyebrow">SKIN LINE</div><h2>'+escapeHTML(line.name)+
+    '</h2><p class="muted">'+escapeHTML(line.description)+'</p><div class="cards">'+
+    skins.map(x=>'<div class="item">'+visualArt(x)+
+      '<h4>'+escapeHTML(x.weapon+' | '+x.skin)+'</h4></div>').join('')+
+    '</div><p><button class="primary" onclick="closeDialog()">Close</button></p>');
+}
+function buySkinLineCase(lineId){
+  const line=universalSkinLines.getLine(lineId);
+  if(line&&purchase(line.casePrice,lineId))inspect(s.items[s.items.length-1].id);
+}
 function previewCatalogWeapon(index){
   const a=catalog[index];
   if(!a)return;
@@ -153,7 +190,7 @@ function market(){return enhancedMarket()}
 function earn(){return '<section class="panel"><h2>MicroTasks</h2><p class="muted">A tiny fallback income. Each click earns one coin. No energy system or cooldown. Your real wealth comes from trading.</p><div class="price">'+money(s.earned)+' earned lifetime</div><p><button class="primary" style="font-size:20px;padding:24px 36px" onclick="clickEarn()">◈ Earn 1 coin</button></p><p class="muted">Starter case: 25 coins · '+Math.max(0,25-s.coins)+' more needed</p></section>'}
 function portfolio(){return enhancedPortfolio()}
 function clickEarn(){if(!canMutate())return;s.coins++;s.earned++;save();render()}
-function purchase(price){if(!canMutate())return false;if(s.coins<price){alert('Not enough coins. Visit MicroTasks or sell an item.');return false}if(!window.LootHubMarketTransactions.purchaseCase(s,price,caseItem))return false;log('Purchased sealed Arsenal Case for '+price+' coins');render();return true}
+function purchase(price,caseId='arsenal'){if(!canMutate())return false;if(s.coins<price){alert('Not enough coins. Visit MicroTasks or sell an item.');return false}if(!window.LootHubMarketTransactions.purchaseCase(s,price,()=>caseItem(caseId)))return false;log('Purchased sealed '+(universalSkinLines.getLine(caseId)?.name||'Arsenal')+' Case for '+price+' coins');render();return true}
 function buy(){if(purchase(25))inspect(s.items[s.items.length-1].id)}
 function marketBuy(price){if(purchase(price))inspect(s.items[s.items.length-1].id)}
 function wear(f){return f<.07?'Factory New':f<.15?'Minimal Wear':f<.38?'Field-Tested':f<.45?'Well-Worn':'Battle-Scarred'}
@@ -165,7 +202,7 @@ function sellOffer(k){let x=s.items.find(v=>v.id===k);if(!x)return;let v=estimat
 function respondOffer(k){if(!canMutate())return;let x=s.items.find(v=>v.id===k);if(!x)return;let ask=Math.floor(Number(document.getElementById('ask').value)),v=estimated(x),key='sale-'+k;let o=s.offers[key]||(s.offers[key]={limit:Math.round(v*(.87+Math.random()*.26)),attempts:0});if(!window.LootHubMarketCore.validAsk(ask)){document.getElementById('response').textContent='Enter a valid whole-coin asking price.';return}if(o.closed||o.attempts>=3){document.getElementById('response').textContent='This buyer already walked away from this item.';return}o.attempts++;if(ask<=o.limit){if(!window.LootHubMarketTransactions.sellOwned(s,k,ask,2))return;delete s.offers[key];log('Negotiated sale of '+itemName(x)+' for '+ask+' coins');closeDialog();render()}else if(o.attempts>=3){o.closed=true;document.getElementById('response').textContent='Buyer walked away. This item cannot be renegotiated with the same buyer.';save()}else{document.getElementById('response').textContent='Buyer counters at '+Math.round(o.limit*(.91+.03*o.attempts))+' coins. Attempts '+o.attempts+'/3';save()}}
 function negotiate(price){let limit=Math.max(1,Math.round(price*(.78+Math.random()*.17)));dialog('<h2>Negotiate purchase</h2><p class="muted">The seller is asking '+price+' coins for a sealed Arsenal Case.</p><input id="offer" class="field" type="number" min="1" value="'+Math.round(price*.8)+'"><p><button class="primary" onclick="makeOffer('+limit+')">Send offer</button> <button onclick="closeDialog()">Cancel</button></p><div id="response"></div>')}
 function makeOffer(limit){let n=Math.floor(Number(document.getElementById('offer').value));if(!Number.isFinite(n)||n<1){document.getElementById('response').textContent='Enter a valid offer.';return}if(n>=limit){if(purchase(n)){closeDialog();inspect(s.items[s.items.length-1].id)}}else document.getElementById('response').textContent='Seller declines. Try offering more.'}
-function openCase(k){if(busy||!canMutate())return;let x=s.items.find(v=>v.id===k);if(!x||x.kind!=='case')return;busy=true;let reward=roll();s.pendingReveal=reward.id;s.items=s.items.filter(v=>v.id!==k);s.items.push(reward);s.openings++;log('Opened Arsenal Case → '+itemName(reward)+' ('+tiers[reward.tier]+')');save();let sequence=Array.from({length:48},()=>({...dropCatalog[rng(dropCatalog.length)]}));sequence[42]=reward;let tiles=sequence.map((a,i)=>{const shown=i===42?a:{...a,id:'reel-preview-'+i+'-'+(a.weapon||''),wearGrade:window.LootHubWear.rollGrade(()=>window.LootHubWearRenderer.hash('reel:'+i+':'+(a.weapon||'')+':'+(a.skin||''))/4294967296)};return '<div class="tile" data-reel-index="'+i+'" style="border-color:'+['#9ba6b7','#5acc7c','#579bf1','#ad6def','#e7b64e'][a.tier]+'">'+visualArt(shown,'reel')+escapeHTML(a.weapon)+'</div>'}).join('');dialog('<h2>Opening Arsenal Case</h2><div class="reel"><div class="pointer"></div><div class="track" id="track">'+tiles+'</div></div><p class="muted tiny">Reward is already saved. Closing or reloading cannot reroll it.</p><button onclick="finishOpening()">Skip animation</button>');let track=document.getElementById('track');track.style.transition='transform 6.5s cubic-bezier(.09,.75,.12,1)';requestAnimationFrame(()=>requestAnimationFrame(()=>{track.style.transform='translateX('+Math.round(track.parentElement.clientWidth/2-(42*120+56))+'px)'}));pending={reward,timer:setTimeout(finishOpening,6700)}}
+function openCase(k){if(busy||!canMutate())return;let x=s.items.find(v=>v.id===k);if(!x||x.kind!=='case')return;const caseId=x.caseId||'arsenal';const reelPool=caseId==='arsenal'?dropCatalog:lineCatalogs[caseId];if(!reelPool?.length)return;busy=true;let reward=roll(caseId);s.pendingReveal=reward.id;s.items=s.items.filter(v=>v.id!==k);s.items.push(reward);s.openings++;log('Opened '+itemName(x)+' → '+itemName(reward)+' ('+tiers[reward.tier]+')');save();let sequence=Array.from({length:48},()=>({...reelPool[rng(reelPool.length)]}));sequence[42]=reward;let tiles=sequence.map((a,i)=>{const shown=i===42?a:{...a,id:'reel-preview-'+i+'-'+(a.weapon||''),wearGrade:window.LootHubWear.rollGrade(()=>window.LootHubWearRenderer.hash('reel:'+i+':'+(a.weapon||'')+':'+(a.skin||''))/4294967296)};return '<div class="tile" data-reel-index="'+i+'" style="border-color:'+['#9ba6b7','#5acc7c','#579bf1','#ad6def','#e7b64e'][a.tier]+'">'+visualArt(shown,'reel')+escapeHTML(a.weapon)+'</div>'}).join('');dialog('<h2>Opening '+escapeHTML(itemName(x))+'</h2><div class="reel"><div class="pointer"></div><div class="track" id="track">'+tiles+'</div></div><p class="muted tiny">Reward is already saved. Closing or reloading cannot reroll it.</p><button onclick="finishOpening()">Skip animation</button>');let track=document.getElementById('track');track.style.transition='transform 6.5s cubic-bezier(.09,.75,.12,1)';requestAnimationFrame(()=>requestAnimationFrame(()=>{track.style.transform='translateX('+Math.round(track.parentElement.clientWidth/2-(42*120+56))+'px)'}));pending={reward,timer:setTimeout(finishOpening,6700)}}
 function finishOpening(){if(!pending)return;clearTimeout(pending.timer);let x=pending.reward;pending=null;busy=false;s.pendingReveal=null;save();render();dialog('<div class="tag '+cls(tiers[x.tier])+'">'+tiers[x.tier]+'</div><div class="big reveal-art">'+visualArt(x,'inspect')+'</div><h2>'+escapeHTML(itemName(x))+'</h2><p class="muted">'+(x.kind==='skin'?'Approved skin · '+x.skin:'Base weapon · unskinned')+'</p><p>'+conditionTag(x)+'</p>'+conditionPriceRows(x)+'<div class="price">Estimated market value: ≈ '+money(marketEstimate(x))+' coins</div><p class="muted tiny">Market value is an estimate, not guaranteed sale proceeds.</p><div class="row"><button class="primary" onclick="inspect(\''+x.id+'\')">Inspect / sell</button><button onclick="closeDialog()">Keep item</button></div>')}
 window.addEventListener('beforeunload',save);window.addEventListener('storage',event=>{if(event.key===KEY){saveConflict=true;updateSaveIndicator()}});setInterval(()=>{if(!busy){const result=marketTick();if(tab==='Market'&&result&&result.changed)render()}},30000);render();
 </script></body></html>

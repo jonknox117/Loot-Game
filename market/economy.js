@@ -4,12 +4,12 @@
 (function(root){
 'use strict';
 const core=root.LootHubMarketCore;
-const DAY=86400000,MAX_KEYS=120,MAX_TRADES_PER_DAY=6,MAX_SAMPLES=12;
+const DAY=86400000,MAX_KEYS=2048,MAX_TRADES_PER_DAY=6,MAX_SAMPLES=12;
 const MIN_FACTOR=.7,MAX_FACTOR=1.35;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 function key(item){
   if(!item||!core.eligible({...item,id:item.id||'market-reference'}))return null;
-  if(item.kind==='case')return 'case';
+  if(item.kind==='case')return item.caseId&&item.caseId!=='arsenal'?'case:'+encodeURIComponent(String(item.caseId)):'case';
   const weapon=String(item.weapon||'').trim().toLowerCase();
   if(!weapon||weapon.length>120)return null;
   const skin=item.kind==='skin'?String(item.skin||'').trim().toLowerCase():'';
