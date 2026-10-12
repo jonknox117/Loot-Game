@@ -65,3 +65,11 @@ The Saves tab provides:
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
 5. Run and verify mobile end-to-end browser CI and audit persistence and economy edge cases.
+
+## October 2026 — Ten selected weapon masters and Arsenal Case roster
+
+The Arsenal Case now rolls only the user's approved weapon families: Glock-18, AK-47, AWP, M4A4, Karambit, Butterfly Knife, 12 Gauge Pump Shotgun, Desert Eagle, Colt .45 Revolver, Tactical Machete, Tactical Tomahawk, SPAS-12, MP5, MAC-10, and Tec-9. Previously owned items from the older case table remain in inventory and the market; the save key and economy are unchanged.
+
+Ten approved original neutral renders were added in three real transparent WebP sizes (400/800/1600): Butterfly Knife, 12 Gauge Pump Shotgun, Desert Eagle, Tactical Machete, Colt .45 Revolver, MP5, MAC-10, Tec-9, Tactical Tomahawk, SPAS-12. All barrels and blades face right. No composite image, white background, cords, or decorative SVG overlays. Neutral artwork is displayed in reel, inventory and inspect while painted finish-specific art is still being produced. Existing seven finished WebP skins take precedence. **A neutral master is not falsely described as a completed custom skin.**
+
+The GitHub connector currently supports UTF-8 content updates but not direct binary writes. Therefore the three WebP exports are stored losslessly as base64 data in individual `assets/neutral-art/<model>.js` modules; the browser uses their exact WebP bytes as `data:image/webp` image URLs. This is a transport format, not SVG art. Original sources and normal standalone WebP exports are archived in the Library package `/LootHub/loothub-ten-weapon-masters-2026-10-12.zip`. Case rarity odds are unchanged.
