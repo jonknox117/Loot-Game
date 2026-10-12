@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "One mask set per complete source weapon silhouette: metal, wood, and other together cover each visible source pixel. Normalized rectangles are conservative material seeds, not certified pixel-perfect boundaries; generated material maps are checked against source alpha and should be visually reviewed before first skin-line release. Existing paint-main is finish eligibility, not a metal map.",
+  "note": "24 silhouette-aligned semantic material maps; refined using comparison of all 24 400px master previews and generated material images. Automated landmark assertions check representative known metal/wood/other points; ambiguous areas intentionally default other. Paint-main remains coating-eligibility, not proof of metal. Material boundaries are visually reviewed drafts pending final owner sign-off.",
   "weapons": {
     "glock-18": {
       "paint": "auto-material",
@@ -32,7 +32,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "mp5": {
@@ -71,7 +72,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "mac-10": {
@@ -82,14 +84,14 @@
       "wear": {
         "metalRects": [
           [
-            0.24,
             0.09,
+            0.1,
             0.93,
-            0.46
+            0.48
           ],
           [
             0.4,
-            0.43,
+            0.42,
             0.65,
             0.95
           ]
@@ -97,20 +99,15 @@
         "woodRects": [],
         "polymerRects": [
           [
-            0.09,
-            0.13,
-            0.28,
-            0.55
-          ],
-          [
-            0.39,
-            0.37,
-            0.57,
-            0.82
+            0.38,
+            0.38,
+            0.55,
+            0.8
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "tec-9": {
@@ -143,7 +140,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "pump-shotgun": {
@@ -176,7 +174,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "desert-eagle": {
@@ -203,7 +202,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "colt-45-revolver": {
@@ -230,7 +230,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "spas-12": {
@@ -241,35 +242,30 @@
       "wear": {
         "metalRects": [
           [
-            0.26,
-            0.24,
+            0.05,
+            0.21,
             0.99,
-            0.58
+            0.6
           ]
         ],
         "woodRects": [],
         "polymerRects": [
           [
-            0.02,
-            0.2,
-            0.32,
-            0.66
-          ],
-          [
-            0.01,
-            0.47,
-            0.13,
+            0.015,
+            0.48,
+            0.15,
             0.82
           ],
           [
-            0.4,
-            0.35,
-            0.75,
-            0.57
+            0.48,
+            0.34,
+            0.76,
+            0.59
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "ak-47": {
@@ -314,7 +310,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "m4a4": {
@@ -328,13 +325,13 @@
             0.23,
             0.17,
             0.98,
-            0.58
+            0.59
           ],
           [
-            0.51,
-            0.46,
-            0.69,
-            0.83
+            0.45,
+            0.45,
+            0.59,
+            0.89
           ]
         ],
         "woodRects": [],
@@ -346,9 +343,9 @@
             0.7
           ],
           [
-            0.32,
+            0.31,
             0.48,
-            0.48,
+            0.45,
             0.85
           ],
           [
@@ -359,7 +356,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "machete": {
@@ -386,7 +384,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "m60": {
@@ -425,7 +424,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "awp": {
@@ -434,38 +434,39 @@
       "patternScale": 1,
       "protectedRects": [
         [
-          0.33,
-          0.16,
-          0.68,
-          0.38
-        ],
-        [
-          0.59,
-          0.35,
-          0.98,
-          0.48
+          0.2,
+          0.26,
+          0.54,
+          0.415
         ]
       ],
       "wear": {
         "metalRects": [
           [
-            0.18,
-            0.23,
+            0.5,
+            0.405,
             0.99,
-            0.5
+            0.54
+          ],
+          [
+            0.45,
+            0.36,
+            0.61,
+            0.45
           ]
         ],
         "woodRects": [],
         "polymerRects": [
           [
             0.04,
-            0.36,
-            0.74,
+            0.455,
+            0.59,
             0.79
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "tactical-tomahawk": {
@@ -476,7 +477,7 @@
       "wear": {
         "metalRects": [
           [
-            0.75,
+            0.78,
             0.05,
             0.995,
             0.96
@@ -486,13 +487,14 @@
           [
             0.015,
             0.3,
-            0.83,
+            0.79,
             0.67
           ]
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "rpg-7": {
@@ -538,7 +540,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "karambit": {
@@ -571,7 +574,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "butterfly-knife": {
@@ -598,7 +602,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "m1911": {
@@ -625,7 +630,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "thompson-smg": {
@@ -670,7 +676,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "m1-garand": {
@@ -681,10 +688,10 @@
       "wear": {
         "metalRects": [
           [
-            0.35,
+            0.33,
             0.24,
             0.99,
-            0.48
+            0.45
           ]
         ],
         "woodRects": [
@@ -696,14 +703,15 @@
           ],
           [
             0.4,
-            0.34,
+            0.4,
             0.86,
             0.72
           ]
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "kar98k": {
@@ -736,7 +744,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "fn-scar-l": {
@@ -747,16 +756,16 @@
       "wear": {
         "metalRects": [
           [
-            0.25,
+            0.27,
             0.16,
             0.99,
-            0.5
+            0.51
           ],
           [
-            0.55,
             0.48,
-            0.74,
-            0.86
+            0.46,
+            0.59,
+            0.87
           ]
         ],
         "woodRects": [],
@@ -764,24 +773,25 @@
           [
             0,
             0.23,
-            0.35,
+            0.32,
             0.73
           ],
           [
-            0.32,
+            0.3,
             0.45,
-            0.46,
+            0.45,
             0.87
           ],
           [
-            0.27,
-            0.29,
-            0.85,
+            0.61,
+            0.3,
+            0.82,
             0.53
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "fn-fal": {
@@ -826,7 +836,8 @@
         ],
         "polymerRects": [],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     },
     "m134-minigun": {
@@ -859,7 +870,8 @@
           ]
         ],
         "protectedRects": [],
-        "reviewed": false
+        "reviewed": false,
+        "reviewStatus": "refined-draft"
       }
     }
   }
