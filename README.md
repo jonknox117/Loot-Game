@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.2
+# LootHub — Arsenal Alpha 0.3.3A (first 2D master pilot)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -13,7 +13,8 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Player listings are kept separate from inventory and remain listed on reload; elapsed time is processed on return.
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
-- **17 original model-specific vector weapon masters**, used across case contents, collection cards, inventory, opening reels and item inspection, with preliminary finish color treatments.
+- **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
+- **First real transparent bitmap pilot:** Glock-18 | Slate Grid is rendered from one clear 2D master, with 400px reel, 800px inventory, and 1600px inspect versions. The neutral Glock master is also saved as three WebP sizes. The 2400x1200 working image and material masks are preserved in the master source archive.
 
 ## Saving progress
 
@@ -38,11 +39,12 @@ The Saves tab provides:
 - **0.3.0 Foundation:** save integrity guard, recovery instead of destructive save reset, stale multi-tab protection, deterministic regressions, and 19-item approved-artwork production manifest.
 - **0.3.1 Website:** mobile-first CSS design system, navigation, cards, dialogs, case page and portfolio visual consistency.
 - **0.3.2 Weapon master foundations:** 17 distinctive, consistent 640 × 270 SVG model silhouettes wired into the existing game. All 19 current finishes map to the correct weapon master. Preliminary finish palettes are in place; original textured skin artwork remains unapproved.
-- **0.3.3+ Planned:** original finish textures and high-quality illustrated skin artwork, then improved inventory, inspection and case-opening sequences.
+- **0.3.3A Master pilot:** created a clean transparent Glock-style 2D base render, generated slide/body paint masks and a reusable Slate Grid finish, exported three high-quality sizes and integrated the actual WebPs into the live site (not base64 page data). Source geometry is AI-generated, a plausible Glock-like depiction rather than an OEM-certified 3D model. The remaining 18 finishes still use vector art.
+- **0.3.3B Planned:** validate source recognition and clarity with the user, then replicate the source/master/finish process for AK-47, AWP, M4A4, and Karambit, followed by remaining models.
 
 ## Known limitations
 
-- Weapon models now use original **model-specific SVG foundation artwork**, not final textured high-resolution rendered skins. Detailed per-finish artwork is still planned.
+- One Glock finish uses an original masked, high-resolution 2D raster; other finishes still use model-specific SVG artwork. Most detailed per-finish art remains planned. Source raster is generated art, not proof of mechanically exact geometry.
 - Still uses client-side random outcomes and client-authoritative transactions; not secure against save modification or exploits.
 - NPC buyers are simplified, not a deep supply/demand economy.
 - Save snapshots are finite browser-local storage; a full browser quota or cleared site data can still lose progress.
@@ -50,7 +52,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Produce and integrate approved, detailed original skin finish artwork using `assets/manifest.json` and the 17 existing model-specific SVG masters as silhouette/layout references; retain SVG fallback for incomplete entries.
+1. Review first clean Glock model visually, then produce AK-47, AWP, M4A4, and Karambit masters with equivalent geometry clarity and isolated finish masks; keep SVG fallbacks until each raster passes QA.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
