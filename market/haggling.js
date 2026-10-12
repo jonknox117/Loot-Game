@@ -1,4 +1,4 @@
-/* LootHub 0.4.3: persistent two-way NPC negotiations.
+/* LootHub 0.4.4: persistent two-way NPC negotiations.
    One fixed budget per listing, three offers maximum, no reroll on reload. */
 (function(root){
 'use strict';
@@ -24,16 +24,14 @@ function begin(game,kind,listingId,now=Date.now()){
   if(existing)return existing;
   const listing=locate(game,kind,listingId);
   if(!listing||!listing.item||!core.validAsk(listing.ask))return null;
-  const ratio=hash(kind+'|'+listing.id+'|'+(listing.seller||''));
-  const buyer=kind==='sell';
-  const threshold=buyer?
-    Math.max(1,Math.round(listing.ask*(.85+ratio*.20))):
-    Math.max(1,Math.min(listing.ask,Math.round(listing.ask*(.79+ratio*.14))));
-  const npcOffer=buyer?Math.max(1,Math.min(threshold,Math.round(listing.ask*(.69+ratio*.15)))):listing.ask;
+  const terms=root.LootHubTraders.terms(game,kind,listing);
+  if(!terms)return null;
+  const {threshold,npcOffer,traderId,persona,description,focus,maxRounds,concession}=terms;
   const deal={id:kind+':'+listing.id+(kind==='sell'?':'+listing.createdAt:''),kind,listingId:listing.id,itemId:listing.item.id,
     listingCreatedAt:listing.createdAt,
     initialAsk:listing.ask,threshold,npcOffer,rounds:0,status:'open',agreedPrice:null,
-    seller:buyer?'Interested Collector':listing.seller,createdAt:now,updatedAt:now,
+    traderId,persona,description,focus,maxRounds,concession,
+    seller:terms.seller,createdAt:now,updatedAt:now,
     history:[{by:'npc',amount:npcOffer,at:now}]};
   game.market.negotiations.push(deal);
   return deal;
@@ -48,7 +46,8 @@ function submit(game,kind,listingId,amount,now=Date.now()){
   if(!n||n.status!=='open'||!core.validAsk(amount)||!Number.isFinite(now)||
     (n.kind==='buy'&&amount>n.initialAsk))return null;
   if(!stillAvailable(game,n)){n.status='unavailable';n.updatedAt=now;return n}
-  if(n.rounds>=MAX_ROUNDS)return null;
+  const limit=Number.isSafeInteger(n.maxRounds)?n.maxRounds:MAX_ROUNDS;
+  if(n.rounds>=limit)return null;
   n.rounds++;
   n.updatedAt=now;
   n.history.push({by:'player',amount,at:now});
@@ -56,16 +55,19 @@ function submit(game,kind,listingId,amount,now=Date.now()){
   if(accepted){
     n.agreedPrice=amount;n.status='agreed';
     n.history.push({by:'npc',amount,at:now,message:'Deal agreed'});
-  }else if(n.rounds>=MAX_ROUNDS){
+  }else if(n.rounds>=limit){
     n.status='walked';
     n.history.push({by:'npc',at:now,message:'Trader walked away'});
   }else{
+    const step=Number.isFinite(n.concession)?n.concession:.5;
     if(n.kind==='buy'){
+      const target=Math.max(n.threshold,amount);
       n.npcOffer=Math.max(n.threshold,Math.min(n.npcOffer,
-        Math.round((n.npcOffer+amount)/2)));
+        Math.round(n.npcOffer-(n.npcOffer-target)*step)));
     }else{
+      const target=Math.min(n.threshold,amount);
       n.npcOffer=Math.min(n.threshold,Math.max(n.npcOffer,
-        Math.round((n.npcOffer+amount)/2)));
+        Math.round(n.npcOffer+(target-n.npcOffer)*step)));
     }
     n.history.push({by:'npc',amount:n.npcOffer,at:now,message:'Counteroffer'});
   }
