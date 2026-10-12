@@ -1,4 +1,4 @@
-# LootHub — Base Arsenal
+# LootHub — Base Arsenal (Marketplace 0.4.0 Foundation)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -25,6 +25,17 @@ Tier probabilities: 70% / 20% / 7.5% / 2% / 0.5%. A case costs 25 coins. Base we
 - `assets/weapon-masters.js` is a neutral-only vector fallback for retired weapon models from older saves. Its colorful procedural finish palettes were removed.
 - Previous finished skin images may remain as unused historical files in the repository; they are **not mapped, selectable, rolled, displayed, or used for marketplace trading**.
 - Future skins will be introduced only following approval. A finish must never be improvised in the game.
+
+## Marketplace 0.4.0 — Foundation patch
+
+This release restructures the existing marketplace without changing gameplay or approving any skins.
+
+- Market logic now lives in `market/core.js` (item eligibility, valuations and versioned state), `market/transactions.js` (wallet, inventory and escrow transfers), and `market/simulation.js` (existing NPC sale probability and elapsed intervals).
+- Existing items, market listings, asking prices, coins, saved offers and unique item IDs carry forward. The save uses the same browser key and save version 4, with a new `market.schemaVersion` field and reserved empty collections for later NPC listings, negotiations, traders and price history.
+- Current pricing, case odds, dealer negotiations, the 5% listing-sale fee and sale probabilities are unchanged.
+- Added migration, double-settlement and price-equivalence tests, plus mobile smoke validation.
+- **Zero skins are active or approved.** The new eligibility layer accommodates legacy items and future explicitly approved skins without creating cosmetics.
+- Real multiplayer trading and account-based saving remain out of scope.
 
 ## Economy and progression
 
