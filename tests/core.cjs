@@ -1964,5 +1964,66 @@ test('0.5.5a material maps fully cover every weapon silhouette, one surface per 
   assert.equal(g.run('window.LootHubWearMaterials.eligibility("outside",.5,.5,1).rust'),false);
 });
 
+
+test('0.5.5b material-specific weathering has distinct grade compositions',()=>{
+ const g=boot();
+ const r='window.LootHubWearRenderer';
+ const limits=JSON.parse(g.run('JSON.stringify('+r+'.LIMITS)'));
+ assert.equal(limits.length,5);
+ assert.deepEqual(limits[0],{scratch:0,dirt:0,rust:0,chip:0,fade:0});
+ assert.equal(limits[1].rust,0,'Lightly Worn should have no corrosion whatsoever');
+ for(let grade=1;grade<=4;grade++){
+   const actual=JSON.parse(g.run('JSON.stringify('+r+'.pattern("ak47-grade-proof",'+grade+'))'));
+   const kinds=['scratch','dirt','rust','chip','fade'];
+   assert.deepEqual(Object.fromEntries(kinds.map(kind=>[kind,actual.filter(x=>x.kind===kind).length])),limits[grade]);
+   const second=JSON.parse(g.run('JSON.stringify('+r+'.pattern("ak47-grade-proof",'+grade+'))'));
+   assert.deepEqual(actual,second,'The same item grade must reproduce identical marks');
+   if(grade>1){
+     for(const kind of kinds)assert(limits[grade][kind]>=limits[grade-1][kind],
+       kind+' needs progressively stronger representation');
+   }
+ }
+ assert(!g.run('JSON.stringify('+r+'.pattern("skin-a",4))===JSON.stringify('+r+'.pattern("skin-b",4))'));
+});
+test('0.5.5b pixel-level rust never reaches wood, other or protected material',()=>{
+ const g=boot(),p=JSON.parse(g.run('JSON.stringify((()=>{'+
+    'const api=window.LootHubWearRenderer,ma=window.LootHubWearMaterials;'+
+    'const mk=()=>{const bytes=new Uint8ClampedArray(16);'+
+    'for(let i=0;i<4;i++)bytes[i*4+3]=220;'+
+    'return {getImageData:()=>({data:bytes}),putImageData:r=>{},bytes}};'+
+    'const mat={width:4,height:1,pixels:Uint8ClampedArray.from(['+
+    '255,0,0,255, 0,255,0,255, 0,0,255,255, 255,0,0,255])};'+
+    'const finish={width:4,height:1,pixels:Uint8ClampedArray.from(['+
+    '255,255,255,255, 255,255,255,255, 255,255,255,255, 255,255,255,255])};'+
+    'const fake={getProfile:()=>({protectedRects:[[.75,0,1,1]],wear:{protectedRects:[]}}),inRects:ma.inRects};'+
+    'const results={};'+
+    'for(const kind of ["rust","chip","scratch","dirt","fade"]){'+
+    'const ctx=mk();api.maskLayer(ctx,4,1,kind,{x:0,y:0,w:4,h:1},mat,finish,"AK-47",fake);'+
+    'results[kind]=Array.from([ctx.bytes[3],ctx.bytes[7],ctx.bytes[11],ctx.bytes[15]])}'+
+    'const noMaterial=mk();api.maskLayer(noMaterial,4,1,"rust",{x:0,y:0,w:4,h:1},null,finish,"AK-47",fake);'+
+    'results.missing=Array.from([noMaterial.bytes[3],noMaterial.bytes[7],noMaterial.bytes[11],noMaterial.bytes[15]]);'+
+    'return results})())'));
+ assert.deepEqual(p.rust,[220,0,0,0],'Metal-only rust must never affect wood/other/protected');
+ assert.deepEqual(p.chip,[220,0,0,0],'Metal finish chips must not appear on wood/other');
+ assert.deepEqual(p.scratch,[220,110,154,0],'Wood scuffs must be softer than metal; protected absent');
+ assert.deepEqual(p.dirt,[220,194,220,0]);
+ assert.equal(p.fade[1],Math.round(220*.18),'Wood fade is subtle');
+ assert.deepEqual(p.missing,[0,0,0,0],'If material map fails to load, rust is completely disabled');
+});
+test('0.5.5b source alpha and wear grade remain independent of prices or saved data',()=>{
+ const g=boot();
+ const item={id:'iron-and-wood',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:4};
+ const state=g.state();
+ const art=g.run('visualArt('+JSON.stringify(item)+',"inspect")');
+ assert(art.includes('data-material-mask="./assets/skin-lines/materials/ak-47--material-1600.png"'));
+ assert(art.includes('data-paint-mask="./assets/skin-lines/masks/ak-47--paint-main-1600.png"'));
+ assert.equal(g.run('window.LootHubMarketCore.estimated('+JSON.stringify(item)+')'),55);
+ assert.equal(g.run('window.LootHubWearRenderer.paint.length'),4);
+ assert.equal(g.run('window.LootHubWearRenderer.attach(null)'),0);
+ assert.equal(g.run('window.LootHubWearRenderer.release(null)'),0);
+ assert.deepEqual(g.state(),state);
+ assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
