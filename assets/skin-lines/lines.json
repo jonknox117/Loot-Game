@@ -8,7 +8,11 @@
       "type": "crimson",
       "multiplier": 2,
       "casePrice": 25,
-      "released": true
+      "released": true,
+      "palette": [
+        "#190608",
+        "#e22c44"
+      ]
     },
     {
       "id": "emerald-fracture",
@@ -17,7 +21,11 @@
       "type": "kryptonite",
       "multiplier": 2,
       "casePrice": 25,
-      "released": true
+      "released": true,
+      "palette": [
+        "#071611",
+        "#129f57"
+      ]
     },
     {
       "id": "royal-bloom",
@@ -26,7 +34,11 @@
       "type": "bloom",
       "multiplier": 2,
       "casePrice": 25,
-      "released": true
+      "released": true,
+      "palette": [
+        "#30181b",
+        "#e8b7ad"
+      ]
     }
   ]
 }
