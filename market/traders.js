@@ -1,4 +1,4 @@
-/* LootHub 0.4.4 — Persistent NPC profiles and finite buyer budgets.
+/* LootHub 0.4.8 — Persistent NPC profiles and finite buyer budgets.
    Preferences and negotiation temperaments are separate from case-drop odds. */
 (function(root){
 'use strict';
@@ -111,6 +111,18 @@ function terms(game,kind,listing){
     description:traits.description,focus:[...trader.focus],maxRounds:traits.patience,
     concession:traits.concession,threshold:ceiling,npcOffer:bid};
 }
+function canSettleOffer(game,offer,price){
+  if(!offer||!offer.traderId||!core.validAsk(price))return false;
+  const buyer=get(game,offer.traderId);
+  if(!buyer||buyer.role!=='buyer')return false;
+  // Agreements from other listings reserve funds first. The current trade's
+  // own reservation must not be counted twice.
+  const otherReserved=(game.market.negotiations||[]).filter(n=>n&&
+    n!==offer&&n.id!==offer.id&&n.kind==='sell'&&
+    n.traderId===buyer.id&&n.status==='agreed')
+    .reduce((sum,n)=>sum+(core.validAsk(n.agreedPrice)?n.agreedPrice:0),0);
+  return buyer.wallet-otherReserved>=price;
+}
 function canFund(game,id,price){
   if(!id)return true; // Negotiations from previous versions had no persistent trader.
   const trader=get(game,id);
@@ -139,5 +151,5 @@ function summary(trader){
     wallet:trader?trader.wallet:0};
 }
 root.LootHubTraders=Object.freeze({PROFILES,STYLES,ensure,get,style,likes,categories,
-  buyingPower,chooseBuyer,terms,canFund,finishPurchase,finishSale,summary});
+  buyingPower,chooseBuyer,terms,canFund,canSettleOffer,finishPurchase,finishSale,summary});
 })(window);
