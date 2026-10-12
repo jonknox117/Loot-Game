@@ -354,7 +354,7 @@ test('Marketplace state migration preserves legacy listing, offers and item iden
   store.setItem(KEY,JSON.stringify(old));
   const g=boot(store),state=g.state();
   assert.equal(state.market.schemaVersion,1);
-  assert.deepEqual(state.market.npcListings,[]);
+  assert.equal(state.market.npcListings.length,15,'An existing Market tab seeds NPC offers after migration');
   assert.equal(state.items[0].id,'owned-case');
   assert.equal(state.listings[0].item.id,'other');
   assert.equal(state.listings[0].ask,30);
