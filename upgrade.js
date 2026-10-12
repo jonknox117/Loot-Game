@@ -30,15 +30,33 @@ function isValidSave(data) {
     Number.isSafeInteger(data.coins) && data.coins>=0 &&
     Array.isArray(data.items) && Array.isArray(data.history));
 }
-// Keep existing items and market listings after the Golden Talon rename.
-function canonicalSkin(weapon,skin){
-  return weapon==='Karambit'&&(skin==='Golden Talon'||skin==="Raptor's Gaze")?'Starfall':skin;
-}
+// Convert every retired skin to its unskinned base weapon without losing the
+// original unique item, asking price, or pre-migration market estimate.
+// Only the previous one-time conversion applies wear/pattern/StatTrak multipliers.
 function migrateLegacyFinishData(data){
   if(!data||typeof data!=='object')return data;
-  const migrate=item=>{if(item&&item.kind==='skin'&&item.weapon==='Karambit'&&(item.skin==='Golden Talon'||item.skin==="Raptor's Gaze"))item.skin='Starfall';};
+  const migrate=item=>{
+    if(!item||typeof item!=='object'||item.kind==='case')return;
+    if(item.kind==='skin'){
+      const base=Number(item.base);
+      if(Number.isFinite(base)&&base>=0){
+        const f=Number(item.float);
+        const wear=Number.isFinite(f)&&f>=0&&f<=1?(f<.07?1.4:f<.15?1.18:f>.45?.75:1):1;
+        const bonus=(item.stattrak?1.65:1)*wear*(item.pattern===777?1.25:1);
+        item.base=Math.max(1,Math.round(base*bonus));
+      }
+      item.kind='weapon';
+    }
+    if(item.kind==='weapon'){
+      delete item.skin;
+      delete item.finish;
+      delete item.float;
+      delete item.pattern;
+      delete item.stattrak;
+    }
+  };
   if(Array.isArray(data.items))data.items.forEach(migrate);
-  if(Array.isArray(data.listings))data.listings.forEach(listing=>migrate(listing&&listing.item));
+  if(Array.isArray(data.listings))data.listings.forEach(l=>migrate(l&&l.item));
   return data;
 }
 function loadGame(key) {
@@ -90,7 +108,7 @@ function persistGame(data,activeTab){
     }
     data.tab=activeTab;
     data.savedAt=Date.now();
-    data.version=3;
+    data.version=4;
     const nextRevision=(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function')?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+(++saveRevisionSequence).toString(36);
     data.revision=nextRevision;
     // A failed backup write must not prevent the current save from succeeding.
@@ -118,19 +136,20 @@ function safeUpload(data) {
      !Array.isArray(data.listings||[]) || (data.listings||[]).length>50000 ||
      !Number.isFinite(data.earned) || data.earned<0 ||
      !Number.isFinite(data.spent) || data.spent<0 ||
-     !Number.isFinite(data.sales) || data.sales<0) return false;
-  const all=data.items.concat((data.listings||[]).map(v=>v.item));
+     !Number.isFinite(data.sales) || data.sales<0)return false;
+  const all=data.items.concat((data.listings||[]).map(v=>v&&v.item));
   const ids=new Set();
-  for(const item of all) {
-    if(!item || typeof item.id!=='string' || item.id.length>150 || ids.has(item.id) ||
-       !['case','skin'].includes(item.kind))return false;
+  for(const item of all){
+    if(!item||typeof item.id!=='string'||item.id.length>150||ids.has(item.id)||
+       !['case','weapon','skin'].includes(item.kind))return false;
     ids.add(item.id);
-    if(item.kind==='skin' && (!Number.isInteger(item.tier) || item.tier<0 || item.tier>4 ||
-      !Number.isFinite(item.float) || item.float<0 || item.float>1 ||
-      !Number.isFinite(item.base) || item.base<0 ||
-      !Number.isFinite(item.pattern) || item.pattern<0 ||
-      typeof item.weapon!=='string' || typeof item.skin!=='string' ||
-      !Array.isArray(catalog) || !catalog.some(a=>a[0]===item.weapon&&a[1]===canonicalSkin(item.weapon,item.skin)&&a[2]===item.tier)))return false;
+    // Pre-update saves are valid imports even when their former skin was retired.
+    if(item.kind!=='case' && (!Number.isInteger(item.tier)||item.tier<0||item.tier>4||
+       !Number.isFinite(item.base)||item.base<0||
+       typeof item.weapon!=='string'||item.weapon.length<1||item.weapon.length>120))return false;
+    if(item.kind==='skin' && (typeof item.skin!=='string'||item.skin.length>120||
+       !Number.isFinite(item.float)||item.float<0||item.float>1||
+       !Number.isFinite(item.pattern)||item.pattern<0))return false;
   }
   return true;
 }
@@ -173,7 +192,7 @@ function saveHub(){
   const listed=(s.listings||[]).length;
   const ledger=(s.ledger||[]).length;
   return '<section class="panel"><div class="section-eyebrow">PROGRESS PROTECTION</div><h2>My Save</h2>'+ (recoveryRequired?'<div class="notice"><b>Save recovery required.</b><p>Your existing save was unreadable. It has not been overwritten. Restore a previous snapshot or import your exported save before continuing.</p></div>':saveConflict?'<div class="notice"><b>Another tab updated this game.</b><p>This tab is not allowed to overwrite newer progress.</p><button onclick="reloadLatestProgress()">Reload latest save</button></div>':'')+
-  '<div class="notice"><b>Autosave active on this device.</b><p class="muted tiny">Wallet, inventory, opened items, floats, listings, transactions, negotiations, reputation, and settings save automatically. Your existing save is retained when the game updates.</p></div>'+
+  '<div class="notice"><b>Autosave active on this device.</b><p class="muted tiny">Wallet, base weapons, listings, transactions, negotiations, reputation, and settings save automatically. Your existing save is retained when the game updates.</p></div>'+
   '<div class="stat"><span class="muted">Last saved</span><b>'+new Date(s.savedAt||Date.now()).toLocaleString()+'</b></div>'+
   '<div class="stat"><span class="muted">Items carried</span><b>'+count+'</b></div>'+
   '<div class="stat"><span class="muted">Market listings</span><b>'+listed+'</b></div>'+
@@ -281,44 +300,7 @@ function enhancedPortfolio(){
   (s.ledger&&s.ledger.length?'':'<p class="muted">Your first transaction will appear here.</p>')+
   '</div><p class="muted tiny">All recorded events remain in the local save and exported backup; the journal displays the most recent 50.</p></section>';
 }
-/* Pilot: approved render files only. Future skins remain on individually rendered SVG masters. */
-const lootHubBitmapArt=Object.freeze({
-  'Glock-18|Slate Grid':Object.freeze({
-    reel:'assets/renders/finishes/glock-18--slate-grid-400.webp',
-    inventory:'assets/renders/finishes/glock-18--slate-grid-800.webp',
-    inspect:'assets/renders/finishes/glock-18--slate-grid-1600.webp'
-  }),
-  'AK-47|Ghostline':Object.freeze({
-    reel:'assets/renders/finishes/ak-47--ghostline-400.webp',
-    inventory:'assets/renders/finishes/ak-47--ghostline-800.webp',
-    inspect:'assets/renders/finishes/ak-47--ghostline-1600.webp'
-  }),
-  'AK-47|Crimson Circuit':Object.freeze({
-    reel:'assets/renders/finishes/ak-47--crimson-circuit-400.webp',
-    inventory:'assets/renders/finishes/ak-47--crimson-circuit-800.webp',
-    inspect:'assets/renders/finishes/ak-47--crimson-circuit-1600.webp'
-  }),
-  'AWP|Night Watch':Object.freeze({
-    reel:'assets/renders/finishes/awp--night-watch-400.webp',
-    inventory:'assets/renders/finishes/awp--night-watch-800.webp',
-    inspect:'assets/renders/finishes/awp--night-watch-1600.webp'
-  }),
-  'AWP|Eclipse':Object.freeze({
-    reel:'assets/renders/finishes/awp--eclipse-400.webp',
-    inventory:'assets/renders/finishes/awp--eclipse-800.webp',
-    inspect:'assets/renders/finishes/awp--eclipse-1600.webp'
-  }),
-  'M4A4|Voltage Bloom':Object.freeze({
-    reel:'assets/renders/finishes/m4a4--voltage-bloom-400.webp',
-    inventory:'assets/renders/finishes/m4a4--voltage-bloom-800.webp',
-    inspect:'assets/renders/finishes/m4a4--voltage-bloom-1600.webp'
-  }),
-  'Karambit|Starfall':Object.freeze({
-    reel:'assets/renders/finishes/karambit--starfall-400.webp',
-    inventory:'assets/renders/finishes/karambit--starfall-800.webp',
-    inspect:'assets/renders/finishes/karambit--starfall-1600.webp'
-  })
-});
+// Exactly one neutral master per model. Retired finishes are never displayed.
 const lootHubNeutralModels=Object.freeze({
   'Butterfly Knife':'butterfly-knife',
   '12 Gauge Pump Shotgun':'pump-shotgun',
@@ -329,40 +311,38 @@ const lootHubNeutralModels=Object.freeze({
   'MAC-10':'mac-10',
   'Tec-9':'tec-9',
   'Tactical Tomahawk':'tactical-tomahawk',
-  'SPAS-12':'spas-12'
+  'SPAS-12':'spas-12',
+  'M60':'m60',
+  'RPG-7':'rpg-7'
+});
+const lootHubOriginalBaseMasters=Object.freeze({
+  'Glock-18':'assets/renders/masters/glock-18-neutral-1600.webp',
+  'AK-47':'assets/renders/masters/ak-47-neutral-1600.webp',
+  'AWP':'assets/renders/masters/awp-neutral-1600.webp',
+  'M4A4':'assets/renders/masters/m4a4-neutral-1600.webp',
+  'Karambit':'assets/renders/masters/karambit-neutral-1600.webp'
 });
 function visualArt(item,context='inventory') {
-  if(item&&item.kind==='skin'){
-    const displaySkin=canonicalSkin(item.weapon,item.skin);
-    const entry=lootHubBitmapArt[item.weapon+'|'+displaySkin];
-    if(entry){
-      const src=entry[context==='reel'?'reel':context==='inspect'?'inspect':'inventory'];
-      const fallback=window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)
-        ?window.ArsenalMasters.render(displaySkin===item.skin?item:{...item,skin:displaySkin}):'';
-      const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-      return '<div class="art weapon-art master-raster" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(displaySkin)+'" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
-        '<img src="./'+src+'" alt="'+safeAttr(item.weapon+' | '+displaySkin)+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
-        '<div class="raster-fallback" hidden>'+fallback+'</div></div>';
-    }
-  }
-
-  // Real WebP neutral masters; completed finish art above always wins.
-  if(item&&item.kind==='skin'&&typeof window!=='undefined'){
+  if(item&&item.kind!=='case'){
+    const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const size=context==='inspect'?'1600':context==='reel'?'400':'800';
     const modelSlug=lootHubNeutralModels[item.weapon];
-    const art=window.LootHubNeutralArt&&window.LootHubNeutralArt[modelSlug];
-    if(art){
-      const size=context==='inspect'?'1600':context==='reel'?'400':'800';
-      const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(canonicalSkin(item.weapon,item.skin))+'" data-resolution="'+size+'" data-art-status="neutral-master">'+
-        '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon+' neutral weapon master')+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+    const art=typeof window!=='undefined'&&window.LootHubNeutralArt&&window.LootHubNeutralArt[modelSlug];
+    if(art&&art[size]){
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="'+size+'" data-art-status="base">'+
+        '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+    }
+    const master=lootHubOriginalBaseMasters[item.weapon];
+    if(master){
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="1600" data-art-status="base">'+
+        '<img src="./'+master+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+    }
+    // Legacy retired weapon models from old saves remain accessible, never skinned.
+    if(typeof window!=='undefined'&&window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)){
+      try{return window.ArsenalMasters.render({...item,skin:''});}catch(_){}
     }
   }
 
-  // Arsenal vector master: per-model silhouette and consistent aspect ratio.
-  // Sealed cases and any unmapped/imported legacy items retain the existing SVG fallback.
-  if(item&&item.kind==='skin'&&typeof window!=='undefined'&&window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)){
-    try { return window.ArsenalMasters.render(item); } catch(_) { /* intentionally fall back */ }
-  }
   const rarityIdx=item.kind==='case'?2:(item.tier||0);
   const color=['#9ca6b6','#55c983','#63a9ff','#c28bf9','#eac46d'][rarityIdx];
   const seed=String(item.id||item.kind+'-'+(item.weapon||'')+'-'+(item.skin||'')+'-'+(item.tier||0));
