@@ -287,6 +287,29 @@ function marketTick(){
   if(result.changed)save();
   return result;
 }
+function conditionLabel(item){
+  return window.LootHubWear.wearable(item)?
+    window.LootHubWear.label(window.LootHubWear.validGrade(item.wearGrade)?item.wearGrade:0):
+    'Not applicable';
+}
+function conditionTag(item){
+  if(!window.LootHubWear.wearable(item))return '<span class="muted tiny">Sealed case · No condition</span>';
+  const grade=window.LootHubWear.validGrade(item.wearGrade)?item.wearGrade:0;
+  return '<span class="wear-grade grade-'+grade+'" data-wear-grade="'+grade+'">Condition: '+
+    escapeHTML(conditionLabel(item))+'</span>';
+}
+function conditionPriceRows(item){
+  if(!window.LootHubWear.wearable(item))
+    return '<div class="stat"><span>Sealed case</span><b>No wear grade</b></div>'+
+      '<div class="stat"><span>Base value</span><b>'+money(window.LootHubMarketCore.baseEstimated(item))+' coins</b></div>';
+  return '<div class="stat"><span>Condition</span><b>'+escapeHTML(conditionLabel(item))+'</b></div>'+
+    '<div class="stat"><span>Base value (Pristine)</span><b>'+
+      money(window.LootHubMarketCore.baseEstimated(item))+' coins</b></div>'+
+    '<div class="stat"><span>Wear modifier</span><b>'+
+      window.LootHubWear.multiplier(item).toFixed(2)+'×</b></div>'+
+    '<div class="stat"><span>Condition-adjusted value</span><b>'+
+      money(window.LootHubMarketCore.estimated(item))+' coins</b></div>';
+}
 function marketAction(name,id){return name+'('+escapeHTML(JSON.stringify(String(id)))+')'}
 function listingItemName(item){
   return item&&item.kind==='skin'&&item.skin
@@ -332,7 +355,7 @@ function listingEditor(item,ask,mode,listingId){
     '<div class="listing-editor-art">'+visualArt(item,'inspect')+'</div>'+
     '<p class="muted tiny">The exact owned item stays in escrow until it sells or you cancel. Changing the price costs nothing. A 5% fee applies only when it sells.</p>'+
     '<div class="stat"><span>Market value</span><b>'+money(reference)+' coins</b></div>'+ 
-    '<div class="stat"><span>Base estimate</span><b>'+money(estimated(item))+' coins</b></div>'+
+    conditionPriceRows(item)+
     '<label class="listing-price-label" for="listPrice">Your asking price</label>'+
     '<input id="listingPriceRef" type="hidden" value="'+reference+'">'+
     '<input id="listPrice" class="field" aria-label="Your asking price" type="number" inputmode="numeric" min="1" max="100000000" step="1" value="'+safeAsk+'" oninput="previewListingPrice()">'+
@@ -429,10 +452,10 @@ function renderNpcMarketResults(){
       '<div class="npc-listing-art">'+visualArt(item)+'</div>'+
       '<div class="npc-listing-body">'+
       '<span class="tag '+cls(rarity(item))+'">'+escapeHTML(rarity(item))+'</span>'+
-      '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
+      '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+conditionTag(item)+
       '<div class="muted tiny">Seller: '+escapeHTML(l.seller)+' · '+escapeHTML(persona.persona)+'</div>'+
       '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
-      '<span class="muted tiny">Market '+money(info.value)+' ◈ · Base '+money(info.base)+' ◈</span>'+ 
+      '<span class="muted tiny">Market '+money(info.value)+' ◈ · Condition value '+money(info.base)+' ◈</span>'+ 
       '<span class="muted tiny">'+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
       '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+ 
@@ -460,7 +483,7 @@ function inspectNpcListing(k){
     '<div class="stat"><span>Trading style</span><b>'+escapeHTML(personality.persona)+'</b></div>'+ 
     '<p class="muted tiny">'+escapeHTML(personality.description)+' · Prefers '+escapeHTML(personality.focus)+'</p>'+
     '<div class="stat"><span>Asking price</span><b>'+money(listing.ask)+' coins</b></div>'+
-    '<div class="stat"><span>Base estimate</span><b>'+money(estimated(item))+' coins</b></div>'+ 
+    conditionPriceRows(item)+ 
     '<div class="stat"><span>Live market value</span><b>'+money(marketEstimate(item))+' coins</b></div>'+
     '<div class="stat"><span>Price assessment</span><b>'+npcPriceLabel(listing)+'</b></div>'+
     '<p class="muted tiny">'+escapeHTML(attributes.join(' · ')||
@@ -618,7 +641,8 @@ function renderMarketOwnedResults(){
   const all=window.LootHubTradingTools.filterOwned(s,marketOwnedView);
   const cards=all.slice(0,marketOwnedView.limit).map(item=>
     '<div class="item">'+visualArt(item)+'<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
-    '<p class="muted tiny">Market '+money(marketEstimate(item))+' ◈ · Base '+
+    '<p class="muted tiny">'+conditionTag(item)+'</p>'+ 
+    '<p class="muted tiny">Market '+money(marketEstimate(item))+' ◈ · Condition value '+
       money(estimated(item))+' ◈</p>'+
     '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
   return (cards?'<div class="cards">'+cards+'</div>':
@@ -738,7 +762,8 @@ function enhancedMarket(){
     return '<div class="listing-line market-listing-row">'+
       '<div class="listing-identity">'+visualArt(l.item)+
       '<div class="listing-identity-copy"><b>'+escapeHTML(listingItemName(l.item))+'</b>'+
-      '<span class="muted tiny">Market '+money(marketEstimate(l.item))+' ◈ · Base '+money(estimated(l.item))+' ◈ · Listed '+new Date(l.createdAt).toLocaleString()+'</span>'+
+      '<span class="muted tiny">'+conditionTag(l.item)+'</span>'+ 
+      '<span class="muted tiny">Market '+money(marketEstimate(l.item))+' ◈ · Condition value '+money(estimated(l.item))+' ◈ · Listed '+new Date(l.createdAt).toLocaleString()+'</span>'+
       (l.updatedAt?'<span class="muted tiny">Price updated '+new Date(l.updatedAt).toLocaleString()+'</span>':'')+
       '</div></div>'+
       '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
