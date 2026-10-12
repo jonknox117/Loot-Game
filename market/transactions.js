@@ -1,4 +1,4 @@
-/* LootHub 0.4.0 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.1 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -37,6 +37,17 @@ function createListing(game,itemId,ask,now){
   game.listings.push(listing);
   return listing;
 }
+function repriceListing(game,listingId,ask,now){
+  if(!core.validAsk(ask)||!Number.isFinite(now)||!Array.isArray(game.listings))return null;
+  const listing=game.listings.find(x=>x.id===listingId);
+  if(!listing||!listing.item||!core.eligible(listing.item)||!core.validAsk(listing.ask))return null;
+  if(listing.ask===ask)return {listing,oldAsk:ask,changed:false};
+  const oldAsk=listing.ask;
+  listing.ask=ask;
+  listing.checkedAt=now; // Never apply elapsed time before repricing at the new price.
+  listing.updatedAt=now;
+  return {listing,oldAsk,changed:true};
+}
 function cancelListing(game,listingId){
   if(!Array.isArray(game.listings)||!Array.isArray(game.items))return null;
   const index=game.listings.findIndex(x=>x.id===listingId);
@@ -61,6 +72,6 @@ function settleListing(game,listingId){
   return {item:listing.item,ask:listing.ask,net,fee:listing.ask-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
-  purchaseCase,sellOwned,createListing,cancelListing,settleListing
+  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing
 });
 })(window);
