@@ -58,6 +58,8 @@ const fs = require('fs');
         stops:[...(gradient?.querySelectorAll('stop')||[])].map(x=>x.getAttribute('stop-color'))
       };
     }));
+    // Fail if any new bitmap is referenced but broken or still pending after loading.
+    await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img => img.complete && img.naturalWidth > 0),{timeout:5000}).catch(()=>{throw Error('Opening reel has broken bitmap artwork')});
     assert(reelColors.length===48,'Reel must have 48 item tiles');
     const vectorCards=reelColors.filter(x=>x.kind==='svg');
     const rasterCards=reelColors.filter(x=>x.kind==='bitmap');
@@ -70,7 +72,9 @@ const fs = require('fs');
     const bitmapCatalog={
       'Glock-18|Slate Grid':'glock-18--slate-grid',
       'AK-47|Ghostline':'ak-47--ghostline',
-      'AK-47|Crimson Circuit':'ak-47--crimson-circuit'
+      'AK-47|Crimson Circuit':'ak-47--crimson-circuit',
+      'AWP|Night Watch':'awp--night-watch',
+      'AWP|Eclipse':'awp--eclipse'
     };
     assert(rasterCards.every(x=>x.src?.includes(bitmapCatalog[x.weapon+'|'+x.finish]+'-400.webp')&&bitmapCatalog[x.weapon+'|'+x.finish]),
       'Reel bitmap does not match the correct weapon and finish');
