@@ -81,3 +81,10 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - Both images point the muzzle right like the other released masters, and their alpha channels are **pixel-identical** before compression and in exported WebPs at all three sizes.
 - Current status: **pilot live; not final-approved**. A dedicated higher-detail source may replace this while keeping the finish recipe and asset addresses.
 - No game economy, saves, rarity odds or item instance data changed.
+
+## 0.3.3F — Golden Talon production brief (art pending)
+
+- [Golden Talon source-generation prompt and QA checklist](art-briefs/karambit-golden-talon.md) defines the **right-facing**, near-side-profile neutral master, and the sculptural eagle **brow / inset eye** at the blade-to-hilt junction. It explicitly forbids a full eagle picture, a giant gemstone eye, fake/closed ring hole, flat-yellow material, and changes to the knife's silhouette.
+- [Future finish recipe](skin-definitions/karambit--golden-talon.json) defines the separate metal surfaces, gold tones, grip and ring materials, embossing placement, feather engravings, image-size contracts and image-quality gates.
+- Both are **design / production instructions only**. This update creates no Karambit PNG/WebP artwork, changes no in-game rendering, and does not mark the item approved. The existing SVG fallback remains live.
+- Before implementation, obtain one isolated source image with real detail at inspect size; do not use a cropped multi-weapon concept sheet. Preserve exact neutral/finished alpha, open finger ring and weapon orientation across reel, card and inspect.
