@@ -56,3 +56,15 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - Both AK exports use exact model and finish metadata in opening reels, inventory cards, and item inspection; other weapons continue to use their dedicated SVG fallbacks until they meet the same raster detail standard.
 - Remaining initial anchors (AWP, M4A4, Karambit) still need **isolated, high-resolution neutral source renders**. Multi-weapon mood boards were **rejected as raster sources**: cropping their 400–700px artwork and upscaling it would not meet the approved Glock clarity benchmark.
 - Work on the exact existing catalog finishes: **AWP Night Watch**, **AWP Eclipse**, **M4A4 Voltage Bloom**, and **Karambit Golden Talon**. Never create new inventory names merely because a design reference board contained them.
+
+## 0.3.3D — AWP standalone raster master and two finishes
+
+- **Live:** AWP | Night Watch (Rare) and AWP | Eclipse (Super Rare) are distinct, deterministic 2D finishes on **one isolated AWP master**.
+- Original source render: `/LootHub/loothub-awp-master-033D.zip` in Library. Includes 1774x887 native generated transparent original, 2400x1200 working master, six pixel-aligned masks, finished artwork, reusable Python compositor, and 400px, 800px, 1600px WebPs.
+- Production script: `scripts/build_awp_2d.py`. Regenerates the same neutral master and both finish sets with an exact shared alpha mask.
+- In-game images: `assets/renders/finishes/awp--night-watch-{400,800,1600}.webp` and `awp--eclipse-{400,800,1600}.webp`. The matching neutral master resides in `assets/renders/masters/awp-neutral-{400,800,1600}.webp`.
+- The generated original faced left. All published item exports are corrected to **barrel/muzzle right**, matching Glock and AK framing.
+- Night Watch: original indigo/cyan constellation streams on the real stock/chassis only, with untouched barrel, scope and other hardware.
+- Eclipse: masked dark metallic-gold chassis with original eclipse medallion, repeating engraved arcs, and gold edge lines. The real stock, magazine, bipod, scope, and silhouette remain intact.
+- The actual neutral source is original AI-generated **illustration**, not CAD or a licensed manufacturer GLB. This is a high-resolution raster visual pilot; final iOS Safari review is still pending.
+- No user balances, item odds, item attributes or save keys changed. All remaining non-raster items continue using their model-specific vector fallbacks.
