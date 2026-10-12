@@ -2025,5 +2025,36 @@ test('0.5.5b source alpha and wear grade remain independent of prices or saved d
  assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
 });
 
+
+test('0.5.5c all 24 weapons have fixed semantic landmarks and deliberately unapproved draft status',()=>{
+ const p=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-lines/paint-profiles.json'),'utf8'));
+ const anchors=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-lines/material-landmarks.json'),'utf8'));
+ const items=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8')).items;
+ const slugs=items.map(x=>x.modelSlug||x.id.replace(/--base$/,''));
+ assert.equal(anchors.schemaVersion,1);
+ assert.equal(slugs.length,24);
+ assert.deepEqual(Object.keys(anchors.weapons).sort(),slugs.slice().sort());
+ let landmarks=0;
+ for(const slug of slugs){
+   const profile=p.weapons[slug],points=anchors.weapons[slug];
+   assert(profile&&profile.wear,'Missing material profile '+slug);
+   assert.equal(profile.wear.reviewed,false,'Draft boundaries require explicit owner approval');
+   assert.equal(profile.wear.reviewStatus,'refined-draft');
+   assert(points.length>=2,'Need at least two visible source reference landmarks for '+slug);
+   for(const [kind,x,y] of points){
+     assert(['metal','wood','other'].includes(kind),'Invalid material kind '+slug);
+     assert(Number.isFinite(x)&&x>0&&x<1&&Number.isFinite(y)&&y>0&&y<1,
+       'Invalid source coordinate in '+slug);
+     landmarks++;
+   }
+ }
+ assert(landmarks>=55,'All weapon types must carry meaningful sample points');
+ const g=boot();
+ assert.deepEqual(JSON.parse(g.run('JSON.stringify(window.LootHubPaintProfiles.weapons.awp.protectedRects)')),
+   p.weapons.awp.protectedRects);
+ assert.equal(g.run('window.LootHubWearMaterials.materialAt("AWP",.4,.25,1)'),'protected');
+ assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),55);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
