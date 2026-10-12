@@ -1700,9 +1700,10 @@ test('0.5.3 high resolution inspections opt into silhouette masked renderer with
   assert(html.includes('data-resolution="1600"'));
   const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inspect")');
   assert(pristine.includes('data-wear-grade="0"'));
-  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"inventory")').includes('data-wear-seed='),false,
-    'All cards and reel tiles are reserved for the 0.5.4 integration patch');
-  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"reel")').includes('data-wear-seed='),false);
+  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"inventory")').includes('data-wear-seed="special-wear-seed"'),true,
+    'Inventory weapons must carry their saved grade and seed');
+  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"reel")').includes('data-wear-seed="special-wear-seed"'),true,
+    'Case-opening reels must carry the saved prize grade and seed');
   const skin={id:'original-approved-skin',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,wearGrade:3};
   g.run('window.LootHubSkinArt={"MAC-10|Red Devil":{"1600":"dummy-browser-image"}}');
   const skinHtml=g.run('visualArt('+JSON.stringify(skin)+',"inspect")');
@@ -1711,6 +1712,64 @@ test('0.5.3 high resolution inspections opt into silhouette masked renderer with
     'New visual engine must not change already-applied wear valuations');
   assert.equal(g.run('window.LootHubWearRenderer.attach(null)'),0,
     'Renderer must be safe for nonbrowser test harnesses');
+});
+
+test('0.5.4 wear metadata follows every context while catalog templates, cases and Pristine remain safe',()=>{
+  const g=boot();
+  const item={id:'worn-glock',kind:'weapon',weapon:'Glock-18',tier:0,base:7,wearGrade:4};
+  for(const context of ['inventory','inspect','reel','market']){
+    const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
+    assert(html.includes('data-wear-grade="4"'));
+    assert(html.includes('data-wear-seed="worn-glock"'));
+    assert(html.includes('glock-18-neutral-1600.webp'));
+    assert(!html.includes('data-finish='));
+  }
+  const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inventory")');
+  assert(pristine.includes('data-wear-grade="0"'));
+  assert.equal(g.run('visualArt({kind:"case",id:"sealed-keep"}, "reel")').includes('data-wear-seed='),false);
+  assert.equal(g.run('visualArt({kind:"weapon",weapon:"Glock-18",tier:0,base:7},"inventory")').includes('data-wear-grade='),false,
+    'Catalog display art is not a persisted collectible and must not have fake wear');
+  assert.equal(g.run('window.LootHubWearRenderer.attach(null)'),0);
+  assert.equal(g.run('window.LootHubWearRenderer.release(null)'),0);
+});
+test('0.5.4 main render and dynamic market filters preserve saved wear and never change odds',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"wear-grade-inv",kind:"weapon",weapon:"Glock-18",tier:0,base:8,wearGrade:3})');
+  const before=g.state();
+  g.run("go('Inventory')");
+  assert(g.byId('main').innerHTML.includes('data-wear-seed="wear-grade-inv"'));
+  g.run("document.getElementById('filter').value='Common';filterInv()");
+  assert(g.byId('inventoryGrid').innerHTML.includes('data-wear-grade="3"'));
+  g.run("go('Market')");
+  const market=g.byId('main').innerHTML;
+  const npc=g.state().market.npcListings.find(l=>l.item.kind!=='case');
+  assert(market.includes('data-wear-seed="'+npc.item.id+'"'));
+  const beforeGrades=g.state().market.npcListings.map(x=>x.item.wearGrade);
+  g.run('updateNpcMarketFilter("kind","weapon")');
+  assert(g.byId('npcMarketResults').innerHTML.includes('data-wear-grade='));
+  assert.deepEqual(g.state().market.npcListings.map(x=>x.item.wearGrade),beforeGrades);
+  assert.equal(g.state().items[0].id,'wear-grade-inv');
+  assert.equal(g.state().items[0].wearGrade,3);
+  assert.deepEqual(JSON.parse(g.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+});
+test('0.5.4 the 48 reel entries have transient cosmetic preview grades but award stays unchanged',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"case-reel-0.5.4",kind:"case",paid:25})');
+  g.run('openCase("case-reel-0.5.4")');
+  const reward=g.state().items[0];
+  const html=g.byId('overlay').innerHTML;
+  assert.equal((html.match(/data-reel-index=/g)||[]).length,48);
+  assert.equal((html.match(/data-wear-seed=/g)||[]).length,48);
+  assert(html.includes('data-wear-seed="'+reward.id+'"'));
+  assert(html.includes('data-wear-grade="'+reward.wearGrade+'"'));
+  assert(html.includes('data-wear-seed="reel-preview-0-'));
+  assert.equal(g.state().items.length,1,'Preview reel entries cannot enter inventory');
+  assert.equal(g.state().items[0].id,reward.id);
+  assert(!g.state().items[0].id.startsWith('reel-preview-'));
+  g.run('finishOpening()');
+  assert(g.byId('overlay').innerHTML.includes('data-wear-seed="'+reward.id+'"'));
+  assert.equal(g.state().items[0].wearGrade,reward.wearGrade);
+  assert(!JSON.stringify(g.state()).includes('reel-preview-'));
 });
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');

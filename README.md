@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Procedural Wear Engine 0.5.3)
+# LootHub — Curated Arsenal (Full Wear Visuals 0.5.4)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -128,6 +128,14 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
 
+## Wear overhaul 0.5.4 — Wear everywhere
+
+- The unchanged 400/800/1600 WebP masters now display seeded, alpha-clipped procedural scratches, grime and corrosion on **inventory cards, NPC marketplace cards, the inventory-selling shelf, player escrow listing cards, full inspection/reveal dialogs, and case-opening reels**.
+- **No per-weapon images, silhouettes, or outlines** were added. Pristine shows no texture; all other conditions derive their marks from the item's permanent unique ID. Source files, approved skins, equipment naming, inventory IDs, market values and saved case odds are unchanged.
+- Viewport-aware rendering uses a **single `IntersectionObserver`** with a small prefetch margin: offscreen inventory items and reel tiles don't immediately allocate or paint their canvases. New filtered cards re-register automatically, while removed elements are released. When IntersectionObserver is unavailable, image-load-based rendering remains a safe fallback.
+- Case-opening reel placeholders display cosmetic **temporary sample conditions**, drawn deterministically from the published wear distribution without consuming new game RNG draws. The reel's real winning tile always uses the saved reward's actual `wearGrade` and ID. Placeholder IDs and grades never enter saves or inventories and do not change odds or values.
+- Complete regression checks validate metadata across layouts, preservation of condition through listings, correct 48-slot reel winner and IDs, retina iPhone alpha-clipped canvas rendering, player and NPC market filter refreshes, and pristine art preservation.
+
 ## Wear overhaul 0.5.3 — Reusable procedural weathering engine
 
 `market/wear-renderer.js` creates **four increasingly worn surface treatments** with deterministic scratches, dirt patina, and spot corrosion. No new, duplicate, recolored, or compressed weapon image assets were created.
@@ -136,7 +144,7 @@ The initial marketplace patch restructured the existing marketplace; the current
 - **Automatic clipping:** each effect is drawn to a transparent canvas and then masked using the alpha pixels of the existing 1600-resolution weapon/skin image (`destination-in`). Wear cannot appear on transparent padding or surrounding card backgrounds. **No per-gun manual outline or material mask is needed.**
 - **Permanent appearance:** a seeded pseudo-random generator derives every wear mark from an item's saved unique ID. A grade and ID yield the same wear marks across reloads, browsers, trades, and inspections. No game randomness or save fields are consumed by rendering.
 - **iPhone-friendly:** weathering is generated on-demand, limited to a 1,100-pixel longest canvas side, device pixel ratio capped at 2, and loaded only after the image is ready. If canvas rendering is unavailable, the unmodified master remains visible. Source WebP art is never overwritten or recompressed.
-- **Initial preview integration:** weapon/skin inspection panels, listing-editor large previews and case-opening reward details automatically show the wear overlay. Inventory tiles, small marketplace cards, and case-opening reel tiles will be integrated in **0.5.4** once the high-resolution mask and texture quality are validated.
+- **0.5.3 initial integration:** weapon/skin inspection panels, listing-editor large previews and reward reveals first received the overlays. Patch 0.5.4 extends the same engine throughout the rest of the game.
 - **Regression testing:** deterministic pattern density per grade, different shapes for different collectible IDs, zero overlay for Pristine, retina iPhone canvas coverage, alpha-clipped transparent regions, stable appearance after reload, and approved-skin compatibility.
 
 ## Wear overhaul 0.5.2 — Visible condition and adjusted market prices

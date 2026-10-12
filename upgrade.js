@@ -433,7 +433,11 @@ function updateNpcMarketFilter(field,value){
   if(!Object.prototype.hasOwnProperty.call(npcMarketView,field))return;
   npcMarketView[field]=String(value||'').slice(0,120);
   const results=document.getElementById('npcMarketResults');
-  if(results)results.innerHTML=renderNpcMarketResults();
+  if(results){
+    window.LootHubWearRenderer.release(results);
+    results.innerHTML=renderNpcMarketResults();
+    window.LootHubWearRenderer.attach(results);
+  }
   const count=document.getElementById('npcMarketCount');
   if(count)count.textContent=npcMatches().length+
     ' listings';
@@ -633,7 +637,11 @@ function showMoreMarketOwned(){
 }
 function refreshOwnedShelf(){
   const target=document.getElementById('marketOwnedResults');
-  if(target)target.innerHTML=renderMarketOwnedResults();
+  if(target){
+    window.LootHubWearRenderer.release(target);
+    target.innerHTML=renderMarketOwnedResults();
+    window.LootHubWearRenderer.attach(target);
+  }
   const count=document.getElementById('marketOwnedCount');
   if(count)count.textContent=window.LootHubTradingTools.filterOwned(s,marketOwnedView).length+' available';
 }
@@ -900,7 +908,7 @@ function visualArt(item,context='inventory') {
   const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const size=context==='inspect'?'1600':context==='reel'?'400':'800';
   // Reusable renderer needs only an existing item identity and transparent master image.
-  const wearMeta=context==='inspect'&&item&&item.id&&window.LootHubWear.wearable(item)&&
+  const wearMeta=item&&item.id&&window.LootHubWear.wearable(item)&&
     window.LootHubWear.validGrade(item.wearGrade)?
     ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"':'';
   // Only explicitly approved skins have separate paint art; neutral masters remain unchanged.
