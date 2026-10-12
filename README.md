@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.8)
+# LootHub — Curated Arsenal (Wear Foundation 0.5.0)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -127,6 +127,24 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Add safe-integer wallet, sale-receipt, and spending-total checks before moving inventory. Oversized transactions fail without half-completing.
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
+
+## Wear overhaul 0.5.0 — Condition data foundation
+
+This patch introduces a separate, permanent five-grade wear property on each weapon or cosmetic skin instance. The `market/wear.js` module defines the grade index (`wearGrade`), labels, validators, and an idempotent save migration:
+
+| Saved grade | Condition |
+| --- | --- |
+| 0 | Pristine |
+| 1 | Lightly Worn |
+| 2 | Field-Tested |
+| 3 | Heavily Worn |
+| 4 | Battle-Scarred |
+
+- Every previously owned weapon or approved skin, player escrow item, and NPC market weapon/skin gains `wearGrade: 0` if missing. Valid existing grades are retained. Item IDs, asking prices, base values, wallets, art, and rarity stay unchanged.
+- New weapon/skin drops and replenished NPC items are also Pristine until the independent condition-roll patch 0.5.1. Sealed cases have no wear grade.
+- Wear moves with the same item object during listing, cancellation, and purchases. Reloading or migration cannot reroll or otherwise change saved conditions.
+- `wearSchemaVersion: 1` is stored alongside the game state. Existing backups without wear information remain importable and normalize on load. Invalid grades (anything except integer 0–4), a condition on a sealed case, or unsupported schema versions are rejected.
+- No procedural overlay, visual wear label, wear-related price multiplier, new case odds, or new images ship in this foundation patch. Those are explicitly reserved for later 0.5 patches.
 
 ## Economy and progression
 
