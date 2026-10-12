@@ -94,10 +94,10 @@
   },
   "rarity": "Legendary",
   "tier": 4,
-  "status": "design-locked-awaiting-artwork",
+  "status": "raster-pilot-live",
   "artworkApproved": false,
-  "assetFilesPresent": false,
-  "gameIntegration": "not-yet-enabled",
+  "assetFilesPresent": true,
+  "gameIntegration": "reel, inventory, catalog preview and inspect WebPs",
   "artBrief": "assets/art-briefs/karambit-golden-talon.md",
   "masterRequirements": {
     "orientation": "blade tip right, finger ring left",
@@ -111,7 +111,7 @@
     "colors": "neutral graphite and steel only"
   },
   "plannedOutputs": {
-    "source": "assets/source/karambit/neutral-master-2400.png",
+    "source": "assets/source/karambit/neutral-master-2400.png (full editable source archived in Library ZIP; not currently committed as PNG)",
     "neutral": {
       "reel": "assets/renders/masters/karambit-neutral-400.webp",
       "inventory": "assets/renders/masters/karambit-neutral-800.webp",
@@ -147,5 +147,22 @@
     "save-and-reel-reveal-regressions",
     "user-visual-approval"
   ],
-  "notes": "Design metadata and filenames are future production targets. No Karambit raster is delivered by adding this recipe."
+  "notes": "This recipe was designed before source creation; live artwork is registered by the manifest and exact raster URL mapping.",
+  "pilot": true,
+  "sourceNativePixelsApprox": [
+    960,
+    300
+  ],
+  "qualityNote": "Two AI-generated concept-board render regions are aligned to one canonical neutral silhouette, not manufacturer 3D geometry. Gold texture, brow and eye are illustrated 2D relief. Source knife ~960 native px wide, 1600 inspect upsampled; visual acceptance pending.",
+  "provenance": "assets/source/karambit/provenance.json",
+  "productionScript": "scripts/build_karambit_2d.py",
+  "sourceBundleLibrary": "/LootHub/loothub-karambit-master-033F.zip",
+  "alphaParityCheckedAt": [
+    400,
+    800,
+    1600
+  ],
+  "ringApertureAlphaChecked": true,
+  "orientation": "blade-hook-right, finger-ring-left",
+  "finishingMethod": "2D generated gold relief aligned to neutral blade geometry, alpha clipped to exact neutral mask and mirrored"
 }
