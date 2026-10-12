@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A assets/skin-lines/line-data.js assets/skin-lines/masks assets/renders/lines assets/renders/masters
+          git add -A assets/skin-lines/line-data.js assets/skin-lines/masks assets/renders/
           if ! git diff --cached --quiet; then
             git commit -m 'Build transparent universal skin-line assets [skip ci]'
             git push origin HEAD:${GITHUB_REF_NAME}
