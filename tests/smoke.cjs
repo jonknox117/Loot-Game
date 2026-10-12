@@ -59,7 +59,7 @@ const fs = require('fs');
       };
     }));
     // Fail if any new bitmap is referenced but broken or still pending after loading.
-    await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img => img.complete && img.naturalWidth > 0),{timeout:5000}).catch(()=>{throw Error('Opening reel has broken bitmap artwork')});
+    await page.waitForFunction(() => [...document.querySelectorAll('#track .master-raster > img')].every(img => img.complete && img.naturalWidth > 0),undefined,{timeout:5000}).catch(()=>{throw Error('Opening reel has broken bitmap artwork')});
     assert(reelColors.length===48,'Reel must have 48 item tiles');
     const vectorCards=reelColors.filter(x=>x.kind==='svg');
     const rasterCards=reelColors.filter(x=>x.kind==='bitmap');
