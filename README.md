@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.3F (Karambit Golden Talon)
+# LootHub — Arsenal Alpha 0.3.3G (Raptor's Gaze redesign)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -14,7 +14,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
 - **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **Seven live transparent 2D finish pilots:** Glock-18 | Slate Grid; AK-47 | Ghostline and Crimson Circuit; AWP | Night Watch and Eclipse; M4A4 | Voltage Bloom; and **Karambit | Golden Talon**. All have 400px reel, 800px inventory and 1600px inspect WebPs, plus archived source art and reproducible scripts.
+- **Seven live transparent 2D finish pilots:** Glock-18 | Slate Grid; AK-47 | Ghostline and Crimson Circuit; AWP | Night Watch and Eclipse; M4A4 | Voltage Bloom; and **Karambit | Raptor's Gaze**. All have 400px reel, 800px inventory and 1600px inspect WebPs, plus archived source art and reproducible scripts.
 
 ## Saving progress
 
@@ -44,7 +44,9 @@ The Saves tab provides:
 - **0.3.3D AWP pilot completed:** standalone right-facing AWP neutral master, Night Watch, and Eclipse, also sharing an exact silhouette.
 - **0.3.3E M4A4 provisional bitmap pilot:** original generated M4A4 image, isolated from a comparison reference into one reusable neutral master, with a masked Voltage Bloom finish. All exports face right. The source weapon itself has approximately 1110 native horizontal pixels; the 1600px inspect image is an upscale/export, not native 1600px model detail. The result is **not marked final-approved** and can be upgraded later with a dedicated higher-resolution source.
 
-- **0.3.3F Golden Talon pilot:** original right-facing karambit silhouette, premium burnished-gold blade, dark grip, and an eagle-shaped brow with a small dark recessed eye where blade meets hilt. Feathery relief engraving is drawn into the gold surface. Both neutral and finished exports use **pixel-identical alpha masks**, including the open finger ring, at all three sizes. The generated concept-board source is about 960px across the subject and does not have native 1600px detail; finish is **live but not final-approved**. Source and eight component masks: `/LootHub/loothub-karambit-master-033F.zip`.
+- **0.3.3F Golden Talon pilot (superseded art):** original right-facing karambit silhouette, premium burnished-gold blade, dark grip, and an eagle-shaped brow with a small dark recessed eye where blade meets hilt. Feathery relief engraving is drawn into the gold surface. Both neutral and finished exports use **pixel-identical alpha masks**, including the open finger ring, at all three sizes. The generated concept-board source is about 960px across the subject and does not have native 1600px detail; finish is **live but not final-approved**. Source and eight component masks: `/LootHub/loothub-karambit-master-033F.zip`.
+
+- **0.3.3G Raptor's Gaze:** replaced Golden Talon with one long sculpted eyebrow along the blade and a separate dark eye near the blade heel, based on the user's annotated knife reference. The previous carved bird face is removed. The new 400/800/1600 WebPs use exact neutral geometry and transparent finger ring; the 1600 file is upsampled from a ~960px source subject. Owned and listed legacy Golden Talon items are renamed in memory on load with all their unique IDs, values, attributes and trading state preserved; normal saves persist the new title through existing backup safety checks. Source ZIP: `/LootHub/loothub-raptors-gaze-master-033G.zip`.
 
 ## Known limitations
 
@@ -56,7 +58,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Visually review the Golden Talon eagle brow and dark inset eye, then upgrade the provisional M4A4/Karambit native source renders if needed. Convert the remaining twelve SVG-backed finishes using high-resolution isolated masters and shared-geometry finish masks.
+1. Review the new Raptor's Gaze eyebrow and eye placement against the user's annotated sketch, then upgrade provisional M4A4/Karambit native source detail if needed. Convert the remaining twelve SVG-backed finishes using high-resolution isolated masters and shared-geometry finish masks.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
