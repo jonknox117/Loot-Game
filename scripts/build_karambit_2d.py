@@ -10,11 +10,12 @@ import io
 import json
 import math
 import pathlib
+import sys
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance, ImageOps
 
-ROOT=pathlib.Path(__file__).resolve().parent
+ROOT=pathlib.Path(sys.argv[1]).resolve() if len(sys.argv)>1 else pathlib.Path(__file__).resolve().parent
 SRC=ROOT/'source'/'original-neutral-and-golden-concept.png'
 PRE=ROOT/'previews'; PRE.mkdir(exist_ok=True)
 MAST=ROOT/'renders'/'masters'; MAST.mkdir(parents=True, exist_ok=True)
