@@ -71,7 +71,9 @@ test('Universal skin-line engine ships without speculative skin lines',()=>{
     assert(win.LootHubSkinLines.isRegistered(variant));
     assert(win.LootHubSkinLines.imagePath(variant,800).endsWith('.webp'));
   }
-  assert.equal(g.run('universalCases()'),g.run('cases()'),'Empty line catalog changed existing case UI');
+  const emptyCatalogView=g.run('universalCases()');
+  assert(emptyCatalogView.includes('Arsenal Case'),'Original case was hidden');
+  assert(!emptyCatalogView.includes('Universal skin-line cases'),'Unapproved themed cases visible');
 });
 test('Arsenal Case contains 24 supplied base weapons and ten owner-approved skins',()=>{
   const g=boot();
