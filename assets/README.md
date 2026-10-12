@@ -33,3 +33,14 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - [Machine-readable targets](master-render-spec.json): first five weapon models and required outputs with **status: not-rendered**.
 - New master production uses 2:1 exports at 1600x800 / 800x400 / 400x200, superseding the older provisional 1600x850 / 640x340 / 320x170 targets for **future assets**. No existing output has been removed.
 - The in-game renderer is unchanged until approved, actually existing replacement images are integrated. No high-fidelity master art is implied by this specification.
+
+## 0.3.3A — First real transparent 2D master shipped
+
+- Glock-18 neutral master WebPs: `assets/renders/masters/glock-18-neutral-{1600,800,400}.webp`.
+- Pilot applied finish: `assets/renders/finishes/glock-18--slate-grid-{1600,800,400}.webp`.
+- All images are genuine transparent WebP files committed as Git binary blobs, not inline base64 or upscaled thumbnails. The 1600px detail and 400px reel variants originate from the same layered working master.
+- The source image, 2400x1200 working PNG, eight aligned surface masks, tested `scripts/render_2d_finish.py`, finish recipe and previews are preserved in `/LootHub/loothub-glock-master-033A.zip` in the user's Library.
+- Reusable recipe: `assets/skin-definitions/glock-18--slate-grid.json`. Pillow compositor: `scripts/render_2d_finish.py`. Local regeneration reproduces the three published finish WebPs **byte-for-byte** in the current environment.
+- The base render was generated from original AI imagery, not from an exact OEM 3D model; this is a convincing Glock-style visual pilot, not a claim of manufacturer-exact geometry. The source image was natively 1774x887 before the transparent 2400x1200 working canvas.
+- The case catalog's **View finish** control lets players inspect this item at 1600px without needing to win it; no game state is modified.
+- Other 18 finishes continue using model-specific vector artwork. Full-quality approval for the remaining masters is pending.
