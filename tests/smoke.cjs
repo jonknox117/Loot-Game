@@ -1,13 +1,33 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const http = require('node:http');
+
+const root = path.resolve(__dirname,'..');
+const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css',
+  '.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'};
 
 (async () => {
+  // GitHub Pages serves all masters and material maps from one HTTPS origin.
+  // Local HTTP reproduces that origin for getImageData; file:// taints PNG/WebP canvases.
+  const server=http.createServer((req,res)=>{
+    try{
+      const route=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+      const file=path.resolve(root,'.'+route);
+      if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return}
+      fs.readFile(file,(err,data)=>{
+        if(err){res.writeHead(404);res.end();return}
+        res.setHeader('Content-Type',mimes[path.extname(file)]||'application/octet-stream');
+        res.writeHead(200);res.end(data);
+      });
+    }catch(_){res.writeHead(400);res.end()}
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  const url = 'file://' + path.resolve(__dirname, '../index.html');
+  const url = 'http://127.0.0.1:' + server.address().port + '/index.html';
 
   const assert = (condition, message) => { if (!condition) throw Error(message); };
   const waitForVisible = async (selector) => page.locator(selector).waitFor({ state: 'visible', timeout: 10000 });
@@ -680,5 +700,6 @@ const fs = require('fs');
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
     await browser.close();
+    await new Promise(resolve=>server.close(resolve));
   }
 })().catch(err => { console.error('FAIL:', err.stack || err); process.exit(1); });
