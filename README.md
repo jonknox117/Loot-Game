@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Marketplace 0.4.1)
+# LootHub — Curated Arsenal (Marketplace 0.4.2)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -46,6 +46,15 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Repricing resets the next simulated buyer-check time, so old elapsed intervals cannot be back-applied to a newly lowered price. Cancelling restores the exact item without fees.
 - Every change is journaled and saved using the existing local save key and version 4; old backups and listings remain usable.
 - Existing NPC sale odds, case odds, case pool and dealer offers are unchanged. Browsable NPC weapon listings and advanced haggling are planned for later patches.
+
+## Marketplace 0.4.2 — Browsable simulated NPC market
+
+- The Market now offers 15 **persistent, individually priced NPC listings** drawn only from the game's currently approved drop catalog: 24 base weapon models, the personally approved MAC-10 | Red Devil skin, and sealed cases. No unapproved or generated finishes enter the marketplace.
+- Each offer has a stable seller, exact item ID, asking price, time posted, and expiration time. Search by weapon, finish, or seller; filter by item type/rarity and sort by price, value, or recency.
+- Inspect a real listing's weapon image, rarity, posted price, reference value and item attributes before buying. A successful purchase debits the exact posted price, transfers the exact listed instance (preserving its identity and fields), removes the NPC listing, and records the event in the save's transaction history.
+- Simulated NPC stock is generated and **saved on the first Market visit**, not regenerated on every page open. Stock replenishes at most once per 20-minute elapsed interval, up to a maximum of 15; unsold listings expire after 24–72 hours. No restocking by switching tabs or refreshing.
+- The existing player listing editor, listing escrow and offline simulated player sales are preserved. Saving remains local to your device (same key and version 4). Older save exports remain importable; NPC import validation rejects bad prices, duplicate IDs and unapproved skins.
+- This is a **single-player simulation**, not real player-to-player trading. Offer/counteroffer haggling with individual NPC traders is scoped to **Patch 0.4.3**.
 
 ## Economy and progression
 

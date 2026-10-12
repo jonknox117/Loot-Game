@@ -160,7 +160,25 @@ function safeUpload(data) {
       if(!approved&&!legacyWear)return false;
     }
   }
-  if(data.market!=null&&!window.LootHubMarketCore.validMarketState(data.market))return false;
+  if(data.market!=null){
+    if(!window.LootHubMarketCore.validMarketState(data.market))return false;
+    if(data.market.npcListings.length>100)return false;
+    const listingIds=new Set();
+    for(const l of data.market.npcListings){
+      if(!l||typeof l.id!=='string'||l.id.length>150||listingIds.has(l.id)||
+         typeof l.seller!=='string'||l.seller.length>80||
+         !window.LootHubMarketCore.validAsk(l.ask)||
+         !Number.isFinite(l.createdAt)||!Number.isFinite(l.expiresAt)||
+         !window.LootHubMarketCore.eligible(l.item)||l.item.id.length>150||
+         ids.has(l.item.id)||listingIds.has(l.item.id))return false;
+      if(l.item.kind!=='case'&&(!Number.isInteger(l.item.tier)||l.item.tier<0||
+         l.item.tier>4||!Number.isFinite(l.item.base)||l.item.base<=0||
+         typeof l.item.weapon!=='string'||l.item.weapon.length>120))return false;
+      if(l.item.kind==='skin'&&!(l.item.weapon==='MAC-10'&&l.item.skin==='Red Devil'))return false;
+      listingIds.add(l.id);
+      ids.add(l.item.id);
+    }
+  }
   return true;
 }
 function exportProgress() {
@@ -332,8 +350,84 @@ function cancelListing(k){
   recordActivity(s,'Cancelled listing: '+listingItemName(listing.item));
   save();render();
 }
+// Market filters are transient UI state; actual NPC listings are durable save data.
+let npcMarketView={search:'',kind:'all',tier:'all',sort:'price-asc'};
+function updateNpcMarketFilter(field,value){
+  if(!Object.prototype.hasOwnProperty.call(npcMarketView,field))return;
+  npcMarketView[field]=String(value||'').slice(0,120);
+  const results=document.getElementById('npcMarketResults');
+  if(results)results.innerHTML=renderNpcMarketResults();
+  const count=document.getElementById('npcMarketCount');
+  if(count)count.textContent=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView).length+
+    ' listings';
+}
+function npcPriceLabel(listing){
+  const estimate=estimated(listing.item),ratio=listing.ask/Math.max(1,estimate);
+  return ratio<.92?'Below estimate':ratio>1.12?'Above estimate':'Near estimate';
+}
+function renderNpcMarketResults(){
+  const listings=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,npcMarketView);
+  return listings.map(l=>{
+    const item=l.item,estimate=estimated(item);
+    return '<article class="npc-listing">'+
+      '<div class="npc-listing-art">'+visualArt(item)+'</div>'+
+      '<div class="npc-listing-body">'+
+      '<span class="tag '+cls(rarity(item))+'">'+escapeHTML(rarity(item))+'</span>'+
+      '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
+      '<div class="muted tiny">Seller: '+escapeHTML(l.seller)+'</div>'+
+      '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
+      '<span class="muted tiny">Est. '+money(estimate)+' ◈ · '+npcPriceLabel(l)+'</span></div>'+
+      '<div class="npc-listing-buttons">'+
+      '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+
+      '<button class="primary" onclick="'+marketAction('buyNpcListing',l.id)+'">Buy now</button></div>'+
+      '</div></article>';
+  }).join('')||'<p class="muted">No listings match those filters. Try another weapon, price order, or rarity.</p>';
+}
+function inspectNpcListing(k){
+  const listing=s.market.npcListings.find(x=>x.id===k);
+  if(!listing)return;
+  const item=listing.item;
+  const attributes=[];
+  if(Number.isFinite(item.float))attributes.push('Wear float: '+item.float);
+  if(Number.isFinite(item.pattern))attributes.push('Pattern: '+item.pattern);
+  if(item.stattrak)attributes.push('StatTrak');
+  const name=listingItemName(item);
+  dialog('<div class="section-eyebrow">SIMULATED SELLER LISTING</div>'+
+    '<div class="tag '+cls(rarity(item))+'">'+escapeHTML(rarity(item))+'</div>'+
+    '<div class="big reveal-art">'+visualArt(item,'inspect')+'</div>'+
+    '<h2>'+escapeHTML(name)+'</h2>'+
+    '<div class="stat"><span>Seller</span><b>'+escapeHTML(listing.seller)+'</b></div>'+
+    '<div class="stat"><span>Asking price</span><b>'+money(listing.ask)+' coins</b></div>'+
+    '<div class="stat"><span>Reference estimate</span><b>'+money(estimated(item))+' coins</b></div>'+
+    '<div class="stat"><span>Price assessment</span><b>'+npcPriceLabel(listing)+'</b></div>'+
+    '<p class="muted tiny">'+escapeHTML(attributes.join(' · ')||
+      (item.kind==='skin'?'Approved cosmetic · exact listed item':item.kind==='case'?
+       'Sealed Arsenal Case':'Base weapon · unskinned'))+'</p>'+
+    '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiated offers arrive in Patch 0.4.3.</p>'+
+    '<div class="row"><button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
+      money(listing.ask)+' coins</button><button onclick="closeDialog()">Back to market</button></div>');
+}
+function buyNpcListing(k){
+  if(!canMutate())return;
+  const listing=s.market.npcListings.find(x=>x.id===k);
+  if(!listing)return;
+  if(s.coins<listing.ask){
+    alert('Not enough coins. Earn more or sell a collectible before purchasing.');
+    return;
+  }
+  const sale=window.LootHubMarketTransactions.buyNpcListing(s,k);
+  if(!sale)return;
+  recordActivity(s,'Bought '+listingItemName(sale.item)+' from '+sale.seller+
+    ' for '+sale.price+' coins');
+  save();
+  closeDialog();
+  tab='Inventory';
+  render();
+}
 function enhancedMarket(){
-  const offers=[{name:'Sealed Arsenal Case',price:29},{name:'Discount Arsenal Case',price:23},{name:'Collector Arsenal Case',price:32}];
+  if(isSaveCurrent()){
+    window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
+  }
   const listingItems=(s.listings||[]).map(l=>{
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
     return '<div class="listing-line market-listing-row">'+
@@ -354,24 +448,40 @@ function enhancedMarket(){
     '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
     '<p class="muted">Est. '+money(estimated(item))+' coins</p>'+
     '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
-  return '<section class="panel"><div class="section-eyebrow">YOUR TRADING DESK</div>'+
-    '<div class="row space"><h2>My Market Listings <span class="muted">('+(s.listings||[]).length+')</span></h2>'+
-    '<button onclick="go(\'Inventory\')">Full inventory</button></div>'+
-    (listingItems||'<p class="muted">No active listings. Choose an owned weapon or case below to set your price.</p>')+
-    '<p class="muted tiny">Each listed item is held in escrow. NPC buyers may purchase it while you are away. A 5% fee applies on successful sales only.</p></section>'+
+  const view=npcMarketView;
+  const select=(a,b)=>a===b?' selected':'';
+  const count=window.LootHubNPCMarket.filterNpcListings(s.market.npcListings,view).length;
+  return '<section class="panel npc-market-section">'+
+    '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
+    '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
+      count+' listings</span></div>'+
+    '<p class="muted">Inspect and buy actual listed collectibles from NPC sellers. These listings persist between visits; prices and item IDs are fixed until purchased or expired.</p>'+
+    '<div class="npc-market-filters">'+
+      '<label>Search weapons & sellers<input id="npcSearch" class="field" type="search" placeholder="Weapon, finish, seller..." value="'+escapeHTML(view.search)+'" oninput="updateNpcMarketFilter(\'search\',this.value)"></label>'+
+      '<label>Item type<select id="npcKindFilter" class="field" onchange="updateNpcMarketFilter(\'kind\',this.value)">'+
+      [['all','All items'],['weapon','Base weapons'],['skin','Approved skins'],['case','Cases']].map(x=>
+        '<option value="'+x[0]+'"'+select(x[0],view.kind)+'>'+x[1]+'</option>').join('')+'</select></label>'+
+      '<label>Rarity<select id="npcTierFilter" class="field" onchange="updateNpcMarketFilter(\'tier\',this.value)">'+
+      '<option value="all"'+select('all',view.tier)+'>All rarities</option>'+
+      tiers.map((x,i)=>'<option value="'+i+'"'+select(String(i),view.tier)+'>'+x+'</option>').join('')+
+      '</select></label>'+
+      '<label>Sort by<select id="npcSortFilter" class="field" onchange="updateNpcMarketFilter(\'sort\',this.value)">'+
+      [['price-asc','Price: Low → High'],['price-desc','Price: High → Low'],['value-desc','Highest estimated value'],['newest','Newest first']].map(x=>
+        '<option value="'+x[0]+'"'+select(x[0],view.sort)+'>'+x[1]+'</option>').join('')+
+      '</select></label></div>'+
+    '<div class="npc-market-grid" id="npcMarketResults">'+renderNpcMarketResults()+'</div>'+
+    '<p class="muted tiny">NPC stock refreshes gradually over time and is unique to your saved game. No real players are connected. Make Offer functionality is planned for the next patch.</p>'+
+    '</section>'+
+    '<section class="panel"><div class="row space"><h2>My Market Listings <span class="muted">('+
+      (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
+    (listingItems||'<p class="muted">No active listings. Choose an owned item below to set your price.</p>')+
+    '<p class="muted tiny">Your listings stay in escrow. NPC buyers may purchase them while you are away; the 5% fee is deducted on sale.</p></section>'+
     '<section class="panel"><div class="row space"><h3>List from Inventory</h3>'+
     '<span class="muted tiny">'+ownable.length+' available</span></div>'+
     (sellShelf?'<div class="cards">'+sellShelf+'</div>':
-      '<p class="muted">Nothing available to list. Existing market listings are held separately from your inventory.</p>')+
+      '<p class="muted">Nothing available to list. Existing listings are held separately.</p>')+
     (ownable.length>6?'<p class="muted tiny">Showing 6 items. Use Full inventory to choose from the rest.</p>':'')+
-    '</section>'+
-    '<section class="panel"><div class="section-eyebrow">LOOTBAY MARKETPLACE</div>'+
-    '<h2>Simulated Case Sellers</h2>'+
-    '<p class="muted">These are the existing NPC case offers. Browsable NPC weapon listings arrive in Patch 0.4.2.</p>'+
-    '<div class="cards">'+offers.map((x,i)=>'<div class="item">'+visualArt({kind:'case'})+'<h4>'+x.name+'</h4>'+
-      '<p class="muted">Seller #'+(i+1)+'</p><b>'+x.price+' coins</b>'+
-      '<button onclick="marketBuy('+x.price+')">Buy now</button><button onclick="negotiate('+x.price+')">Make offer</button></div>').join('')+
-    '</div></section>';
+    '</section>';
 }
 function enhancedPortfolio(){
   const value=s.items.reduce((total,x)=>total+estimated(x),0);

@@ -16,6 +16,28 @@ const fs = require('fs');
     await waitForVisible('.brand');
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
 
+    // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
+    await page.getByRole('button', { name: 'Market', exact: true }).click();
+    await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});
+    assert(await page.locator('.npc-listing').count()===15,'Initial NPC market stock should contain 15 listings');
+    const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
+    const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
+    assert(approvedOriginal?.item.skin==='Red Devil','NPC inventory used an unapproved cosmetic');
+    await page.locator('#npcKindFilter').selectOption('skin');
+    await page.locator('#npcSearch').fill('RED DEVIL');
+    assert(await page.locator('.npc-listing').count()===1,'Skin type and weapon-name search must work together');
+    await page.locator('.npc-listing').getByRole('button',{name:'Inspect'}).click();
+    assert((await page.locator('.dialog h2').textContent()).includes('Red Devil'),'Inspect must show exact approved finish');
+    await page.getByRole('button',{name:'Back to market'}).click();
+    await page.locator('#npcSearch').fill('');
+    await page.locator('#npcKindFilter').selectOption('all');
+    await page.locator('#npcSortFilter').selectOption('price-desc');
+    const sorted=await page.locator('.npc-listing-cost b').allTextContents();
+    const amounts=sorted.map(x=>Number(x.replace(/[^0-9]/g,'')));
+    assert(amounts.every((v,i)=>i===0||amounts[i-1]>=v),'High-to-low price sort must work');
+    await page.reload({waitUntil:'load'});
+    const sameNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
+    assert(JSON.stringify(originalNpcOffers)===JSON.stringify(sameNpcOffers),'Opening and reloading market must preserve NPC offers');
     await page.getByRole('button', { name: 'Earn', exact: true }).click();
     await waitForVisible('text=MicroTasks');
     for (let i = 0; i < 25; i++) {
@@ -131,6 +153,35 @@ const fs = require('fs');
     const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(restored.items.length===1,'Backup must restore inventory after primary corruption');
     assert(errors.length===0, 'Browser JavaScript errors: '+errors.join('; '));
+
+    // Purchase a specific affordable NPC listing and confirm the exact saved instance.
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    const cheapestOffer=await page.evaluate(()=>{
+      const saved=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return saved.market.npcListings.reduce((best,x)=>!best||x.ask<best.ask?x:best,null);
+    });
+    assert(cheapestOffer,'NPC stock unexpectedly disappeared');
+    await page.getByRole('button',{name:'Earn',exact:true}).click();
+    while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g,''))<cheapestOffer.ask){
+      await page.getByRole('button',{name:/Earn 1 coin/}).click();
+    }
+    await page.getByRole('button',{name:'Market',exact:true}).click();
+    const npcCard=page.locator('.npc-listing').filter({
+      has:page.locator('button[onclick*="'+cheapestOffer.id+'"]')
+    });
+    assert(await npcCard.count()===1,'NPC listing must remain identifiable by ID');
+    await npcCard.getByRole('button',{name:'Inspect'}).click();
+    const beforePurchase=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    await page.getByRole('button',{name:/Buy for .* coins/}).click();
+    const purchased=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(purchased.coins===beforePurchase.coins-cheapestOffer.ask,'NPC purchase must debit exactly the posted price');
+    assert(purchased.market.npcListings.length===beforePurchase.market.npcListings.length-1,'Purchased NPC listing must disappear');
+    assert(purchased.items.some(x=>x.id===cheapestOffer.item.id&&x.kind===cheapestOffer.item.kind),'Exact NPC item must transfer to inventory');
+    await page.reload({waitUntil:'load'});
+    const afterReload=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
+    assert(afterReload.items.some(x=>x.id===cheapestOffer.item.id),'Purchased NPC item must survive reload');
+    assert(!afterReload.market.npcListings.some(x=>x.id===cheapestOffer.id),'Purchased listing must not regenerate');
+    assert(errors.length===0,'Browser errors after NPC market purchase: '+errors.join('; '));
 
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
