@@ -215,54 +215,157 @@ function marketTick(){
   }
   if(result.changed)save();
 }
+function marketAction(name,id){return name+'('+escapeHTML(JSON.stringify(String(id)))+')'}
+function listingItemName(item){
+  return item&&item.kind==='skin'&&item.skin
+    ?String(item.weapon)+' | '+String(item.skin):itemName(item);
+}
+function previewListingPrice(){
+  const input=document.getElementById('listPrice');
+  const reference=document.getElementById('listingPriceRef');
+  const fee=document.getElementById('listingFee');
+  const net=document.getElementById('listingNet');
+  const hint=document.getElementById('listingHint');
+  if(!input||!reference||!fee||!net||!hint)return;
+  const quote=window.LootHubMarketCore.listingQuote(Number(input.value),Number(reference.value));
+  if(!quote){
+    fee.textContent='—';
+    net.textContent='—';
+    hint.textContent='Enter a whole-coin price between 1 and 100,000,000.';
+    return;
+  }
+  fee.textContent=money(quote.fee)+' coins';
+  net.textContent=money(quote.net)+' coins';
+  hint.textContent=quote.ratio===null?'A listing price is not a guaranteed sale.':
+    quote.ratio>1.3?'Well above estimated value; buyers may take longer.':
+    quote.ratio<.8?'Below estimated value; buyers may be more interested.':
+    'Near the estimated value; sales still depend on buyer activity.';
+}
+function suggestListingPrice(price){
+  const field=document.getElementById('listPrice');
+  if(!field)return;
+  field.value=String(price);
+  previewListingPrice();
+}
+function listingEditor(item,ask,mode,listingId){
+  const reference=estimated(item);
+  const safeAsk=window.LootHubMarketCore.validAsk(ask)?ask:reference;
+  const quote=window.LootHubMarketCore.listingQuote(safeAsk,reference);
+  const suggested=window.LootHubMarketCore.suggestedPrices(reference);
+  const label=mode==='edit'?'EDIT LISTING PRICE':'CREATE A LISTING';
+  const action=mode==='edit'?marketAction('submitPriceEdit',listingId):marketAction('submitListing',item.id);
+  const back=mode==='edit'?'closeDialog()':marketAction('inspect',item.id);
+  dialog('<div class="section-eyebrow">'+label+'</div>'+
+    '<h2>'+escapeHTML(listingItemName(item))+'</h2>'+
+    '<div class="listing-editor-art">'+visualArt(item,'inspect')+'</div>'+
+    '<p class="muted tiny">The exact owned item stays in escrow until it sells or you cancel. Changing the price costs nothing. A 5% fee applies only when it sells.</p>'+
+    '<div class="stat"><span>Estimated value</span><b>'+money(reference)+' coins</b></div>'+
+    '<label class="listing-price-label" for="listPrice">Your asking price</label>'+
+    '<input id="listingPriceRef" type="hidden" value="'+reference+'">'+
+    '<input id="listPrice" class="field" aria-label="Your asking price" type="number" inputmode="numeric" min="1" max="100000000" step="1" value="'+safeAsk+'" oninput="previewListingPrice()">'+
+    '<div class="listing-quick-prices">'+suggested.map(v=>
+      '<button type="button" onclick="suggestListingPrice('+v+')">'+money(v)+' ◈</button>').join('')+'</div>'+
+    '<div class="listing-quote" aria-live="polite">'+
+      '<div class="stat"><span>Marketplace fee (5%)</span><b id="listingFee">'+money(quote.fee)+' coins</b></div>'+
+      '<div class="stat"><span>Proceeds if sold</span><b id="listingNet">'+money(quote.net)+' coins</b></div>'+
+      '<p id="listingHint" class="muted tiny">The estimate is not a guaranteed offer.</p></div>'+
+    '<div class="row listing-editor-actions"><button class="primary" onclick="'+action+'">'+(mode==='edit'?'Save price':'List for sale')+'</button>'+
+    '<button onclick="'+back+'">Back</button></div>');
+  previewListingPrice();
+}
+function listingInputAsk(){
+  const input=document.getElementById('listPrice');
+  if(!input)return null;
+  const ask=Number(input.value);
+  if(!window.LootHubMarketCore.validAsk(ask)){
+    alert('Enter a whole-coin asking price between 1 and 100,000,000.');
+    return null;
+  }
+  return ask;
+}
 function submitListing(k){
   if(!canMutate())return;
-  const item=s.items.find(v=>v.id===k),input=document.getElementById('listPrice');
-  if(!item||!input)return;
-  const ask=Number(input.value);
-  if(!Number.isSafeInteger(ask)||ask<1||ask>100000000){
-    alert('Enter a whole-coin asking price between 1 and 100,000,000.');return;
-  }
+  const item=s.items.find(v=>v.id===k);
+  if(!item)return;
+  const ask=listingInputAsk();
+  if(ask===null)return;
   const listing=window.LootHubMarketTransactions.createListing(s,k,ask,Date.now());
   if(!listing)return;
-  recordActivity(s,'Listed '+itemName(item)+' for '+ask+' coins');
+  recordActivity(s,'Listed '+listingItemName(item)+' for '+ask+' coins');
   save();
   closeDialog();
   tab='Market';render();
 }
-function listItem(k) {
-  const item=s.items.find(v=>v.id===k);
+function listItem(k){
+  const item=s.items.find(v=>v.id===k&&window.LootHubMarketCore.eligible(v));
   if(!item)return;
-  const v=estimated(item);
-  dialog('<div class="section-eyebrow">CREATE A LISTING</div><h2>'+escapeHTML(itemName(item))+'</h2>'+
-  '<p class="muted">A buyer may purchase this listing while you are away. Market sales have a 5% fee. Your item is held in escrow until sold or cancelled.</p>'+
-  '<div class="stat"><span>Estimated value</span><b>'+money(v)+' coins</b></div>'+
-  '<label>Asking price<input id="listPrice" class="field" type="number" min="1" max="100000000" step="1" value="'+v+'"></label>'+
-  '<p class="muted tiny">Higher asking prices usually take longer and may never sell.</p>'+
-  '<div class="row"><button class="primary" onclick="submitListing(\''+escapeHTML(k)+'\')">List for sale</button><button onclick="inspect(\''+escapeHTML(k)+'\')">Back</button></div>');
+  listingEditor(item,estimated(item),'create',null);
+}
+function editListing(k){
+  const listing=(s.listings||[]).find(v=>v.id===k);
+  if(!listing||!listing.item)return;
+  listingEditor(listing.item,listing.ask,'edit',listing.id);
+}
+function submitPriceEdit(k){
+  if(!canMutate())return;
+  const ask=listingInputAsk();
+  if(ask===null)return;
+  const changed=window.LootHubMarketTransactions.repriceListing(s,k,ask,Date.now());
+  if(!changed)return;
+  if(changed.changed){
+    recordActivity(s,'Updated '+listingItemName(changed.listing.item)+' listing from '+
+      changed.oldAsk+' to '+ask+' coins');
+    save();
+  }
+  closeDialog();render();
 }
 function cancelListing(k){
   if(!canMutate())return;
   const listing=window.LootHubMarketTransactions.cancelListing(s,k);
   if(!listing)return;
-  recordActivity(s,'Cancelled listing: '+itemName(listing.item));
+  recordActivity(s,'Cancelled listing: '+listingItemName(listing.item));
   save();render();
 }
 function enhancedMarket(){
   const offers=[{name:'Sealed Arsenal Case',price:29},{name:'Discount Arsenal Case',price:23},{name:'Collector Arsenal Case',price:32}];
-  const yours=(s.listings||[]).map(l=>'<div class="listing-line">'+
-    '<div class="row" style="min-width:0">'+visualArt(l.item)+
-    '<div><b>'+escapeHTML(itemName(l.item))+'</b><div class="muted tiny">Listed '+new Date(l.createdAt).toLocaleString()+'</div></div></div>'+
-    '<div class="row"><b>'+money(l.ask)+' ◈</b><button onclick="cancelListing(\''+escapeHTML(l.id)+'\')">Cancel</button></div></div>').join('');
-  return '<section class="panel"><div class="section-eyebrow">LOOTBAY MARKETPLACE</div><h2>Live Listings</h2>'+
-    '<p class="muted">Buy sealed cases from simulated sellers. Market prices are not guaranteed resale prices.</p>'+
+  const listingItems=(s.listings||[]).map(l=>{
+    const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
+    return '<div class="listing-line market-listing-row">'+
+      '<div class="listing-identity">'+visualArt(l.item)+
+      '<div class="listing-identity-copy"><b>'+escapeHTML(listingItemName(l.item))+'</b>'+
+      '<span class="muted tiny">Estimated '+money(estimated(l.item))+' ◈ · Listed '+new Date(l.createdAt).toLocaleString()+'</span>'+
+      (l.updatedAt?'<span class="muted tiny">Price updated '+new Date(l.updatedAt).toLocaleString()+'</span>':'')+
+      '</div></div>'+
+      '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
+      '<span class="muted tiny">Receive '+(quote?money(quote.net):'—')+' ◈ after fee</span>'+
+      '<div class="row"><button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
+      '<button onclick="'+marketAction('cancelListing',l.id)+'">Cancel</button></div></div>'+
+      '</div>';
+  }).join('');
+  const ownable=s.items.filter(v=>window.LootHubMarketCore.eligible(v));
+  const sellShelf=ownable.slice(0,6).map(item=>
+    '<div class="item">'+visualArt(item)+
+    '<h4>'+escapeHTML(listingItemName(item))+'</h4>'+
+    '<p class="muted">Est. '+money(estimated(item))+' coins</p>'+
+    '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
+  return '<section class="panel"><div class="section-eyebrow">YOUR TRADING DESK</div>'+
+    '<div class="row space"><h2>My Market Listings <span class="muted">('+(s.listings||[]).length+')</span></h2>'+
+    '<button onclick="go(\'Inventory\')">Full inventory</button></div>'+
+    (listingItems||'<p class="muted">No active listings. Choose an owned weapon or case below to set your price.</p>')+
+    '<p class="muted tiny">Each listed item is held in escrow. NPC buyers may purchase it while you are away. A 5% fee applies on successful sales only.</p></section>'+
+    '<section class="panel"><div class="row space"><h3>List from Inventory</h3>'+
+    '<span class="muted tiny">'+ownable.length+' available</span></div>'+
+    (sellShelf?'<div class="cards">'+sellShelf+'</div>':
+      '<p class="muted">Nothing available to list. Existing market listings are held separately from your inventory.</p>')+
+    (ownable.length>6?'<p class="muted tiny">Showing 6 items. Use Full inventory to choose from the rest.</p>':'')+
+    '</section>'+
+    '<section class="panel"><div class="section-eyebrow">LOOTBAY MARKETPLACE</div>'+
+    '<h2>Simulated Case Sellers</h2>'+
+    '<p class="muted">These are the existing NPC case offers. Browsable NPC weapon listings arrive in Patch 0.4.2.</p>'+
     '<div class="cards">'+offers.map((x,i)=>'<div class="item">'+visualArt({kind:'case'})+'<h4>'+x.name+'</h4>'+
       '<p class="muted">Seller #'+(i+1)+'</p><b>'+x.price+' coins</b>'+
       '<button onclick="marketBuy('+x.price+')">Buy now</button><button onclick="negotiate('+x.price+')">Make offer</button></div>').join('')+
-    '</div></section>'+
-    '<section class="panel"><div class="row space"><h3>My Market Listings <span class="muted">('+(s.listings||[]).length+')</span></h3><button onclick="go(\'Inventory\')">List an item →</button></div>'+
-    (yours||'<p class="muted">No active listings. Open an owned item in Inventory and choose List for sale.</p>')+
-    '<p class="muted tiny">Simulated buyers evaluate prices at intervals. While the game is closed, elapsed time is processed when you return. A listing can remain unsold.</p></section>';
+    '</div></section>';
 }
 function enhancedPortfolio(){
   const value=s.items.reduce((total,x)=>total+estimated(x),0);
