@@ -77,7 +77,7 @@ function filterNpcListings(listings,options={}){
     if(!l||!l.item)return false;
     const item=l.item;
     if(kind!=='all'&&item.kind!==kind)return false;
-    if(tier!=='all'&&String(item.tier)!==tier)return false;
+    if(tier!=='all'&&(item.kind==='case'?'2':String(item.tier))!==tier)return false;
     const name=item.kind==='case'?'Sealed Arsenal Case':item.weapon+' '+(item.skin||'');
     return !search||[name,l.seller].some(x=>String(x||'').toLocaleLowerCase().includes(search));
   });
