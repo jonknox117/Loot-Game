@@ -29,7 +29,7 @@
     ]
   ],
   "native1600SourceDetail": false,
-  "qualityStatus": "pilot awaiting visual acceptance; not high-native-resolution final",
+  "qualityStatus": "Provisional original illustrated 2D source; real native knife detail approximately 960px, 1600px inspect is an export upscale.",
   "originalSourceBundleLibrary": "/LootHub/loothub-karambit-master-033F.zip",
   "buildScript": "scripts/build_karambit_2d.py",
   "materialSource": "Two 2D renders from the same original AI-generated concept image, not licensed game textures, not production CAD; a background-clipped photo illustration.",
@@ -46,5 +46,12 @@
     "Model silhouette is based on AI-generated karambit-like illustration; manufacturer mechanical accuracy not verified",
     "No independent iPhone Safari visual signoff"
   ],
-  "originalArtwork": "Project-original AI-generated imagery created for this task; no assertion that name or concept is globally unique."
+  "originalArtwork": "Project-original AI-generated imagery created for this task; no assertion that name or concept is globally unique.",
+  "currentFinish": "Raptor's Gaze",
+  "previousFinish": "Golden Talon",
+  "legacyArtworkArchived": true,
+  "currentProductionScript": "scripts/build_raptors_gaze_2d.py",
+  "currentSourceBundleLibrary": "/LootHub/loothub-raptors-gaze-master-033G.zip",
+  "currentDesign": "A single elongated embossed brow following the gold blade and one inset near-heel eye, aligned to user-marked neutral source. No full carved eagle head.",
+  "designReview": "User placement acceptance and independent iPhone Safari review pending"
 }
