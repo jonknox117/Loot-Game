@@ -38,6 +38,8 @@ function migrateLegacyFinishData(data){
   if(!data||typeof data!=='object')return data;
   const migrate=item=>{
     if(!item||typeof item!=='object'||item.kind==='case')return;
+    // Keep user-selected approved finish intact; retire only older unapproved skins.
+    if(item.kind==='skin'&&item.weapon==='MAC-10'&&item.skin==='Red Devil')return;
     if(item.kind==='skin'){
       const base=Number(item.base);
       if(Number.isFinite(base)&&base>=0){
@@ -150,9 +152,13 @@ function safeUpload(data) {
     if(item.kind!=='case' && (!Number.isInteger(item.tier)||item.tier<0||item.tier>4||
        !Number.isFinite(item.base)||item.base<0||
        typeof item.weapon!=='string'||item.weapon.length<1||item.weapon.length>120))return false;
-    if(item.kind==='skin' && (typeof item.skin!=='string'||item.skin.length>120||
-       !Number.isFinite(item.float)||item.float<0||item.float>1||
-       !Number.isFinite(item.pattern)||item.pattern<0))return false;
+    if(item.kind==='skin'){
+      if(typeof item.skin!=='string'||item.skin.length>120)return false;
+      const approved=item.weapon==='MAC-10'&&item.skin==='Red Devil';
+      const legacyWear=Number.isFinite(item.float)&&item.float>=0&&item.float<=1&&
+        Number.isFinite(item.pattern)&&item.pattern>=0;
+      if(!approved&&!legacyWear)return false;
+    }
   }
   if(data.market!=null&&!window.LootHubMarketCore.validMarketState(data.market))return false;
   return true;
@@ -393,7 +399,14 @@ const lootHubNeutralModels=Object.freeze({
   'Tactical Tomahawk':'tactical-tomahawk',
   'SPAS-12':'spas-12',
   'M60':'m60',
-  'RPG-7':'rpg-7'
+  'RPG-7':'rpg-7',
+  'M1911':'m1911',
+  'M1 Garand':'m1-garand',
+  'Kar98k':'kar98k',
+  'Thompson SMG':'thompson-smg',
+  'FN SCAR-L':'fn-scar-l',
+  'FN FAL':'fn-fal',
+  'M134 Minigun':'m134-minigun'
 });
 const lootHubOriginalBaseMasters=Object.freeze({
   'Glock-18':'assets/renders/masters/glock-18-neutral-1600.webp',
@@ -403,6 +416,15 @@ const lootHubOriginalBaseMasters=Object.freeze({
   'Karambit':'assets/renders/masters/karambit-neutral-1600.webp'
 });
 function visualArt(item,context='inventory') {
+  // Only the explicitly user-approved skin may replace a neutral master.
+  if(item&&item.kind==='skin'&&item.weapon==='MAC-10'&&item.skin==='Red Devil'){
+    const skin=typeof window!=='undefined'&&window.LootHubSkinArt&&window.LootHubSkinArt['MAC-10|Red Devil'];
+    const size=context==='inspect'?'1600':context==='reel'?'400':'800';
+    if(skin&&skin[size]){
+      return '<div class="art weapon-art master-raster approved-skin" data-weapon-model="MAC-10" data-finish="Red Devil" data-art-status="approved-skin" data-resolution="'+size+'">'+
+        '<img src="data:image/webp;base64,'+skin[size]+'" alt="MAC-10 | Red Devil user-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+    }
+  }
   if(item&&item.kind!=='case'){
     const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const size=context==='inspect'?'1600':context==='reel'?'400':'800';
