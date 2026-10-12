@@ -481,3 +481,22 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 @media(max-width:340px){
   .npc-market-grid{grid-template-columns:1fr}
 }
+
+
+/* Patch 0.4.3: mobile haggling cards and saved negotiation transcripts. */
+.offer-history{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow-y:auto;margin:14px 0;padding:10px;background:#101b2a;border:1px solid #344960;border-radius:12px}
+.offer-message{display:flex;flex-direction:column;gap:4px;max-width:89%;padding:9px 12px;border:1px solid #40536d;border-radius:10px;line-height:1.4;overflow-wrap:anywhere}
+.offer-trader{align-self:flex-start;background:#24344a}
+.offer-player{align-self:flex-end;background:#183a44;border-color:#356778}
+.offer-actions{margin:14px 0;display:flex;gap:8px;flex-wrap:wrap}
+.offer-actions button{min-height:44px;flex:1 1 125px}
+.dialog:has(.offer-history) input.field{min-height:46px;width:100%;margin-top:8px}
+.npc-listing-buttons{grid-template-columns:1fr 1fr}
+.npc-listing-buttons button:nth-child(3){grid-column:span 2}
+@media(max-width:540px){
+ .offer-history{max-height:210px}
+ .offer-actions{flex-direction:column}
+ .offer-actions button{width:100%}
+ .npc-listing-buttons{grid-template-columns:1fr}
+ .npc-listing-buttons button:nth-child(3){grid-column:auto}
+}
