@@ -1244,5 +1244,114 @@ test('Market layout offers mobile shortcuts, buyer filters and whole-inventory l
   assert.equal(g.run('catalog.length'),24);
   assert.equal(g.run('approvedSkins.length'),5);
 });
+test('Four-round collector walkaway remains importable after a full negotiation',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  const listing=g.state().market.npcListings.find(x=>x.seller==='VaultKeeper');
+  assert(listing&&listing.ask>1);
+  g.run("negotiateNpcListing("+JSON.stringify(listing.id)+")");
+  const id='buy:'+listing.id;
+  assert.equal(g.state().market.negotiations.find(x=>x.id===id).maxRounds,4);
+  for(let i=0;i<4;i++){
+    g.byId('negotiationAmount').value='1';
+    g.run("sendNegotiationOffer('buy',"+JSON.stringify(listing.id)+")");
+  }
+  const n=g.state().market.negotiations.find(x=>x.id===id);
+  assert.equal(n.rounds,4);
+  assert.equal(n.status,'walked');
+  assert.equal(g.run('safeUpload(JSON.parse(JSON.stringify(s)))'),true);
+  const corrupt=g.state();
+  corrupt.market.negotiations.find(x=>x.id===id).rounds=5;
+  assert.equal(g.run('safeUpload('+JSON.stringify(corrupt)+')'),false);
+});
+test('Accepted buyer agreement reserves player escrow against automatic sale simulation',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"protected-case",kind:"case",paid:25})');
+  g.run('window.LootHubMarketTransactions.createListing(s,"protected-case",25,Date.now()-3600000)');
+  const listing=g.state().listings.find(x=>x.item.id==='protected-case');
+  g.run("reviewBuyerOffer("+JSON.stringify(listing.id)+")");
+  g.run("acceptMarketCounter('sell',"+JSON.stringify(listing.id)+")");
+  assert.equal(g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id).status,'agreed');
+  const before=g.state();
+  const result=JSON.parse(g.run('JSON.stringify(window.LootHubMarketSimulation.advanceListings(s,Date.now(),()=>0))'));
+  assert.equal(result.sales.length,0);
+  assert.equal(g.state().listings.length,1);
+  assert.equal(g.state().coins,before.coins);
+  assert(Date.now()-g.state().listings[0].checkedAt<2000,'Elapsed time on protected escrow is consumed');
+  assert.equal(g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingId===listing.id).status,'agreed');
+});
+test('Direct purchase of an expired NPC listing is refused without spending coins',()=>{
+  const g=boot();
+  g.run("go('Market')");
+  g.run('s.coins=100000;save()');
+  const listing=g.state().market.npcListings[0];
+  g.run('s.market.npcListings[0].expiresAt=Date.now()-1');
+  const before=g.state();
+  assert.equal(g.run('window.LootHubMarketTransactions.buyNpcListing(s,'+
+    JSON.stringify(listing.id)+')'),null);
+  assert.equal(g.state().coins,before.coins);
+  assert.equal(g.state().items.length,before.items.length);
+  assert.equal(g.state().market.npcListings.length,before.market.npcListings.length);
+});
+test('Other buyer agreements reserve funds before a negotiated seller payout',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"reserved-a",kind:"case",paid:25},{id:"reserved-b",kind:"case",paid:25})');
+  g.run('window.LootHubMarketTransactions.createListing(s,"reserved-a",40,Date.now()-9000)');
+  g.run('window.LootHubMarketTransactions.createListing(s,"reserved-b",40,Date.now()-8000)');
+  const listings=g.state().listings;
+  for(const l of listings){
+    g.run("reviewBuyerOffer("+JSON.stringify(l.id)+")");
+    g.run("acceptMarketCounter('sell',"+JSON.stringify(l.id)+")");
+  }
+  const records=g.state().market.negotiations.filter(x=>x.kind==='sell'&&x.status==='agreed');
+  assert.equal(records.length,2);
+  const buyer=records[0].traderId,first=records[0],second=records[1];
+  // Simulate two agreements owned by the same collector to exercise reservation logic.
+  g.run('s.market.negotiations.find(x=>x.id==='+JSON.stringify(second.id)+').traderId='+JSON.stringify(buyer));
+  g.run('s.market.traders.find(x=>x.id==='+JSON.stringify(buyer)+').wallet='+
+    (first.agreedPrice+second.agreedPrice-1));
+  const initial=g.state();
+  const sold=g.run('window.LootHubMarketTransactions.settleListing(s,'+
+    JSON.stringify(first.listingId)+','+first.agreedPrice+')');
+  assert.equal(sold,null,'Competing accepted deals must not spend previously reserved funds');
+  assert.equal(g.state().coins,initial.coins);
+  assert.equal(g.state().listings.length,2);
+  assert.equal(g.state().market.traders.find(x=>x.id===buyer).wallet,
+    first.agreedPrice+second.agreedPrice-1);
+});
+test('Marketplace payouts and instant-sale arithmetic refuse unsafe integer overflow',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"overflow-case",kind:"case",paid:25})');
+  g.run('window.LootHubMarketTransactions.createListing(s,"overflow-case",40,Date.now())');
+  const listing=g.state().listings[0];
+  g.run('s.coins=Number.MAX_SAFE_INTEGER-1;s.sales=Number.MAX_SAFE_INTEGER-1');
+  const original=g.state();
+  const invalid=g.run('window.LootHubMarketTransactions.settleListing(s,'+
+    JSON.stringify(listing.id)+')');
+  assert.equal(invalid,null);
+  assert.deepEqual(g.state().listings,original.listings);
+  assert.equal(g.state().coins,original.coins);
+  g.run('s.items.push({id:"quick-case",kind:"case",paid:25})');
+  assert.equal(g.run('window.LootHubMarketTransactions.sellOwned(s,"quick-case",50,1)'),null);
+  assert(g.state().items.some(x=>x.id==='quick-case'));
+});
+test('Legacy direct-buyer walkaway persists instead of generating fresh offers forever',()=>{
+  const g=boot();
+  g.run('s.items.push({id:"legacy-counter-case",kind:"case",paid:25})');
+  for(let i=0;i<3;i++){
+    g.run('sellOffer("legacy-counter-case")');
+    g.byId('ask').value='100000000';
+    g.run('respondOffer("legacy-counter-case")');
+  }
+  const first=g.state().offers['sale-legacy-counter-case'];
+  assert(first&&first.closed&&first.attempts===3);
+  assert.equal(g.state().items.length,1);
+  g.run('sellOffer("legacy-counter-case")');
+  g.byId('ask').value='1';
+  g.run('respondOffer("legacy-counter-case")');
+  assert.equal(g.state().offers['sale-legacy-counter-case'].attempts,3);
+  assert.equal(g.state().items.length,1);
+  assert.equal(g.state().sales,0);
+});
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
