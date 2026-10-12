@@ -1696,7 +1696,7 @@ test('0.5.3 high resolution inspections opt into silhouette masked renderer with
   // browser uses MP5's neutral raster from the approved art asset scripts.
   assert(html.includes('data-wear-seed="special-wear-seed"'));
   assert(html.includes('data-wear-grade="4"'));
-  assert(html.includes('data:image/webp;base64,'));
+  assert(html.includes('glock-18-neutral-1600.webp'));
   assert(html.includes('data-resolution="1600"'));
   const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inspect")');
   assert(pristine.includes('data-wear-grade="0"'));
