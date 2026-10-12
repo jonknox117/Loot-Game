@@ -98,7 +98,7 @@
   },
   "rarity": "Legendary",
   "tier": 4,
-  "status": "raster-pilot-live",
+  "status": "superseded-legacy-asset",
   "artworkApproved": false,
   "assetFilesPresent": true,
   "gameIntegration": "reel, inventory, catalog preview and inspect WebPs",
@@ -153,7 +153,7 @@
     "one-visible-eyeball-near-heel",
     "no-illustrated-eagle-head"
   ],
-  "notes": "Provisional redraw from exact existing neutral silhouette; legacy Golden Talon owners are migrated at load, preserving attributes and values.",
+  "notes": "Original Raptor's Gaze design rejected; archived only for file provenance. Current Legendary Karambit is Starfall; existing instances migrate to it.",
   "pilot": true,
   "sourceNativePixelsApprox": [
     960,
@@ -171,5 +171,7 @@
   "ringApertureAlphaChecked": true,
   "orientation": "blade-hook-right, finger-ring-left",
   "finishingMethod": "Neutral blade gold recolor plus one shaded cubic-Bezier raised brow and independent near-heel inset eyeball, both alpha-clipped to unchanged neutral mask.",
-  "displayName": "Raptor's Gaze"
+  "displayName": "Raptor's Gaze",
+  "liveCatalogItem": false,
+  "supersededBy": "karambit--starfall"
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "stage": "Five anchor weapon masters have at least one live raster finish. M4A4 and Karambit remain provisional native-detail sources; final user visual approval pending. Other 12 finishes remain vector.",
+  "stage": "Five models and seven 2D finish pilots live including Legendary Karambit Starfall. M4A4 and Karambit still use upsampled native-detail sources; twelve remaining catalog finishes use SVG art.",
   "status": "not-rendered",
   "readme": "assets/master-render-spec.md",
   "resolution": {
@@ -236,17 +236,17 @@
       },
       "assetStatus": "provisional-raster-integrated",
       "approved": false,
-      "designBrief": "assets/art-briefs/karambit-raptors-gaze.md",
-      "firstFinishRecipe": "assets/skin-definitions/karambit--raptors-gaze.json",
-      "designStatus": "0.3.3G new brow and eye finish rendered",
+      "designBrief": "assets/art-briefs/karambit-starfall.md",
+      "firstFinishRecipe": "assets/skin-definitions/karambit--starfall.json",
+      "designStatus": "Starfall original metallic finish built from the shared neutral image and masks, with no facial motif.",
       "completedFinishes": [
-        "karambit--raptors-gaze"
+        "karambit--starfall"
       ],
-      "sourceBundleLibrary": "/LootHub/loothub-raptors-gaze-master-033G.zip",
+      "sourceBundleLibrary": "/LootHub/loothub-karambit-starfall-033H.zip",
       "sharedAlphaConfirmed": true,
       "orientation": "hook right, ring left",
-      "productionScript": "scripts/build_raptors_gaze_2d.py",
-      "reviewStatus": "Provisional 2D source; mobile review pending"
+      "productionScript": "scripts/build_starfall_2d.py",
+      "reviewStatus": "Provisional native detail ~960px across knife, inspected 1600px is resampled; visual approval and mobile Safari QA pending."
     }
   ]
 }

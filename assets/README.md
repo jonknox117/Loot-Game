@@ -105,3 +105,12 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - The original generated knife is approximately 960px across. The 1600px WebP is an export upscale, **not** native inspection-detail imagery. This finish remains **provisional, approved:false**, awaiting placement review and mobile Safari signoff.
 - Backward compatibility: `upgrade.js` recognizes `Karambit|Golden Talon` when loading saved inventory/listed items and when validating imported backups, then canonicalizes it to `Raptor's Gaze`. It preserves item IDs, floats, pattern numbers, wear, StatTrak, value and listing state. `index.html` uses numeric catalog indexes for preview callbacks so the apostrophe in the finish name cannot break a quoted JavaScript handler.
 - The previous Golden Talon recipe and WebPs remain archived as legacy assets; no new 20th catalog slot was created.
+
+## 0.3.3H — Starfall (active Legendary Karambit)
+
+- Current Legendary Karambit is `Karambit | Starfall`, still tier 4 and 1900 base value with exactly 19 catalog finishes and identical published odds.
+- The actual raster is the same neutral 2D Karambit master retextured using per-surface metallic masks, not a manually drawn SVG eye or brow: satin cobalt/sapphire, fine purple Damascus-like grain, icy cyan polished bevel, black grip, warm gold ring.
+- Live transparent images: `assets/renders/finishes/karambit--starfall-{400,800,1600}.webp`, pixel-perfect alpha matched to neutral exports at each size. Real transparent ring aperture retained.
+- Rebuild with `python scripts/build_starfall_2d.py <extracted archive root>` and Pillow, NumPy, OpenCV. The original AI-generated source, working RGBA PNG, shared neutral master, material masks and exports are archived at `/LootHub/loothub-karambit-starfall-033H.zip`.
+- Source knife actually has ~960 native horizontal pixels, while the 1600px output is interpolated. Do not mark as native full-detail or final-approved without art review and iPhone Safari QA.
+- Save compatibility resolves both historical Golden Talon and Raptor's Gaze strings to Starfall without losing item identity, attribute values, or market listings. Old artwork remains archived and is no longer used in the live catalog.

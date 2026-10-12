@@ -29,7 +29,7 @@
     ]
   ],
   "native1600SourceDetail": false,
-  "qualityStatus": "Provisional original illustrated 2D source; real native knife detail approximately 960px, 1600px inspect is an export upscale.",
+  "qualityStatus": "Same shared neutral silhouette. Source is original AI-generated neutral knife from concept sheet ~960px native width. Inspect 1600px is upscale. Finish is masked metallic texture, not an SVG overlay. Await art approval.",
   "originalSourceBundleLibrary": "/LootHub/loothub-karambit-master-033F.zip",
   "buildScript": "scripts/build_karambit_2d.py",
   "materialSource": "Two 2D renders from the same original AI-generated concept image, not licensed game textures, not production CAD; a background-clipped photo illustration.",
@@ -47,11 +47,15 @@
     "No independent iPhone Safari visual signoff"
   ],
   "originalArtwork": "Project-original AI-generated imagery created for this task; no assertion that name or concept is globally unique.",
-  "currentFinish": "Raptor's Gaze",
+  "currentFinish": "Starfall",
   "previousFinish": "Golden Talon",
   "legacyArtworkArchived": true,
-  "currentProductionScript": "scripts/build_raptors_gaze_2d.py",
-  "currentSourceBundleLibrary": "/LootHub/loothub-raptors-gaze-master-033G.zip",
-  "currentDesign": "A single elongated embossed brow following the gold blade and one inset near-heel eye, aligned to user-marked neutral source. No full carved eagle head.",
-  "designReview": "User placement acceptance and independent iPhone Safari review pending"
+  "currentProductionScript": "scripts/build_starfall_2d.py",
+  "currentSourceBundleLibrary": "/LootHub/loothub-karambit-starfall-033H.zip",
+  "currentDesign": "Original satin sapphire/cobalt iridescent Damascus blade, cool cyan polished bevel, black textured grip and subtle muted gold finger ring. No animal-face motifs or added geometry.",
+  "designReview": "User placement acceptance and independent iPhone Safari review pending",
+  "previousFinishes": [
+    "Golden Talon",
+    "Raptor's Gaze"
+  ]
 }

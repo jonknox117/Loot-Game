@@ -31,7 +31,7 @@ const catalog=[
 ['UMP-45','Signal Green',1,19,'🔫'],['FAMAS','Polar Relay',1,23,'🔫'],['MAC-10','Circuit Blue',1,17,'🔫'],['Five-SeveN','Copper Web',1,21,'🔫'],
 ['M4A4','Voltage Bloom',2,70,'🔫'],['AK-47','Ghostline',2,85,'🔫'],['AWP','Night Watch',2,105,'🎯'],['Desert Eagle','Solar Ash',2,92,'🔫'],
 ['AK-47','Crimson Circuit',3,310,'🔫'],['AWP','Eclipse',3,390,'🎯'],['M4A1-S','Prism Burn',3,280,'🔫'],
-['Karambit',"Raptor's Gaze",4,1900,'🗡️'],['Butterfly Knife','Spectrum',4,2400,'🗡️'],['Bayonet','Black Ember',4,1650,'🗡️']];
+['Karambit','Starfall',4,1900,'🗡️'],['Butterfly Knife','Spectrum',4,2400,'🗡️'],['Bayonet','Black Ember',4,1650,'🗡️']];
 let s=loadGame(KEY);if(!s||!Array.isArray(s.items))s={coins:0,items:[],history:[],earned:0,spent:0,sales:0,rep:0,openings:0,serial:0,offers:{},tab:'Home'};if(!Array.isArray(s.listings))s.listings=[];if(!Array.isArray(s.ledger))s.ledger=[];if(!s.preferences)s.preferences={fastOpen:false};
 let tab=s.tab||'Home',busy=false, pending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
 const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?'Sealed Arsenal Case':x.weapon+' | '+canonicalSkin(x.weapon,x.skin), rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>x.kind==='case'?25:Math.round(x.base*(x.stattrak?1.65:1)*(x.float<.07?1.4:x.float<.15?1.18:x.float>.45?.75:1)*(x.pattern===777?1.25:1)), caseItem=()=>({id:id(),kind:'case',paid:25}), rng=n=>Math.floor(Math.random()*n);

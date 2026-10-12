@@ -3,7 +3,7 @@
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
   "assetStatus": "seven-raster-finish-pilots-live",
-  "notes": "Seven high-quality transparent 2D raster pilots for five weapon models, including renamed Raptor's Gaze. Older Golden Talon save objects map to Raptor's Gaze without reroll or value changes. Knife is an illustrated provisional ~960 native-pixel source with clean 1600-pixel export.",
+  "notes": "Seven live original-raster pilots across five weapon models; Karambit Starfall replaces former Golden Talon and Raptor's Gaze in the same Legendary tier 4 slot. Older saved knife names canonicalize to Starfall, preserving item IDs and attributes. Neutral knife source is ~960px native subject; final 1600px output upsampled. Twelve other finishes still SVG.",
   "sourceFormat": "lossless PNG / layered working originals retained separately",
   "outputs": {
     "inspection": {
@@ -369,16 +369,16 @@
       "vectorStatus": "implemented"
     },
     {
-      "id": "karambit--raptors-gaze",
+      "id": "karambit--starfall",
       "weapon": "Karambit",
-      "finish": "Raptor's Gaze",
+      "finish": "Starfall",
       "tier": 4,
       "rarity": "Legendary",
       "status": "raster-pilot-live",
       "master": "assets/renders/masters/karambit-neutral-1600.webp",
-      "inspection": "assets/renders/finishes/karambit--raptors-gaze-1600.webp",
-      "inventory": "assets/renders/finishes/karambit--raptors-gaze-800.webp",
-      "thumbnail": "assets/renders/finishes/karambit--raptors-gaze-400.webp",
+      "inspection": "assets/renders/finishes/karambit--starfall-1600.webp",
+      "inventory": "assets/renders/finishes/karambit--starfall-800.webp",
+      "thumbnail": "assets/renders/finishes/karambit--starfall-400.webp",
       "approved": false,
       "vectorModel": "karambit",
       "vectorSource": "assets/weapon-masters.js",
@@ -394,8 +394,8 @@
         2400,
         1200
       ],
-      "artBrief": "assets/art-briefs/karambit-raptors-gaze.md",
-      "pilotReviewNote": "0.3.3G original illustrated 2D redesign. One extended embossed brow across the gold blade and separate dark eyeball near heel following user's sketch; previous carved bird face removed. Shares exact neutral alpha at 400, 800 and 1600. Original AI-generated native subject approximately 960px wide; 1600px inspection is upsampled. Await user/Safari signoff."
+      "artBrief": "assets/art-briefs/karambit-starfall.md",
+      "pilotReviewNote": "0.3.3H original sapphire/cobalt metallic Damascus-style blade on the neutral Karambit, cold cyan bevel highlights, black handle and muted gold ring. NO eye, brow, eagle or separately drawn facial detail. Source knife has ~960 horizontal native pixels; 1600px inspect is resampled. Neutral/finish transparent geometry verified identical at 400/800/1600; user art approval and Safari QA pending."
     },
     {
       "id": "butterfly-knife--spectrum",
@@ -466,6 +466,6 @@
     "awp--night-watch",
     "awp--eclipse",
     "m4a4--voltage-bloom",
-    "karambit--raptors-gaze"
+    "karambit--starfall"
   ]
 }

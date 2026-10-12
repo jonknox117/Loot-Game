@@ -94,7 +94,7 @@
   },
   "rarity": "Legendary",
   "tier": 4,
-  "status": "legacy-artwork-superseded",
+  "status": "superseded-legacy-asset",
   "artworkApproved": false,
   "assetFilesPresent": true,
   "gameIntegration": "reel, inventory, catalog preview and inspect WebPs",
@@ -147,7 +147,7 @@
     "save-and-reel-reveal-regressions",
     "user-visual-approval"
   ],
-  "notes": "Legacy Golden Talon art kept for provenance only. Raptor's Gaze has replaced the one live Legendary Karambit catalog entry. Previously saved Golden Talon instances are aliased and retain the same attributes.",
+  "notes": "Historical Golden Talon finish archived. Current Legendary Karambit finish is Starfall. Former Golden Talon and Raptor's Gaze instances are recognized and renamed in memory.",
   "pilot": true,
   "sourceNativePixelsApprox": [
     960,
@@ -166,5 +166,5 @@
   "orientation": "blade-hook-right, finger-ring-left",
   "finishingMethod": "2D generated gold relief aligned to neutral blade geometry, alpha clipped to exact neutral mask and mirrored",
   "liveCatalogItem": false,
-  "supersededBy": "karambit--raptors-gaze"
+  "supersededBy": "karambit--starfall"
 }

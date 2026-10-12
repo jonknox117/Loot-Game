@@ -76,7 +76,7 @@ const fs = require('fs');
       'AWP|Night Watch':'awp--night-watch',
       'AWP|Eclipse':'awp--eclipse',
       'M4A4|Voltage Bloom':'m4a4--voltage-bloom',
-      "Karambit|Raptor's Gaze":'karambit--raptors-gaze'
+      'Karambit|Starfall':'karambit--starfall'
     };
     assert(rasterCards.every(x=>x.src?.includes(bitmapCatalog[x.weapon+'|'+x.finish]+'-400.webp')&&bitmapCatalog[x.weapon+'|'+x.finish]),
       'Reel bitmap does not match the correct weapon and finish');

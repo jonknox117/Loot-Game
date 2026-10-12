@@ -32,11 +32,11 @@ function isValidSave(data) {
 }
 // Keep existing items and market listings after the Golden Talon rename.
 function canonicalSkin(weapon,skin){
-  return weapon==='Karambit'&&skin==='Golden Talon'?"Raptor's Gaze":skin;
+  return weapon==='Karambit'&&(skin==='Golden Talon'||skin==="Raptor's Gaze")?'Starfall':skin;
 }
 function migrateLegacyFinishData(data){
   if(!data||typeof data!=='object')return data;
-  const migrate=item=>{if(item&&item.kind==='skin'&&item.weapon==='Karambit'&&item.skin==='Golden Talon')item.skin="Raptor's Gaze";};
+  const migrate=item=>{if(item&&item.kind==='skin'&&item.weapon==='Karambit'&&(item.skin==='Golden Talon'||item.skin==="Raptor's Gaze"))item.skin='Starfall';};
   if(Array.isArray(data.items))data.items.forEach(migrate);
   if(Array.isArray(data.listings))data.listings.forEach(listing=>migrate(listing&&listing.item));
   return data;
@@ -313,10 +313,10 @@ const lootHubBitmapArt=Object.freeze({
     inventory:'assets/renders/finishes/m4a4--voltage-bloom-800.webp',
     inspect:'assets/renders/finishes/m4a4--voltage-bloom-1600.webp'
   }),
-  "Karambit|Raptor's Gaze":Object.freeze({
-    reel:'assets/renders/finishes/karambit--raptors-gaze-400.webp',
-    inventory:'assets/renders/finishes/karambit--raptors-gaze-800.webp',
-    inspect:'assets/renders/finishes/karambit--raptors-gaze-1600.webp'
+  'Karambit|Starfall':Object.freeze({
+    reel:'assets/renders/finishes/karambit--starfall-400.webp',
+    inventory:'assets/renders/finishes/karambit--starfall-800.webp',
+    inspect:'assets/renders/finishes/karambit--starfall-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {

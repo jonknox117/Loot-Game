@@ -241,33 +241,33 @@ test('M4A4 Voltage Bloom pilot preserves actual model and finish across all imag
   assert.equal(recipe.finish,'Voltage Bloom');
   assert.equal(recipe.approved,false);
 });
-test("Karambit Raptor's Gaze uses same neutral geometry across contexts",()=>{
+test("Karambit Starfall uses same neutral geometry across contexts",()=>{
   const g=boot();
   const catalog=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  const entry=catalog.items.find(x=>x.id==='karambit--raptors-gaze');
-  assert(entry && entry.weapon==='Karambit' && entry.finish==="Raptor's Gaze");
+  const entry=catalog.items.find(x=>x.id==='karambit--starfall');
+  assert(entry && entry.weapon==='Karambit' && entry.finish==="Starfall");
   assert.equal(entry.rarity,'Legendary');
   assert.equal(entry.tier,4);
   assert.equal(entry.pilot,true);
   assert.equal(entry.approved,false,'Generated-source pilot must not be marked approved');
   assert.equal(entry.renderMode,'static-2d-webp');
   assert.equal(entry.provenance,'assets/source/karambit/provenance.json');
-  const item={kind:'skin',weapon:'Karambit',skin:"Raptor's Gaze",tier:4};
-  const production=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/karambit--raptors-gaze.json'),'utf8'));
+  const item={kind:'skin',weapon:'Karambit',skin:"Starfall",tier:4};
+  const production=JSON.parse(fs.readFileSync(path.join(root,'assets/skin-definitions/karambit--starfall.json'),'utf8'));
   assert.equal(production.assetFilesPresent,true);
   assert.equal(production.artworkApproved,false);
-  assert.equal(production.orientation,'blade-hook-right, finger-ring-left');
+  assert.deepEqual(production.exportDimensions.inspect,[1600,800]);
   const prov=JSON.parse(fs.readFileSync(path.join(root,'assets/source/karambit/provenance.json'),'utf8'));
   assert.equal(prov.artworkGuarantees.alphaIdentityAtAllThreeSizes,true);
   assert.equal(prov.native1600SourceDetail,false);
-  assert(fs.existsSync(path.join(root,'scripts/build_raptors_gaze_2d.py')),'Production source missing');
+  assert(fs.existsSync(path.join(root,'scripts/build_starfall_2d.py')),'Production source missing');
   for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
     const actual=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
-    assert(actual.includes('karambit--raptors-gaze-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
+    assert(actual.includes('karambit--starfall-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
     assert(actual.includes('data-weapon-model="Karambit"'),'Incorrect Golden Talon weapon identity');
     assert(actual.includes("data-finish=\"Raptor&#39;s Gaze\""),'Incorrect Golden Talon finish identity');
     assert(actual.includes('class="raster-fallback"'),'Karambit fallback SVG missing');
-    for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--raptors-gaze']]){
+    for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--starfall']]){
       const bytes=fs.readFileSync(path.join(root,'assets/renders',part,filename+'-'+size+'.webp'));
       assert.equal(bytes.toString('ascii',0,4),'RIFF','Missing or corrupt WebP data');
       assert.equal(bytes.toString('ascii',8,12),'WEBP','Invalid image format');
@@ -278,26 +278,26 @@ test("Karambit Raptor's Gaze uses same neutral geometry across contexts",()=>{
 test('Golden Talon legacy inventory and marketplace items retain their attributes after rename',()=>{
   const storage=new LocalStore();
   const owned={id:'legacy-owned',kind:'skin',weapon:'Karambit',skin:'Golden Talon',tier:4,base:1900,float:0.121234,pattern:777,stattrak:true,paid:25};
-  const listed={...owned,id:'legacy-listed',pattern:44,stattrak:false};
+  const listed={...owned,id:'legacy-listed',skin:"Raptor's Gaze",pattern:44,stattrak:false};
   const old={coins:463,items:[owned],listings:[{id:'listing-legacy',item:listed,price:2575,ask:2575,createdAt:Date.now(),checkedAt:Date.now()}],
     history:[],earned:463,spent:0,sales:0,rep:0,openings:2,serial:8,offers:{},ledger:[],tab:'Inventory',lastMarketCheck:Date.now()};
   storage.setItem(KEY,JSON.stringify(old));
   const g=boot(storage);
   assert.equal(g.run('safeUpload('+JSON.stringify(old)+')'),true,'Old save exports should remain importable');
   const state=g.state();
-  assert.equal(state.items[0].skin,"Raptor's Gaze");
-  assert.equal(state.listings[0].item.skin,"Raptor's Gaze");
+  assert.equal(state.items[0].skin,"Starfall");
+  assert.equal(state.listings[0].item.skin,"Starfall");
   assert.equal(state.items[0].id,'legacy-owned');
   assert.equal(state.listings[0].item.id,'legacy-listed');
   assert.equal(state.items[0].float,0.121234);
   assert.equal(state.items[0].pattern,777);
   assert.equal(state.coins,463);
   assert.equal(state.listings[0].price,2575);
-  assert.equal(g.run('itemName(s.items[0])'),"Karambit | Raptor's Gaze");
+  assert.equal(g.run('itemName(s.items[0])'),"Karambit | Starfall");
   assert(g.run('save()'),'Normal save should preserve valid migrated items');
   const saved=g.persisted();
-  assert.equal(saved.items[0].skin,"Raptor's Gaze");
-  assert.equal(saved.listings[0].item.skin,"Raptor's Gaze");
+  assert.equal(saved.items[0].skin,"Starfall");
+  assert.equal(saved.listings[0].item.skin,"Starfall");
   assert.equal(saved.coins,463);
 });
 test('Raptor catalog preview has apostrophe-safe handler and exact 1600px image',()=>{
@@ -308,7 +308,7 @@ test('Raptor catalog preview has apostrophe-safe handler and exact 1600px image'
   const prior=g.state();
   g.run('previewCatalogFinish(16)');
   const modal=g.byId('overlay').innerHTML;
-  assert(modal.includes('karambit--raptors-gaze-1600.webp'));
+  assert(modal.includes('karambit--starfall-1600.webp'));
   assert(modal.includes('Karambit | Raptor&#39;s Gaze'));
   assert.equal(g.state().coins,prior.coins);
   assert.deepEqual(g.state().items,prior.items);

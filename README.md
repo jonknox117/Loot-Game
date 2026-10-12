@@ -1,4 +1,4 @@
-# LootHub — Arsenal Alpha 0.3.3G (Raptor's Gaze redesign)
+# LootHub — Arsenal Alpha 0.3.3H (Starfall Karambit)
 
 Live browser game: https://loot-game-kappa.vercel.app
 
@@ -14,7 +14,7 @@ Live browser game: https://loot-game-kappa.vercel.app
 - Portfolio and transaction journal.
 - Polished responsive dark website interface with sticky desktop navigation, bottom mobile navigation and sharper item cards.
 - **17 original model-specific vector weapon masters**, still used as fallbacks for the full catalog.
-- **Seven live transparent 2D finish pilots:** Glock-18 | Slate Grid; AK-47 | Ghostline and Crimson Circuit; AWP | Night Watch and Eclipse; M4A4 | Voltage Bloom; and **Karambit | Raptor's Gaze**. All have 400px reel, 800px inventory and 1600px inspect WebPs, plus archived source art and reproducible scripts.
+- **Seven live transparent 2D finish pilots:** Glock-18 | Slate Grid; AK-47 | Ghostline and Crimson Circuit; AWP | Night Watch and Eclipse; M4A4 | Voltage Bloom; and **Karambit | Starfall**. All have 400px reel, 800px inventory and 1600px inspect WebPs, plus archived source art and reproducible scripts.
 
 ## Saving progress
 
@@ -48,6 +48,8 @@ The Saves tab provides:
 
 - **0.3.3G Raptor's Gaze:** replaced Golden Talon with one long sculpted eyebrow along the blade and a separate dark eye near the blade heel, based on the user's annotated knife reference. The previous carved bird face is removed. The new 400/800/1600 WebPs use exact neutral geometry and transparent finger ring; the 1600 file is upsampled from a ~960px source subject. Owned and listed legacy Golden Talon items are renamed in memory on load with all their unique IDs, values, attributes and trading state preserved; normal saves persist the new title through existing backup safety checks. Source ZIP: `/LootHub/loothub-raptors-gaze-master-033G.zip`.
 
+- **0.3.3H Starfall Karambit:** rejected the drawn eagle/brow approach and replaced it with a genuinely distinct original metallic surface treatment: sapphire-blue/cobalt steel, violet Damascus-like grain, cyan bevel, black texture, warm-gold ring. No facial motif or SVG geometry is drawn over the item. Both source and all 400/800/1600 transparent WebPs use the original neutral master's **pixel-identical alpha**, preserving the open ring. Legacy Golden Talon and Raptor's Gaze inventory and market listings become Starfall without reroll or value changes. The source and mask archive is at `/LootHub/loothub-karambit-starfall-033H.zip`. This remains a visual pilot pending user approval; source native knife width is ~960px, so the 1600px inspect image is resampled.
+
 ## Known limitations
 
 - Seven original finishes use standalone transparent raster artwork; the remaining 12 use model-specific SVG artwork. M4A4 and Karambit are provisional conversions from original generated comparison art, with about 1110px and 960px native weapon detail respectively; their 1600px inspect files are resampled, not native full-resolution originals. Both require final visual signoff. The app does not claim true 3D rotation.
@@ -58,7 +60,7 @@ The Saves tab provides:
 
 ## Next major work
 
-1. Review the new Raptor's Gaze eyebrow and eye placement against the user's annotated sketch, then upgrade provisional M4A4/Karambit native source detail if needed. Convert the remaining twelve SVG-backed finishes using high-resolution isolated masters and shared-geometry finish masks.
+1. Review the new Starfall metallic blade visually, then upgrade provisional M4A4/Karambit native source detail if needed. Convert the remaining twelve SVG-backed finishes using high-resolution isolated masters and shared-geometry finish masks.
 2. Add authenticated database-backed cloud saves and server-authoritative transaction records.
 3. Refine cinematic openings and inspect screens.
 4. Improve market simulation, prices, liquidity and negotiated offers.
