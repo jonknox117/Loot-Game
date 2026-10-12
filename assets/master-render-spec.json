@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "stage": "AK-47 pilot completed; AWP M4A4 Karambit need isolated high-quality neutral source images",
+  "stage": "Glock, AK and AWP raster master pilots shipped; M4A4 and Karambit still require isolated high-resolution sources",
   "status": "not-rendered",
   "readme": "assets/master-render-spec.md",
   "resolution": {
@@ -151,12 +151,20 @@
       "master": "assets/source/awp/neutral-master.blend",
       "license": "assets/source/awp/provenance.json",
       "outputs": {
-        "inspect": "assets/renders/masters/awp-neutral-1600.webp",
+        "reel": "assets/renders/masters/awp-neutral-400.webp",
         "inventory": "assets/renders/masters/awp-neutral-800.webp",
-        "reel": "assets/renders/masters/awp-neutral-400.webp"
+        "inspect": "assets/renders/masters/awp-neutral-1600.webp"
       },
-      "assetStatus": "not-created",
-      "approved": false
+      "assetStatus": "pilot-rendered-integrated",
+      "approved": false,
+      "completedFinishes": [
+        "awp--night-watch",
+        "awp--eclipse"
+      ],
+      "sourceBundleLibrary": "/LootHub/loothub-awp-master-033D.zip",
+      "sharedAlphaConfirmed": true,
+      "orientation": "muzzle-right",
+      "reviewStatus": "Mobile Safari user visual acceptance pending"
     },
     {
       "id": "m4a4",
