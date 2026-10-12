@@ -319,6 +319,18 @@ const lootHubBitmapArt=Object.freeze({
     inspect:'assets/renders/finishes/karambit--starfall-1600.webp'
   })
 });
+const lootHubNeutralModels=Object.freeze({
+  'Butterfly Knife':'butterfly-knife',
+  '12 Gauge Pump Shotgun':'pump-shotgun',
+  'Desert Eagle':'desert-eagle',
+  'Tactical Machete':'machete',
+  'Colt .45 Revolver':'colt-45-revolver',
+  'MP5':'mp5',
+  'MAC-10':'mac-10',
+  'Tec-9':'tec-9',
+  'Tactical Tomahawk':'tactical-tomahawk',
+  'SPAS-12':'spas-12'
+});
 function visualArt(item,context='inventory') {
   if(item&&item.kind==='skin'){
     const displaySkin=canonicalSkin(item.weapon,item.skin);
@@ -331,6 +343,18 @@ function visualArt(item,context='inventory') {
       return '<div class="art weapon-art master-raster" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(displaySkin)+'" data-resolution="'+(context==='inspect'?'1600':context==='reel'?'400':'800')+'">'+
         '<img src="./'+src+'" alt="'+safeAttr(item.weapon+' | '+displaySkin)+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'" onerror="this.hidden=true;if(this.nextElementSibling)this.nextElementSibling.hidden=false">'+
         '<div class="raster-fallback" hidden>'+fallback+'</div></div>';
+    }
+  }
+
+  // Real WebP neutral masters; completed finish art above always wins.
+  if(item&&item.kind==='skin'&&typeof window!=='undefined'){
+    const modelSlug=lootHubNeutralModels[item.weapon];
+    const art=window.LootHubNeutralArt&&window.LootHubNeutralArt[modelSlug];
+    if(art){
+      const size=context==='inspect'?'1600':context==='reel'?'400':'800';
+      const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(canonicalSkin(item.weapon,item.skin))+'" data-resolution="'+size+'" data-art-status="neutral-master">'+
+        '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon+' neutral weapon master')+'" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
   }
 
