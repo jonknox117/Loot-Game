@@ -7,17 +7,20 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
 assert(scriptMatch,'Game script missing');
 const universalData=fs.readFileSync(path.join(root,'assets/skin-lines/line-data.js'),'utf8');
 const universalRegistry=fs.readFileSync(path.join(root,'market/skin-lines.js'),'utf8');
+const materialProfiles=fs.readFileSync(path.join(root,'assets/skin-lines/paint-profile-data.js'),'utf8');
+assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></script>'));
+
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+universalData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
