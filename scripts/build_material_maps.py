@@ -37,14 +37,21 @@ def compose(source,profile):
     visible=alpha.point(lambda a:255 if a else 0)
     w=profile['wear']
     metal=region(source.size,w['metalRects'])
-    wood=region(source.size,w['woodRects'])
+    wood_seed=region(source.size,w['woodRects'])
     other=region(source.size,w['polymerRects'])
     protected=region(source.size,profile.get('protectedRects',[])+w['protectedRects'])
-    # Priority: protected/other -> wood -> metal. Never infer bare metal
-    # from a paint-main mask or from grayscale color alone.
+    # Seeded wood blocks sometimes overlap receiver screws/barrels. A restrained
+    # warm-chroma refinement keeps those hard components OUT of the wood class.
+    # The rest of every wood seed remains safely OTHER rather than rustable METAL.
+    red,green,blue,_=source.split()
+    warm_red=ImageChops.subtract(red,green).point(lambda v:255 if v>=8 else 0)
+    warm_brown=ImageChops.subtract(green,blue).point(lambda v:255 if v>=3 else 0)
+    wood=ImageChops.multiply(wood_seed,ImageChops.multiply(warm_red,warm_brown))
     wood=ImageChops.subtract(wood,ImageChops.lighter(other,protected))
+    # Priority: protected/other -> wood seed (never metal) -> vetted metal.
+    # Paint-main and grayscale alone never imply corrosion-safe metal.
     metal=ImageChops.subtract(metal,ImageChops.lighter(
-        ImageChops.lighter(wood,other),protected))
+        ImageChops.lighter(wood_seed,other),protected))
     metal=ImageChops.multiply(metal,visible)
     wood=ImageChops.multiply(wood,visible)
     classified=ImageChops.lighter(metal,wood)
