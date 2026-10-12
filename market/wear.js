@@ -1,4 +1,4 @@
-/* LootHub 0.5.0 — independent, persistent collectible condition metadata.
+/* LootHub 0.5.1 — independent, persistent collectible condition metadata.
    No drop odds, cosmetic art, wear rendering, or valuations change in this patch. */
 (function(root){
 'use strict';
@@ -10,7 +10,26 @@ const GRADES=Object.freeze([
   Object.freeze({grade:3,name:'Heavily Worn'}),
   Object.freeze({grade:4,name:'Battle-Scarred'})
 ]);
+// Condition rolls are independent of rarity: 8 / 22 / 40 / 22 / 8 percent.
+// Only newly created weapon/skin instances roll; migrated items remain unchanged.
+const ROLL_WEIGHTS=Object.freeze([8,22,40,22,8]);
+function rollGrade(random=Math.random){
+  const sampled=Number(random());
+  const unit=Number.isFinite(sampled)?Math.min(.999999999999,Math.max(0,sampled)):0;
+  const point=unit*100;
+  let cumulative=0;
+  for(let i=0;i<ROLL_WEIGHTS.length;i++){
+    cumulative+=ROLL_WEIGHTS[i];
+    if(point<cumulative)return i;
+  }
+  return ROLL_WEIGHTS.length-1;
+}
 function wearable(item){return !!(item&&(item.kind==='weapon'||item.kind==='skin'))}
+function assignRolled(item,random=Math.random){
+  if(!wearable(item)||Object.prototype.hasOwnProperty.call(item,'wearGrade'))return false;
+  item.wearGrade=rollGrade(random);
+  return true;
+}
 function validGrade(grade){return Number.isInteger(grade)&&grade>=0&&grade<GRADES.length}
 function label(grade){return validGrade(grade)?GRADES[grade].name:null}
 function validItem(item,allowLegacyMissing=true){
@@ -47,6 +66,6 @@ function validGame(game,allowLegacyMissing=true){
   return all.every(item=>validItem(item,allowLegacyMissing));
 }
 root.LootHubWear=Object.freeze({
-  SCHEMA_VERSION,GRADES,wearable,validGrade,label,validItem,ensureItem,ensureGame,validGame
+  SCHEMA_VERSION,GRADES,ROLL_WEIGHTS,rollGrade,wearable,assignRolled,validGrade,label,validItem,ensureItem,ensureGame,validGame
 });
 })(window);
