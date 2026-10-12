@@ -295,6 +295,11 @@ const lootHubBitmapArt=Object.freeze({
     reel:'assets/renders/finishes/awp--eclipse-400.webp',
     inventory:'assets/renders/finishes/awp--eclipse-800.webp',
     inspect:'assets/renders/finishes/awp--eclipse-1600.webp'
+  }),
+  'M4A4|Voltage Bloom':Object.freeze({
+    reel:'assets/renders/finishes/m4a4--voltage-bloom-400.webp',
+    inventory:'assets/renders/finishes/m4a4--voltage-bloom-800.webp',
+    inspect:'assets/renders/finishes/m4a4--voltage-bloom-1600.webp'
   })
 });
 function visualArt(item,context='inventory') {
