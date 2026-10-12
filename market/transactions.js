@@ -1,4 +1,4 @@
-/* LootHub 0.4.6 atomic inventory / wallet transfer functions.
+/* LootHub 0.4.8 atomic inventory / wallet transfer functions.
    The caller checks save authority before mutation and journals after settlement. */
 (function(root){
 'use strict';
@@ -10,6 +10,7 @@ function purchaseCase(game,price,makeCase){
   if(!core.eligible(item)||game.items.some(x=>x.id===item.id)||
     (game.listings||[]).some(x=>x.item&&x.item.id===item.id))return null;
   item.paid=price;
+  if(!Number.isSafeInteger(game.spent)||!Number.isSafeInteger(game.spent+price))return null;
   game.coins-=price;
   game.spent+=price;
   game.items.push(item);
@@ -20,6 +21,8 @@ function sellOwned(game,itemId,price,reputation){
     reputation<0||!Array.isArray(game.items))return null;
   const index=game.items.findIndex(x=>x.id===itemId);
   if(index<0||!core.eligible(game.items[index]))return null;
+  if(!core.validAsk(price)||!Number.isSafeInteger(game.coins+price)||
+     !Number.isSafeInteger(game.sales+price)||!Number.isSafeInteger(game.rep+reputation))return null;
   const item=game.items.splice(index,1)[0];
   game.coins+=price;
   game.sales+=price;
@@ -67,6 +70,8 @@ function buyNpcListing(game,listingId,negotiatedPrice){
   if(index<0)return null;
   const listing=offers[index],item=listing.item,price=permittedPrice(game,'buy',listing,negotiatedPrice);
   if(!core.validAsk(price)||!core.eligible(item)||game.coins<price||
+     !Number.isFinite(listing.expiresAt)||listing.expiresAt<=Date.now()||
+     !Number.isSafeInteger(game.spent+price)||
      game.items.some(x=>x.id===item.id)||
      game.listings.some(x=>x.item&&x.item.id===item.id)||
      offers.some((x,i)=>i!==index&&x&&x.item&&x.item.id===item.id))return null;
@@ -123,6 +128,9 @@ function settleListing(game,listingId,negotiatedPrice){
   if(negotiated&&negotiated.traderId&&
     !root.LootHubTraders.canFund(game,negotiated.traderId,price))return null;
   const net=core.netProceeds(price);
+  if(!Number.isSafeInteger(game.coins+net)||
+     !Number.isSafeInteger(game.sales+net)||
+     !Number.isSafeInteger(game.rep+1))return null;
   game.listings.splice(index,1);
   game.coins+=net;
   game.sales+=net;
