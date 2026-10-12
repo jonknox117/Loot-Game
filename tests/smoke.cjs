@@ -67,8 +67,13 @@ const fs = require('fs');
       'Every vector reel art instance needs its own paint scope');
     assert(new Set(vectorCards.map(x=>x.stops.join(','))).size>1,
       'Different vector weapon finishes unexpectedly share one palette');
-    assert(rasterCards.every(x=>x.src?.includes('glock-18--slate-grid-400.webp')),
-      'Unknown or incorrect bitmap shown in roulette');
+    const bitmapCatalog={
+      'Glock-18|Slate Grid':'glock-18--slate-grid',
+      'AK-47|Ghostline':'ak-47--ghostline',
+      'AK-47|Crimson Circuit':'ak-47--crimson-circuit'
+    };
+    assert(rasterCards.every(x=>x.src?.includes(bitmapCatalog[x.weapon+'|'+x.finish]+'-400.webp')&&bitmapCatalog[x.weapon+'|'+x.finish]),
+      'Reel bitmap does not match the correct weapon and finish');
     const winningTile=reelColors.find(x=>x.index===42);
     assert(winningTile?.weapon===expectedReward.weapon && winningTile?.finish===expectedReward.skin,
       'Winning reel card does not use the saved item and finish');
@@ -89,10 +94,11 @@ const fs = require('fs');
       'Final reward art differs from the wheel item');
     if(winningTile.kind==='bitmap'){
       assert(resultColors.kind==='bitmap','Raster winning item changed rendering format');
-      assert(resultColors.src?.includes('glock-18--slate-grid-1600.webp'),
-        'Revealed Glock should use the real 1600px image');
-      assert(winningTile.src?.includes('glock-18--slate-grid-400.webp'),
-        'Winning reel Glock should use its real 400px image');
+      const slug=bitmapCatalog[winningTile.weapon+'|'+winningTile.finish];
+      assert(slug&&resultColors.src?.includes(slug+'-1600.webp'),
+        'Revealed winner must use its exact 1600px finish image');
+      assert(winningTile.src?.includes(slug+'-400.webp'),
+        'Winning reel must use its exact 400px finish image');
     }else{
       assert(JSON.stringify(resultColors.stops)===JSON.stringify(winningTile.stops),
         'Vector reward art changed its palette after the reel stops');
