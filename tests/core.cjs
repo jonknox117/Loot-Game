@@ -1689,9 +1689,11 @@ test('0.5.3 procedural wear plans are deterministic, bounded and progressively d
 });
 test('0.5.3 high resolution inspections opt into silhouette masked renderer without modifying originals',()=>{
   const g=boot();
-  const item={id:'special-wear-seed',kind:'weapon',weapon:'MP5',tier:0,base:8,wearGrade:4};
+  const item={id:'special-wear-seed',kind:'weapon',weapon:'Glock-18',tier:0,base:8,wearGrade:4};
   const html=g.run('visualArt('+JSON.stringify(item)+',"inspect")');
-  assert(html.includes('data-weapon-model="MP5"'));
+  assert(html.includes('data-weapon-model="Glock-18"'));
+  // The VM unit harness loads only the five standalone masters; the live
+  // browser uses MP5's neutral raster from the approved art asset scripts.
   assert(html.includes('data-wear-seed="special-wear-seed"'));
   assert(html.includes('data-wear-grade="4"'));
   assert(html.includes('data:image/webp;base64,'));
@@ -1702,6 +1704,7 @@ test('0.5.3 high resolution inspections opt into silhouette masked renderer with
     'All cards and reel tiles are reserved for the 0.5.4 integration patch');
   assert.equal(g.run('visualArt('+JSON.stringify(item)+',"reel")').includes('data-wear-seed='),false);
   const skin={id:'original-approved-skin',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,wearGrade:3};
+  g.run('window.LootHubSkinArt={"MAC-10|Red Devil":{"1600":"dummy-browser-image"}}');
   const skinHtml=g.run('visualArt('+JSON.stringify(skin)+',"inspect")');
   assert(skinHtml.includes('data-wear-grade="3"')&&skinHtml.includes('data-art-status="approved-skin"'));
   assert.equal(g.run('window.LootHubMarketCore.estimated('+JSON.stringify(item)+')'),4,
