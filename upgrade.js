@@ -899,11 +899,15 @@ const lootHubOriginalBaseMasters=Object.freeze({
 function visualArt(item,context='inventory') {
   const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const size=context==='inspect'?'1600':context==='reel'?'400':'800';
+  // Reusable renderer needs only an existing item identity and transparent master image.
+  const wearMeta=context==='inspect'&&item&&item.id&&window.LootHubWear.wearable(item)&&
+    window.LootHubWear.validGrade(item.wearGrade)?
+    ' data-wear-grade="'+item.wearGrade+'" data-wear-seed="'+safeAttr(item.id)+'"':'';
   // Only explicitly approved skins have separate paint art; neutral masters remain unchanged.
   if(isApprovedSkin(item)){
     const art=typeof window!=='undefined'&&window.LootHubSkinArt&&window.LootHubSkinArt[item.weapon+'|'+item.skin];
     if(art&&art[size]){
-      return '<div class="art weapon-art master-raster approved-skin" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'" data-art-status="approved-skin" data-resolution="'+size+'">'+
+      return '<div class="art weapon-art master-raster approved-skin" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'" data-art-status="approved-skin" data-resolution="'+size+'"'+wearMeta+'>'+
         '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+' user-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
   }
@@ -911,12 +915,12 @@ function visualArt(item,context='inventory') {
     const modelSlug=lootHubNeutralModels[item.weapon];
     const art=typeof window!=='undefined'&&window.LootHubNeutralArt&&window.LootHubNeutralArt[modelSlug];
     if(art&&art[size]){
-      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="'+size+'" data-art-status="base">'+
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="'+size+'" data-art-status="base"'+wearMeta+'>'+
         '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
     const master=lootHubOriginalBaseMasters[item.weapon];
     if(master){
-      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="1600" data-art-status="base">'+
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="1600" data-art-status="base"'+wearMeta+'>'+
         '<img src="./'+master+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
     // Legacy retired weapon models from old saves remain accessible, never skinned.
