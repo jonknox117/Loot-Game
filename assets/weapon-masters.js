@@ -32,21 +32,16 @@ Object.assign(models,{
 "Bayonet": function(){return [P("M87 142h177l38-9 162-54 92-19-53 34-182 85H265l-49-6-129-6Z","metal"),P("M300 133l170-54 59-10-46 26-159 63Z","metalLight"),P("M82 129h175l20 13-15 35H81l-13-26Z","polymer"),P("M100 137h140l19 12-18 15H90Z","finish"),R(264,110,13,76,3,"metalDark"),R(240,119,68,9,3,"hardware"),C(108,151,4,"hardware"),C(231,152,4,"hardware"),G(132,148,11,4),L(84,177,253,177,"scribe",2)].join("");}
 });
 
-const palettes={"Slate Grid":["#9ba9bb","#596b7d","#a5aebb"],"Dustline":["#c0a88a","#746657","#8a857b"],"Metro Fade":["#4c8ba2","#35637a","#728e9d"],"Tarmac":["#c9ced6","#666d78","#c1b7ac"],"Ash Veil":["#96899c","#5b516a","#8998a4"],"Signal Green":["#73d49f","#2d785b","#8bd09f"],"Polar Relay":["#c1eaf4","#4c85bb","#9bb6d4"],"Circuit Blue":["#3e8bd9","#1c466a","#70bbf1"],"Copper Web":["#d39867","#795f51","#e4b878"],"Voltage Bloom":["#f5c047","#855ddd","#e7d3a2"],"Ghostline":["#79b6e9","#536d8d","#a9d9f6"],"Night Watch":["#7d91cc","#293b65","#d0d8ec"],"Solar Ash":["#f4bc74","#805962","#ffd39c"],"Crimson Circuit":["#fc6d6b","#7d1d3e","#f7adb1"],"Eclipse":["#aa91ef","#3c2a68","#d5c4ff"],"Prism Burn":["#e490f2","#8053ae","#ecdeff"],"Starfall":["#efd082","#9b6736","#ffebaf"],"Spectrum":["#7fd6e8","#a265d6","#f5afdd"],"Black Ember":["#ef9b5c","#694159","#f8d3b3"]};
+// Retired colored finishes are removed. Vector art is a neutral-only safety
+// fallback for obsolete weapon models still present in pre-update saves.
+const palettes=Object.create(null);
 let artSerial=0;
-const specialFinishes=Object.freeze({
-"Slate Grid":"grid","Dustline":"sand","Metro Fade":"fade","Tarmac":"lines",
-"Ash Veil":"fog","Signal Green":"pulse","Polar Relay":"lines",
-"Circuit Blue":"pulse","Copper Web":"grid","Voltage Bloom":"pulse",
-"Ghostline":"lines","Night Watch":"lines","Solar Ash":"sand",
-"Crimson Circuit":"pulse","Eclipse":"eclipse","Prism Burn":"fade",
-"Starfall":"flares","Spectrum":"fade","Black Ember":"flares"
-});
+const specialFinishes=Object.freeze({});
 function render(item){
  const model=typeof item.weapon==='string'?item.weapon:'';
  if(!Object.prototype.hasOwnProperty.call(models,model))return null;
- const finish=typeof item.skin==='string'?item.skin:'';
- const palette=palettes[finish]||['#8ca5b7','#556e89','#c9d5de'];
+ const finish='';
+ const palette=['#777f86','#4b535b','#a4abb3'];
  const tier=Math.max(0,Math.min(4,Number(item.tier)||0));
  const id='lhm'+(++artSerial).toString(36);
  const paint=id+'p',body=id+'m',wood=id+'w',polymer=id+'q',fog=id+'f',bolt=id+'h';
@@ -62,7 +57,7 @@ function render(item){
  else graphic='<path d="M-4 29L29-4M-14 20L19-13" stroke="'+palette[2]+'" stroke-opacity=".28" stroke-width="5"/>';
  const colors=['#adb8c3','#4fca85','#7aaef9','#c694fc','#f0c36f'];
  const rarityColor=colors[tier];
- const label=model+' | '+finish;
+ const label=model;
  const SVG='<svg id="'+id+'" class="arsenal-master" role="img" aria-label="Stylized '+escape(label)+' collectible" viewBox="0 0 640 270" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+
  '<defs>'+
  '<linearGradient id="'+body+'" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#92a4b7"/><stop offset=".29" stop-color="#455569"/><stop offset=".68" stop-color="#202f40"/><stop offset="1" stop-color="#75899b"/></linearGradient>'+
@@ -92,7 +87,7 @@ function render(item){
  '</style>'+
  '<g transform="translate(0 0)" filter="url(#'+id+'shadow)">'+models[model]()+'</g>'+
  '</svg>';
- return '<div class="art weapon-art weapon-master" style="--weapon-rarity:'+rarityColor+';--weapon-finish:'+palette[0]+';" data-weapon-model="'+escape(model)+'" data-finish="'+escape(finish)+'">'+SVG+'</div>';
+ return '<div class="art weapon-art weapon-master" style="--weapon-rarity:'+rarityColor+';--weapon-finish:'+palette[0]+';" data-weapon-model="'+escape(model)+'" data-master="neutral">'+SVG+'</div>';
 }
 function escape(str){return String(str).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
 global.ArsenalMasters={supports:name=>Object.prototype.hasOwnProperty.call(models,name),
