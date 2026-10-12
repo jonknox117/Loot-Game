@@ -722,5 +722,31 @@ test('Repricing and listing disappearance invalidate pending haggling',()=>{
   assert.equal(g.state().coins,old);
   assert.equal(g.state().listings.length,1);
 });
+test('Cancelling and relisting the same item creates a separate buyer negotiation lifecycle',()=>{
+  const g=boot();
+  g.run('for(let i=0;i<25;i++)clickEarn();buy()');
+  g.byId('listPrice').value='40';
+  g.run('submitListing(s.items[0].id)');
+  const original=g.state().listings[0],first=g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingCreatedAt===original.createdAt);
+  assert(first&&first.status==='open');
+  g.run("cancelListing("+JSON.stringify(original.id)+")");
+  assert.equal(g.state().market.negotiations.find(x=>x.id===first.id).status,'unavailable');
+  g.run('s.items[0].paid=25');
+  g.byId('listPrice').value='40';
+  // Force a later creation timestamp so the test is deterministic.
+  g.run('window.LootHubMarketTransactions.createListing(s,s.items[0].id,40,Date.now()+5);save();');
+  g.run("go('Market')");
+  const secondListing=g.state().listings[0];
+  const second=g.state().market.negotiations.find(x=>x.kind==='sell'&&x.listingCreatedAt===secondListing.createdAt);
+  assert(second&&second.id!==first.id,'A genuinely new listing gets its own negotiation');
+  assert.equal(second.status,'open');
+  assert.equal(second.npcOffer,first.npcOffer,'The same buyer terms should not reroll from relisting');
+  g.run('reviewBuyerOffer('+JSON.stringify(secondListing.id)+')');
+  g.run("acceptMarketCounter('sell',"+JSON.stringify(secondListing.id)+")");
+  g.run("completeMarketNegotiation('sell',"+JSON.stringify(secondListing.id)+")");
+  assert.equal(g.state().listings.length,0);
+  assert.equal(g.state().market.negotiations.find(x=>x.id===first.id).status,'unavailable');
+  assert.equal(g.state().market.negotiations.find(x=>x.id===second.id).status,'completed');
+});
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
