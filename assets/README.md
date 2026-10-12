@@ -82,9 +82,15 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - Current status: **pilot live; not final-approved**. A dedicated higher-detail source may replace this while keeping the finish recipe and asset addresses.
 - No game economy, saves, rarity odds or item instance data changed.
 
-## 0.3.3F — Golden Talon production brief (art pending)
+## 0.3.3F — Golden Talon artwork (provisional pilot live)
 
-- [Golden Talon source-generation prompt and QA checklist](art-briefs/karambit-golden-talon.md) defines the **right-facing**, near-side-profile neutral master, and the sculptural eagle **brow / inset eye** at the blade-to-hilt junction. It explicitly forbids a full eagle picture, a giant gemstone eye, fake/closed ring hole, flat-yellow material, and changes to the knife's silhouette.
-- [Future finish recipe](skin-definitions/karambit--golden-talon.json) defines the separate metal surfaces, gold tones, grip and ring materials, embossing placement, feather engravings, image-size contracts and image-quality gates.
-- Both are **design / production instructions only**. This update creates no Karambit PNG/WebP artwork, changes no in-game rendering, and does not mark the item approved. The existing SVG fallback remains live.
-- Before implementation, obtain one isolated source image with real detail at inspect size; do not use a cropped multi-weapon concept sheet. Preserve exact neutral/finished alpha, open finger ring and weapon orientation across reel, card and inspect.
+- **Integrated in-game:** Karambit | Golden Talon (Legendary, tier 4). Existing item identity, case rarity weights, saves and economy remain unchanged.
+- The **same neutral knife geometry** is used for both original 2D textures. One exact alpha mask (including a transparent open finger ring) is used across all 400/800/1600 exports; black background has been removed, not encoded in the sprites.
+- **Signature motif:** Gold eagle-brow relief and small dark eye inset at the blade-to-hilt junction. Feather-inspired engraved lines extend into the blade surface. Black grip, burnished gold edge highlights and warm-gold ring hardware provide contrast.
+- Art files: `assets/renders/masters/karambit-neutral-{400,800,1600}.webp` and `assets/renders/finishes/karambit--golden-talon-{400,800,1600}.webp`.
+- `scripts/build_karambit_2d.py` regenerates the masked neutral and finish PNGs and real WebP exports from the **archived original source**: `/LootHub/loothub-karambit-master-033F.zip`. Run `python scripts/build_karambit_2d.py <unzipped bundle root>`; Pillow, NumPy and OpenCV required.
+- The archive includes the generated design source, 2400×1200 working PNGs, all eight component masks, image previews, the working compositor and a provenance report.
+- **Native detail caveat:** Knife illustrations originated in a single original AI-generated 1774×887 design board, with about **960 horizontal pixels across the knife**. The 1600px inspection file is upsampled—not original native 1600px detail. The apparent metal embossing is high-fidelity painted 2D relief, not physical displacement from CAD.
+- Gold finish and neutral master are corrected together to **hook-right, finger-ring-left** orientation. Both have the identical shape, even though the original generated board shows separate neutral and gold illustrations.
+- Current approval: **raster pilot live, `approved:false`** until the user judges the eye/brow and independent mobile Safari testing confirms visual quality. Existing model-specific SVG art remains the error fallback.
+- [Production spec and source-generation brief](art-briefs/karambit-golden-talon.md) and [live versioned finish recipe](skin-definitions/karambit--golden-talon.json) remain in the repository.
