@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build reusable skin-line WebPs from the actual 24 Loot Hub neutral masters."""
-import argparse,base64,hashlib,io,json,math,random,re
+import argparse,base64,hashlib,io,json,math,random,re,shutil
 from pathlib import Path
 from PIL import Image,ImageChops,ImageDraw,ImageOps
 ROOT=Path(__file__).resolve().parents[1]
@@ -36,11 +36,13 @@ def paint_mask(image,profile):
         if len(coords)!=4 or not all(0<=n<=1 for n in coords): raise ValueError('Invalid protected rectangle')
         draw.rectangle(tuple(round(n*image.size[i%2]) for i,n in enumerate(coords)),fill=0)
     return mask
-def recolor(source,mask,kind):
+def recolor(source,mask,line):
     colors={'crimson':('#190608','#e22c44'),'kryptonite':('#071611','#129f57'),
             'bloom':('#30181b','#e8b7ad')}
-    if kind not in colors: raise ValueError('Unknown line type '+kind)
-    paint=ImageOps.colorize(ImageOps.grayscale(source),*colors[kind]).convert('RGBA')
+    if line['type'] not in colors: raise ValueError('Unknown pattern type '+line['type'])
+    gradient=line.get('palette') or colors[line['type']]
+    if len(gradient)!=2: raise ValueError('Skin palette needs shadow and highlight colors')
+    paint=ImageOps.colorize(ImageOps.grayscale(source),*gradient).convert('RGBA')
     paint.putalpha(source.getchannel('A'))
     result=Image.composite(paint,source,mask)
     result.putalpha(source.getchannel('A'))
@@ -91,17 +93,30 @@ def build():
     (ROOT/'assets/skin-lines/line-data.js').write_text(
         '/* Generated from lines.json; do not edit. */\nwindow.LootHubSkinLineData = Object.freeze('+
         json.dumps(defs,separators=(',',':'))+');\n',encoding='utf-8')
+    # Remove stale generated line folders only; owner-made custom art is elsewhere.
+    destination=ROOT/'assets/renders/lines'
+    allowed={v['id'] for v in defs['lines'] if v['released']}
+    if destination.exists():
+        for stale in destination.iterdir():
+            if stale.is_dir() and stale.name not in allowed:shutil.rmtree(stale)
     count=0
     for item in items:
         slug=item.get('modelSlug') or item['id'].removesuffix('--base')
         source=neutral(item,1600)
         if source.size!=(1600,800):raise ValueError('Unexpected master dimensions for '+slug)
+        if item['renderMode']=='transparent-webp-data-uri':
+            # Extract source WebPs to normal static files once; preserve original JS
+            # master as provenance and use its exact alpha for line exports.
+            for width in SIZES:
+                master_file=ROOT/'assets/renders/masters'/f'{slug}-neutral-{width}.webp'
+                master_file.parent.mkdir(parents=True,exist_ok=True)
+                neutral(item,width).save(master_file,'WEBP',quality=94,method=4,exact=True,alpha_quality=100)
         mask=paint_mask(source,profiles[slug])
         path=ROOT/'assets/skin-lines/masks'/f'{slug}--paint-main-1600.png'
         path.parent.mkdir(parents=True,exist_ok=True);mask.save(path,optimize=True)
         for line in defs['lines']:
             if not line['released']:continue
-            out=recolor(source,mask,line['type'])
+            out=recolor(source,mask,line)
             marks=pattern(source.size,line['type'],slug+':'+line['id'])
             marks.putalpha(ImageChops.multiply(marks.getchannel('A'),mask))
             out=Image.alpha_composite(out,marks);out.putalpha(source.getchannel('A'))
@@ -118,6 +133,11 @@ def verify():
     items,defs,_=sources();count=0
     for item in items:
         slug=item.get('modelSlug') or item['id'].removesuffix('--base')
+        if item['renderMode']=='transparent-webp-data-uri':
+            for size in SIZES:
+                image=Image.open(ROOT/'assets/renders/masters'/f'{slug}-neutral-{size}.webp').convert('RGBA')
+                if image.size!=neutral(item,size).size or ImageChops.difference(image.getchannel('A'),neutral(item,size).getchannel('A')).getbbox():
+                    raise AssertionError('Standalone master failed silhouette verification: '+slug)
         for line in defs['lines']:
             if not line['released']:continue
             for size in SIZES:
