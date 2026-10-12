@@ -6,14 +6,26 @@ from PIL import Image,ImageChops,ImageDraw,ImageOps
 ROOT=Path(__file__).resolve().parents[1]
 SIZES=(400,800,1600)
 Image.MAX_IMAGE_PIXELS=16000000
+def fit_canvas(image,width):
+    # Source dimensions differ between older neutral masters. Center without
+    # cropping, stretching or changing the original weapon silhouette.
+    target=(width,width//2)
+    if image.size==target:return image
+    factor=min(target[0]/image.width,target[1]/image.height)
+    w,h=max(1,round(image.width*factor)),max(1,round(image.height*factor))
+    framed=Image.new('RGBA',target,(0,0,0,0))
+    framed.alpha_composite(image.resize((w,h),Image.Resampling.LANCZOS),((target[0]-w)//2,(target[1]-h)//2))
+    return framed
 def neutral(item,width):
     path=ROOT/item['master']
     if item['renderMode']=='transparent-webp-file':
-        return Image.open(str(path).replace('-1600.webp',f'-{width}.webp')).convert('RGBA')
-    s=path.read_text('utf-8')
-    match=re.search(r'"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"',s)
-    if not match: raise ValueError('Incomplete native WebP master: '+str(path))
-    return Image.open(io.BytesIO(base64.b64decode(match[{400:1,800:2,1600:3}[width]]))).convert('RGBA')
+        raw=Image.open(str(path).replace('-1600.webp',f'-{width}.webp')).convert('RGBA')
+    else:
+        s=path.read_text('utf-8')
+        match=re.search(r'"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"',s)
+        if not match: raise ValueError('Incomplete native WebP master: '+str(path))
+        raw=Image.open(io.BytesIO(base64.b64decode(match[{400:1,800:2,1600:3}[width]]))).convert('RGBA')
+    return fit_canvas(raw,width)
 def paint_mask(image,profile):
     alpha=image.getchannel('A')
     threshold=int(profile.get('protectDarkBelow',16))
