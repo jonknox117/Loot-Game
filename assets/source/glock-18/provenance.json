@@ -1,0 +1,52 @@
+{
+  "assetId": "glock-18-master-pilot-001",
+  "model": "Glock-18",
+  "stage": "0.3.3A pilot",
+  "renderStatus": "integrated as 2D raster; user approval of model accuracy still pending",
+  "sourceType": "OpenAI image generation from an original prompt",
+  "sourceNativeResolution": [
+    1774,
+    887
+  ],
+  "canvasWorkingResolution": [
+    2400,
+    1200
+  ],
+  "sourceQualityNotice": "Working canvas is 2400×1200 with modest upsampling; original generated raster does not contain native 2400px detail.",
+  "created": "2026-10-11",
+  "subject": "Clean photoreal Glock-style polymer-frame semi-automatic handgun, transparent studio product render, facing right",
+  "exactGeometryNotice": "A plausible Glock-style depiction, not a CAD-verified or manufacturer-exact Glock-18 mesh. No downloadable 3D model is represented as having been used.",
+  "sourceAndMasks": "Original image, 2400x1200 master, 8 masks, and layered finish example are stored in LootHub master source ZIP in user's Library (/LootHub/loothub-glock-master-033A.zip).",
+  "exportLocations": {
+    "master": [
+      "assets/renders/masters/glock-18-neutral-1600.webp",
+      "assets/renders/masters/glock-18-neutral-800.webp",
+      "assets/renders/masters/glock-18-neutral-400.webp"
+    ],
+    "finish": [
+      "assets/renders/finishes/glock-18--slate-grid-1600.webp",
+      "assets/renders/finishes/glock-18--slate-grid-800.webp",
+      "assets/renders/finishes/glock-18--slate-grid-400.webp"
+    ]
+  },
+  "materialMasks": [
+    "paint-main",
+    "paint-secondary",
+    "metal-exposed",
+    "polymer-or-wood",
+    "hardware",
+    "edge-highlight",
+    "ao-shadow",
+    "decal-safe"
+  ],
+  "finish": "Slate Grid (original deterministic gray grid masked to slide; pilot finish, not a final approved catalog texture)",
+  "licenseAndProvenance": "Original AI-generated artwork created for this project. Not sourced from a third-party game or downloaded licensed Glock mesh.",
+  "qualityAssurance": [
+    "Transparent RGBA confirmed for all WebP exports",
+    "Silhouette visually reviewed at 164px inventory size",
+    "Need live mobile Safari screenshot for final approval",
+    "Need optional physical geometry comparison if manufacturer-exact representation is required"
+  ],
+  "review": "pilot; not final art approval",
+  "safeFallback": "existing ArsenalMasters SVG if file fails to load"
+}
