@@ -1,4 +1,4 @@
-/* LootHub Marketplace 0.4.5: persistent simulated seller inventory.
+/* LootHub Marketplace 0.5.1: persistent simulated seller inventory.
    All rewards come exclusively from the live, explicitly approved dropCatalog. */
 (function(root){
 'use strict';
@@ -32,8 +32,8 @@ function makeListing(game,m,pool,now,random){
     template=pick(options.length?options:pool,random);
   }
   const item={...template,id:'npc-item-'+ticket};
-  // Version 0.5.0 creates only Pristine condition metadata; random wear comes later.
-  root.LootHubWear.ensureItem(item);
+  // Every new NPC weapon/skin gets one independent roll; sealed cases stay ungraded.
+  root.LootHubWear.assignRolled(item,random);
   if(item.kind==='case')item.paid=25;
   const market=root.LootHubEconomy.marketValue(game,item,now);
   const ask=Math.max(1,Math.min(100000000,Math.round(market*(.86+validRandom(random)*.48))));
