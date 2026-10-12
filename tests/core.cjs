@@ -7,8 +7,8 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
-const marketModules=['wear','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['wear','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-masters.js"></script>'),'Art masters missing from page');
 const scriptMatch=html.match(/<script>\s*([\s\S]*?)\s*<\/script>\s*<\/body>/i);
@@ -1665,6 +1665,49 @@ test('0.5.2 case-opening reveal reports its rolled grade and adjusted value',()=
   assert(html.includes('Wear modifier'));
   assert(html.includes('Estimated market value'));
   assert.equal(g.state().items[0].wearGrade,reward.wearGrade);
+});
+
+test('0.5.3 procedural wear plans are deterministic, bounded and progressively denser',()=>{
+  const g=boot();
+  const grade0=JSON.parse(g.run('JSON.stringify(window.LootHubWearRenderer.pattern("mp5-test",0))'));
+  assert.deepEqual(grade0,[],'Pristine never receives a visual texture');
+  const sizes=[];
+  for(let grade=1;grade<=4;grade++){
+    const a=JSON.parse(g.run('JSON.stringify(window.LootHubWearRenderer.pattern("mp5-test",'+grade+'))'));
+    const b=JSON.parse(g.run('JSON.stringify(window.LootHubWearRenderer.pattern("mp5-test",'+grade+'))'));
+    assert.deepEqual(a,b,'Repeated renders must return the same scratches and grime');
+    assert(a.every(x=>x.x>=0&&x.x<1&&x.y>=0&&x.y<1));
+    assert(a.some(x=>x.kind==='scratch')&&a.some(x=>x.kind==='dirt'));
+    assert.equal(a.filter(x=>x.kind==='rust').length,grade===1?0:[0,0,8,19,35][grade]);
+    sizes.push(a.length);
+  }
+  assert(sizes.every((n,i)=>i===0||n>sizes[i-1]),'Higher wear grades need more texture marks');
+  const a=JSON.parse(g.run('JSON.stringify(window.LootHubWearRenderer.pattern("mp5-test",4))'));
+  const b=JSON.parse(g.run('JSON.stringify(window.LootHubWearRenderer.pattern("different-item",4))'));
+  assert.notDeepEqual(a,b,'Each collectible identity gets a different permanent pattern');
+  assert.equal(g.run('window.LootHubWearRenderer.MAX_PIXELS'),1100);
+});
+test('0.5.3 high resolution inspections opt into silhouette masked renderer without modifying originals',()=>{
+  const g=boot();
+  const item={id:'special-wear-seed',kind:'weapon',weapon:'MP5',tier:0,base:8,wearGrade:4};
+  const html=g.run('visualArt('+JSON.stringify(item)+',"inspect")');
+  assert(html.includes('data-weapon-model="MP5"'));
+  assert(html.includes('data-wear-seed="special-wear-seed"'));
+  assert(html.includes('data-wear-grade="4"'));
+  assert(html.includes('data:image/webp;base64,'));
+  assert(html.includes('data-resolution="1600"'));
+  const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inspect")');
+  assert(pristine.includes('data-wear-grade="0"'));
+  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"inventory")').includes('data-wear-seed='),false,
+    'All cards and reel tiles are reserved for the 0.5.4 integration patch');
+  assert.equal(g.run('visualArt('+JSON.stringify(item)+',"reel")').includes('data-wear-seed='),false);
+  const skin={id:'original-approved-skin',kind:'skin',weapon:'MAC-10',skin:'Red Devil',tier:4,base:1800,wearGrade:3};
+  const skinHtml=g.run('visualArt('+JSON.stringify(skin)+',"inspect")');
+  assert(skinHtml.includes('data-wear-grade="3"')&&skinHtml.includes('data-art-status="approved-skin"'));
+  assert.equal(g.run('window.LootHubMarketCore.estimated('+JSON.stringify(item)+')'),4,
+    'New visual engine must not change already-applied wear valuations');
+  assert.equal(g.run('window.LootHubWearRenderer.attach(null)'),0,
+    'Renderer must be safe for nonbrowser test harnesses');
 });
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
