@@ -88,6 +88,8 @@ const fs = require('fs');
     await page.getByRole('button', { name: 'List for sale' }).click();
     assert(await page.getByText('My Market Listings').count() === 1, 'Listing must show in marketplace');
     assert((await page.locator('.listing-line').count())===1,'Listed case must be escrowed');
+    const marketFoundation=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market);
+    assert(marketFoundation?.schemaVersion===1&&Array.isArray(marketFoundation.npcListings),'Marketplace schema missing from saved game');
     await page.reload({ waitUntil: 'load' });
     await waitForVisible('.listing-line');
     assert(await page.locator('.listing-line').count()===1, 'Listings survive reload');
