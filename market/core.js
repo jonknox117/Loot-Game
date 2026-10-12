@@ -1,4 +1,4 @@
-/* LootHub 0.4.0 marketplace rules and versioned market state.
+/* LootHub 0.4.1 marketplace rules and versioned market state.
    Pure calculations only; current case odds and economic multipliers stay unchanged. */
 (function(root){
 'use strict';
@@ -32,7 +32,18 @@ function validAsk(ask){return Number.isSafeInteger(ask)&&ask>=1&&ask<=100000000}
 function eligible(item){return !!(item&&typeof item.id==='string'&&item.id.length>0&&
   ['case','weapon','skin'].includes(item.kind))}
 function netProceeds(ask){return Math.max(1,Math.floor(ask*.95))}
+function listingQuote(ask,reference){
+  if(!validAsk(ask))return null;
+  const net=netProceeds(ask);
+  const estimate=Number.isFinite(reference)&&reference>0?reference:null;
+  return {ask,fee:ask-net,net,reference:estimate,ratio:estimate?ask/estimate:null};
+}
+function suggestedPrices(reference){
+  const base=Math.max(1,Math.round(Number(reference)||1));
+  return [...new Set([.8,1,1.2,1.5].map(multiplier=>
+    Math.max(1,Math.min(100000000,Math.round(base*multiplier)))))]
+}
 root.LootHubMarketCore=Object.freeze({
-  SCHEMA_VERSION,ensureMarketState,validMarketState,estimated,validAsk,eligible,netProceeds
+  SCHEMA_VERSION,ensureMarketState,validMarketState,estimated,validAsk,eligible,netProceeds,listingQuote,suggestedPrices
 });
 })(window);
