@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "glock-18--slate-grid",
+  "model": "Glock-18",
+  "finish": "Slate Grid",
+  "status": "pilot",
+  "paintMain": {"color": "#708b9d", "opacity": 0.27, "blendColorMix": 0.3},
+  "paintSecondary": {"color": "#53687e", "opacity": 0.12, "blendColorMix": 0.23},
+  "grid": {"enabled": true, "spacingX": 44, "spacingY": 35, "lineColor": "#c4d9e4", "lineOpacityX": 0.22, "lineOpacityY": 0.19, "lineWidth": 1},
+  "exportWidths": [400, 800, 1600],
+  "note": "Original muted grayscale/silver-blue slide grid on neutral master; intended common-tier finish. Cosmetic texture independent of rarity."
+}
