@@ -1,4 +1,4 @@
-# LootHub — Curated Arsenal (Wear Foundation 0.5.0)
+# LootHub — Curated Arsenal (Wear Generation 0.5.1)
 
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
@@ -128,6 +128,23 @@ The initial marketplace patch restructured the existing marketplace; the current
 - Stop the older direct-sale buyer from being endlessly rerolled by walking away and restarting the negotiation. Once that buyer has rejected three offers, the refusal persists on that item.
 - Increase deterministic regression and mobile coverage without changing the case odds, sale fee, dynamic pricing bands, NPC market pacing, local-save key, or the **five currently approved skins**. This remains a client-side simulated economy rather than server-authoritative multiplayer trading.
 
+## Wear overhaul 0.5.1 — Independent condition rolls
+
+Each **newly generated weapon or approved skin** receives exactly one independent five-grade wear roll in `market/wear.js`. The random grade is saved with its individual collectible ID before it can be traded or revealed. This applies to the actual result of an Arsenal Case opening and to newly generated NPC listings. Newly purchased **sealed cases stay ungraded**.
+
+| Wear grade | Probability |
+| --- | ---: |
+| Pristine | 8% |
+| Lightly Worn | 22% |
+| Field-Tested | 40% |
+| Heavily Worn | 22% |
+| Battle-Scarred | 8% |
+
+- **Independent rarity**: existing tier odds remain 70%, 20%, 7.5%, 2%, 0.5%. The game determines a weapon/skin normally, then rolls condition using a separate random draw.
+- **No rerolls**: an item with a valid saved grade retains it through trading, listing, cancellation, reopening and reload. Existing collectibles and imported legacy backups keep their condition from 0.5.0; any item missing metadata migrates to Pristine, not a random new grade.
+- **No extra art yet**: this patch stores wear only. The four reusable transparent-image weathering effects are planned for 0.5.2/0.5.3. Wear labels, value modifiers and NPC negotiation strategies come later; prices remain unchanged in 0.5.1.
+- **Tests**: exact threshold boundaries and 10,000 evenly spaced samples verify the 8/22/40/22/8 distribution, independent rarity selection, case isolation, NPC restocking, safe imports and permanent item identity across trading.
+
 ## Wear overhaul 0.5.0 — Condition data foundation
 
 This patch introduces a separate, permanent five-grade wear property on each weapon or cosmetic skin instance. The `market/wear.js` module defines the grade index (`wearGrade`), labels, validators, and an idempotent save migration:
@@ -141,10 +158,10 @@ This patch introduces a separate, permanent five-grade wear property on each wea
 | 4 | Battle-Scarred |
 
 - Every previously owned weapon or approved skin, player escrow item, and NPC market weapon/skin gains `wearGrade: 0` if missing. Valid existing grades are retained. Item IDs, asking prices, base values, wallets, art, and rarity stay unchanged.
-- New weapon/skin drops and replenished NPC items are also Pristine until the independent condition-roll patch 0.5.1. Sealed cases have no wear grade.
+- In 0.5.0, new weapon/skin drops and replenished NPC items were also Pristine. As of 0.5.1, new items independently roll condition. Sealed cases never have wear.
 - Wear moves with the same item object during listing, cancellation, and purchases. Reloading or migration cannot reroll or otherwise change saved conditions.
 - `wearSchemaVersion: 1` is stored alongside the game state. Existing backups without wear information remain importable and normalize on load. Invalid grades (anything except integer 0–4), a condition on a sealed case, or unsupported schema versions are rejected.
-- No procedural overlay, visual wear label, wear-related price multiplier, new case odds, or new images ship in this foundation patch. Those are explicitly reserved for later 0.5 patches.
+- This foundation patch did not add procedural overlays, labels, valuation multipliers or images. Wear rolling is now implemented in 0.5.1, while art and economic changes remain reserved for subsequent 0.5 patches.
 
 ## Economy and progression
 
