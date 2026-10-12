@@ -342,9 +342,13 @@ const fs = require('fs');
     await page.locator('#marketOwnedSearch').fill('MP5');
     assert(await page.locator('#marketOwnedResults .item').count()===12,'Sell shelf should initially show 12 matched items');
     assert(await page.locator('#marketOwnedMore').count()===1,'Show more needed for larger inventory');
-    await page.getByRole('button',{name:/Show more/}).click();
-    assert(await page.locator('#marketOwnedResults .item').count()===20,'Show more must reveal the entire matching inventory');
-    await page.locator('#marketOwnedResults .item').last().getByRole('button',{name:'List item'}).click();
+    const matchingCount=await page.evaluate(()=>s.items.filter(x=>x.weapon==='MP5').length);
+    while(await page.locator('#marketOwnedMore').count()){
+      await page.locator('#marketOwnedMore').click();
+    }
+    assert(await page.locator('#marketOwnedResults .item').count()===matchingCount,
+      'Show more must reveal every matching inventory item, including earlier earned weapons');
+    await page.locator('#marketOwnedResults .item').first().getByRole('button',{name:'List item'}).click();
     await page.locator('#listPrice').fill('35');
     await page.getByRole('button',{name:'List for sale'}).click();
     const listed=await page.evaluate(()=>{
