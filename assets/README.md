@@ -94,3 +94,14 @@ This directory establishes the source-of-truth manifest for 19 existing Arsenal 
 - Gold finish and neutral master are corrected together to **hook-right, finger-ring-left** orientation. Both have the identical shape, even though the original generated board shows separate neutral and gold illustrations.
 - Current approval: **raster pilot live, `approved:false`** until the user judges the eye/brow and independent mobile Safari testing confirms visual quality. Existing model-specific SVG art remains the error fallback.
 - [Production spec and source-generation brief](art-briefs/karambit-golden-talon.md) and [live versioned finish recipe](skin-definitions/karambit--golden-talon.json) remain in the repository.
+
+## 0.3.3G — Raptor's Gaze (active Legendary Karambit finish)
+
+- **New live item:** `Karambit | Raptor's Gaze`, which replaces Golden Talon in the same existing catalog slot (Legendary tier 4, base value 1900).
+- The user sketch is the production reference: one **long raised brow on the golden blade**, with a separate small dark **eyeball at the marked blade heel**. This redesign removes the old complete eagle-head carving.
+- New live artwork: `assets/renders/finishes/karambit--raptors-gaze-{400,800,1600}.webp`; all three use the existing exact `karambit-neutral-{400,800,1600}.webp` alpha channels. Ring hole and silhouette remain transparent and unchanged.
+- Original source, masks, new and former finish PNGs, user-reference sketches and reproducible script are archived in Library: `/LootHub/loothub-raptors-gaze-master-033G.zip`.
+- Script: `python scripts/build_raptors_gaze_2d.py <archive extraction folder>` with Pillow, NumPy and OpenCV. Brow and eye are **illustrated shaded relief**, not real 3D displacement.
+- The original generated knife is approximately 960px across. The 1600px WebP is an export upscale, **not** native inspection-detail imagery. This finish remains **provisional, approved:false**, awaiting placement review and mobile Safari signoff.
+- Backward compatibility: `upgrade.js` recognizes `Karambit|Golden Talon` when loading saved inventory/listed items and when validating imported backups, then canonicalizes it to `Raptor's Gaze`. It preserves item IDs, floats, pattern numbers, wear, StatTrak, value and listing state. `index.html` uses numeric catalog indexes for preview callbacks so the apostrophe in the finish name cannot break a quoted JavaScript handler.
+- The previous Golden Talon recipe and WebPs remain archived as legacy assets; no new 20th catalog slot was created.
