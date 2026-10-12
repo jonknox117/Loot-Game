@@ -57,8 +57,6 @@ def audit(output=None):
         overlay.putalpha(overlay.getchannel('A').point(lambda v:int(v*.42)))
         mixed=Image.alpha_composite(plain,overlay)
         blocks.append((slug,plain.convert('RGB'),mixed.convert('RGB'),counts))
-    if exceptions:
-        raise AssertionError('Semantic material anchors failed:\n'+'\n'.join(exceptions))
     if count<48:raise AssertionError('Too few independent reference points')
     print('PASS:',len(items),'complete silhouettes,',count,
       'human-selected semantic landmarks, 3 mutually exclusive materials')
@@ -82,6 +80,8 @@ def audit(output=None):
                    fill=(180,198,209))
         sheet.save(dest,optimize=True)
         print('Wrote review sheet to',dest)
+    if exceptions:
+        raise AssertionError('Semantic material anchors failed:\n'+'\n'.join(exceptions))
     return count
 
 if __name__=='__main__':
