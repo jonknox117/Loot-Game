@@ -235,7 +235,10 @@
         "reel": "assets/renders/masters/karambit-neutral-400.webp"
       },
       "assetStatus": "not-created",
-      "approved": false
+      "approved": false,
+      "designBrief": "assets/art-briefs/karambit-golden-talon.md",
+      "firstFinishRecipe": "assets/skin-definitions/karambit--golden-talon.json",
+      "designStatus": "source prompt and manufacturing checklist locked; source art not yet generated"
     }
   ]
 }
