@@ -65,9 +65,9 @@ test('All Arsenal models have distinct, accessible vector artwork',()=>{
   const models=JSON.parse(g.run('JSON.stringify(window.ArsenalMasters.modelNames)'));
   assert.equal(models.length,17);
   assert.equal(manifest.vectorFoundation.modelCount,17);
-  const catalog=JSON.parse(g.run('JSON.stringify(catalog.map(a=>[a[0],a[1],a[2]]))'));
   const uniqueShapes=new Set();
-  for(const [weapon,skin,tier] of catalog){
+  for(const weapon of models){
+    const skin='Factory',tier=0;
     const data={kind:'skin',weapon,skin,tier};
     const html=g.run('window.ArsenalMasters.render('+JSON.stringify(data)+')');
     assert(html.includes('class="arsenal-master"')||html.includes('class="arsenal-master" role='),'Missing SVG master '+weapon);
@@ -79,7 +79,7 @@ test('All Arsenal models have distinct, accessible vector artwork',()=>{
     uniqueShapes.add(geometricBody[1]);
   }
   assert.equal(uniqueShapes.size,17,'All weapon model silhouettes must be distinct');
-  for(const entry of manifest.items) {
+  for(const entry of manifest.items.filter(x=>x.vectorSource)) {
     assert.equal(entry.vectorStatus,'implemented');
     assert.equal(entry.vectorSource,'assets/weapon-masters.js');
     assert.equal(entry.approved,false,'Final skin artwork must not be falsely marked complete');
@@ -303,15 +303,36 @@ test('Golden Talon legacy inventory and marketplace items retain their attribute
 test('Starfall catalog preview uses stable numeric handler and exact 1600px image',()=>{
   const g=boot();
   const html=g.run('cases()');
-  assert(html.includes('previewCatalogFinish(16)'));
+  assert(html.includes('previewCatalogFinish(9)'));
   assert(!html.includes("previewCatalogFinish('Karambit','Starfall"),'Do not put names in onclick JS');
   const prior=g.state();
-  g.run('previewCatalogFinish(16)');
+  g.run('previewCatalogFinish(9)');
   const modal=g.byId('overlay').innerHTML;
   assert(modal.includes('karambit--starfall-1600.webp'));
   assert(modal.includes('Karambit | Starfall'));
   assert.equal(g.state().coins,prior.coins);
   assert.deepEqual(g.state().items,prior.items);
+});
+test('Ten approved neutral master WebP assets and selected case families',()=>{
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const g=boot();
+  const allowed=new Set(['Glock-18','AK-47','AWP','M4A4','Karambit','Butterfly Knife','12 Gauge Pump Shotgun','Desert Eagle','Colt .45 Revolver','Tactical Machete','Tactical Tomahawk','SPAS-12','MP5','MAC-10','Tec-9']);
+  const catalog=JSON.parse(g.run('JSON.stringify(catalog)'));
+  assert.equal(catalog.length,21);
+  for(const row of catalog)assert(allowed.has(row[0]),'Unapproved weapon in case: '+row[0]);
+  const newModels=manifest.neutralMasterPipeline.models;
+  assert.equal(newModels.length,10);
+  for(const slug of newModels){
+    const js=fs.readFileSync(path.join(root,'assets/neutral-art',slug+'.js'),'utf8');
+    assert(js.includes('window.LootHubNeutralArt['+JSON.stringify(slug)+']'));
+    const matches=js.match(/"400":"([A-Za-z0-9+/=]+)","800":"([A-Za-z0-9+/=]+)","1600":"([A-Za-z0-9+/=]+)"/);
+    assert(matches,'Missing WebP sizes for '+slug);
+    for(const encoded of matches.slice(1)){
+      const buf=Buffer.from(encoded,'base64');
+      assert.equal(buf.toString('ascii',0,4),'RIFF');
+      assert.equal(buf.toString('ascii',8,12),'WEBP');
+    }
+  }
 });
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
