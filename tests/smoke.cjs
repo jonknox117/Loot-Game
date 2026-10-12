@@ -44,6 +44,10 @@ const fs = require('fs');
     assert(baselineWear.items.every(x=>x.kind==='case'?!x.hasGrade:
       (x.hasGrade&&Number.isInteger(x.grade)&&x.grade>=0&&x.grade<=4)),
       'New marketplace stock must have a valid condition; sealed cases must remain ungraded');
+    assert(await page.locator('.npc-listing .wear-grade').count()>0,
+      'Marketplace needs visible condition ratings for every NPC weapon or skin');
+    assert((await page.locator('.npc-listing .wear-grade').first().textContent()).includes('Condition:'),
+      'NPC condition must be readable on mobile');
     const originalNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
@@ -116,9 +120,30 @@ const fs = require('fs');
     assert(revealed.weapon===winner.weapon,'Revealed reward model differs from the reel');
     assert(revealed.finish===winner.finish,'The revealed finish differs from the reel or an unapproved skin appeared');
     assert(revealed.loaded,'Base-weapon inspect image failed to load');
+    const wearName=['Pristine','Lightly Worn','Field-Tested','Heavily Worn','Battle-Scarred'][expectedReward.wearGrade];
+    const wearFactor=[1,.95,.85,.7,.55][expectedReward.wearGrade];
+    assert((await page.locator('.dialog').textContent()).includes('Condition: '+wearName),
+      'Case opening must show the exact rolled wear grade');
+    assert((await page.locator('.dialog').textContent()).includes(wearFactor.toFixed(2)+'×'),
+      'Case reveal must show the corresponding wear multiplier');
+    assert((await page.locator('.dialog').textContent()).includes('Condition-adjusted value'),
+      'Case reveal must explain the condition-adjusted value');
+
     await waitForVisible('text=Estimated market value');
     await page.getByRole('button', { name: 'Inspect / sell' }).click();
     assert(await page.getByRole('button', { name: /Instant sell/ }).isVisible(), 'Opened base weapon must be sellable');
+    const inspectedText=await page.locator('.dialog').textContent();
+    assert(inspectedText.includes('Condition: '+wearName),'Weapon inspection must show saved wear');
+    assert(inspectedText.includes('Base value (Pristine)')&&
+      inspectedText.includes('Wear modifier')&&
+      inspectedText.includes('Condition-adjusted value')&&
+      inspectedText.includes('Estimated market value'),'Inspection must show full pricing breakdown');
+    const adjusted=await page.evaluate(item=>{
+      return window.LootHubMarketCore.estimated(item);
+    },expectedReward);
+    assert(adjusted===Math.max(1,Math.round(expectedReward.base*wearFactor)),
+      'Displayed condition value must match pricing engine');
+
 
     await page.getByRole('button', { name: /Instant sell/ }).click();
     assert(await page.locator('.item').count() === 0, 'Sold item must leave inventory');
