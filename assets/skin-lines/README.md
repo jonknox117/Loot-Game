@@ -8,7 +8,7 @@ The catalog already contains 24 approved weapon masters. Each has a source-neutr
 
 ## Adding an owner-created line
 
-1. Save the owner's seamless transparent pattern PNG or WebP to `assets/skin-lines/textures/<your-line>.png`. No separate artwork is required for a flat recolor.
+1. Place the owner's three seamless PNG/WebP textures in `assets/skin-lines/textures/` (one each for metal, wood, other). For legacy single-material lines a single `pattern.texture` still works.
 2. Add **one** entry to `assets/skin-lines/lines.json` following the schema below. Start with `released:false` until owner approval and the assets have been reviewed.
 3. Change to `released:true` only after approval. Run `python scripts/build_skin_lines.py` then `python scripts/build_skin_lines.py --check`.
 4. GitHub Actions regenerates 400px/800px/1600px WebPs and synchronizes the browser registry. A line automatically registers up to 24 variants and its own case. It never alters the original Arsenal Case pool.
@@ -35,6 +35,66 @@ The catalog already contains 24 approved weapon masters. Each has a source-neutr
 ```
 
 Remove `pattern` to apply just a palette. The pattern scales/repeats without changing the neutral master, and is clipped to the weapon paint mask. These placeholders are not entries in the live registry.
+
+### Three-material recipe: use the actual weapon maps
+
+Add an entry to `assets/skin-lines/lines.json` using **materials** (not `pattern`).
+These entries are only examples; the shipped `lines.json` stays empty until the owner requests publishing a line.
+
+```json
+{
+  "id": "owner-selected-line",
+  "name": "Owner Selected Line",
+  "description": "Three separately masked materials",
+  "released": false,
+  "multiplier": 2,
+  "casePrice": 25,
+  "materials": {
+    "metal": {
+      "texture": "assets/skin-lines/textures/example-metal.png",
+      "tileWidth": 480,
+      "offsetX": 0,
+      "offsetY": 0,
+      "opacity": 0.96
+    },
+    "wood": {
+      "texture": "assets/skin-lines/textures/example-wood.png",
+      "tileWidth": 620,
+      "offsetX": 0,
+      "offsetY": 0,
+      "opacity": 1
+    },
+    "other": {
+      "texture": "assets/skin-lines/textures/example-other.png",
+      "tileWidth": 350,
+      "offsetX": 0,
+      "offsetY": 0,
+      "opacity": 1
+    }
+  }
+}
+```
+
+**How masks work:** for each of the 24 existing weapon masters, the generator reads
+`assets/skin-lines/materials/<slug>--material-1600.png` and its corresponding neutral image.
+Every visible pixel must belong to exactly one material: pure red = **metal**, pure green = **wood**,
+pure blue = **other**. The `materials.metal` image is clipped to red pixels, wood to green,
+and other to blue; no texture crosses material boundaries. The alpha must match the original
+weapon exactly. Profiled `protectedRects` remain unpainted, and basic weapon shading is
+preserved rather than stamping flat squares over the neutral source.
+
+**Input format:** `materials` must contain all three keys. Each takes the same tiling parameters
+as the legacy `pattern` definition, but each key can use independent `tileWidth`,
+`offsetX`, `offsetY`, and `opacity`. Source textures must be PNG or WebP,
+inside `assets/skin-lines/textures/`. Do not use a single `pattern` together with
+`materials`. Unlike the older `pattern` recipe, the three-material recipe does **not**
+require a palette; it uses the uploaded artist's actual texture colors. The original
+two-color palette and single-pattern format remain backward compatible.
+
+**Review warning:** metal/wood/other classifications are reviewed drafts, not guaranteed
+perfect semantic segmentation. Any regions labeled **other** will receive the other texture
+even if physically wood or metal. Inspect and refine mask boundaries before releasing a line.
+Rendering changes neither the original 24 masters nor the 10 separately uploaded custom skins.
 
 ### Test and safety rules
 
