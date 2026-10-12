@@ -143,8 +143,11 @@ async function inspect(weapon,x,y){
   const type=material?sampleMaterial(material.pixels,material.width,material.height,x,y):
     // Failed/disabled material loads can only reduce rust, never falsely enable it.
     'other';
+  const profile=getProfile(weapon);
+  const blocked=profile&&(inRects(profile.protectedRects,x,y)||
+    inRects(profile.wear&&profile.wear.protectedRects,x,y));
   return Object.freeze({paintAmount:amount,maskAvailable:!!paint,
-    materialMapAvailable:!!material,...eligibility(type,x,y,amount)});
+    materialMapAvailable:!!material,...eligibility(blocked?'protected':type,x,y,amount)});
 }
 root.LootHubWearMaterials=Object.freeze({
   MASK_EDGE,MAX_DECODED,surfaceTypes,slugFor,getProfile,maskPath,
