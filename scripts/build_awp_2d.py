@@ -10,7 +10,7 @@ from pathlib import Path
 import sys,json,math
 import numpy as np
 import cv2
-from PIL import Image,ImageDraw,ImageFilter,ImageChops
+from PIL import Image,ImageDraw,ImageFilter,ImageChops,ImageOps
 ROOT=Path(sys.argv[1]).resolve() if len(sys.argv)>1 else Path(__file__).resolve().parent
 SOURCE=ROOT/'source'
 NEUTRAL_SOURCE=SOURCE/'awp-neutral-original.png'
@@ -176,7 +176,7 @@ for slug,recipe in finishes.items():
   tint=np.array([105,79,35],np.float32)
   rgb=rgb*(1-scope*.16)+(np.maximum(rgb,tint))*scope*.16
  res=np.dstack([np.uint8(np.clip(rgb,0,255)),np.uint8(alpha)])
- image=Image.fromarray(res,'RGBA')
+ image=ImageOps.mirror(Image.fromarray(res,'RGBA'))  # published geometry faces muzzle-right
  image.save(ROOT/'finishes'/f'awp--{slug}-working-2400.png',optimize=True)
  for target in [400,800,1600]:
   out=image.resize((target,target//2),Image.Resampling.LANCZOS)
@@ -190,7 +190,7 @@ for slug,recipe in finishes.items():
   'description':'Original deterministic shader and detail overlays, constrained to a shared master silhouette and using the same stored PNG for all image sizes.',
   'status':'pilot-awaiting-visual-acceptance','repeatable':True},indent=2)+'\n')
 for target in [400,800,1600]:
- out=working.resize((target,target//2),Image.Resampling.LANCZOS)
+ out=ImageOps.mirror(working).resize((target,target//2),Image.Resampling.LANCZOS)
  out.save(ROOT/'renders'/f'awp-neutral-{target}.webp','WEBP',quality=94,method=6,exact=True)
 # Create a viewer-friendly proof sheet on dark navy backing.
 P=Image.new('RGB',(1180,1000),(12,18,28));d=ImageDraw.Draw(P)
