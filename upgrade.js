@@ -165,7 +165,8 @@ function safeUpload(data) {
     if(data.market.npcListings.length>100||data.market.negotiations.length>1000)return false;
     for(const n of data.market.negotiations){
       if(!n||!['buy','sell'].includes(n.kind)||
-        typeof n.id!=='string'||n.id!==n.kind+':'+n.listingId||
+        typeof n.id!=='string'||n.id!==(n.kind+':'+n.listingId+(n.kind==='sell'?':'+n.listingCreatedAt:''))||
+        !Number.isFinite(n.listingCreatedAt)||
         typeof n.listingId!=='string'||n.listingId.length>160||
         typeof n.itemId!=='string'||n.itemId.length>150||
         !window.LootHubMarketCore.validAsk(n.initialAsk)||
