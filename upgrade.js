@@ -237,7 +237,8 @@ function marketTick(){
     recordActivity(s,'Marketplace sale: '+itemName(sale.item)+' for '+sale.net+
       ' coins ('+sale.fee+' fee)');
   }
-  if(result.changed)save();
+  if(window.LootHubHaggling.resolveUnavailable(s,Date.now()))save();
+  else if(result.changed)save();
 }
 function marketAction(name,id){return name+'('+escapeHTML(JSON.stringify(String(id)))+')'}
 function listingItemName(item){
@@ -337,6 +338,7 @@ function submitPriceEdit(k){
   const changed=window.LootHubMarketTransactions.repriceListing(s,k,ask,Date.now());
   if(!changed)return;
   if(changed.changed){
+    window.LootHubHaggling.closeForListing(s,'sell',k);
     recordActivity(s,'Updated '+listingItemName(changed.listing.item)+' listing from '+
       changed.oldAsk+' to '+ask+' coins');
     save();
@@ -347,6 +349,7 @@ function cancelListing(k){
   if(!canMutate())return;
   const listing=window.LootHubMarketTransactions.cancelListing(s,k);
   if(!listing)return;
+  window.LootHubHaggling.closeForListing(s,'sell',k);
   recordActivity(s,'Cancelled listing: '+listingItemName(listing.item));
   save();render();
 }
@@ -378,7 +381,8 @@ function renderNpcMarketResults(){
       '<div class="npc-listing-cost"><b>'+money(l.ask)+' ◈</b>'+
       '<span class="muted tiny">Est. '+money(estimate)+' ◈ · '+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
-      '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+
+      '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+ 
+      '<button onclick="'+marketAction('negotiateNpcListing',l.id)+'">Make offer</button>'+
       '<button class="primary" onclick="'+marketAction('buyNpcListing',l.id)+'">Buy now</button></div>'+
       '</div></article>';
   }).join('')||'<p class="muted">No listings match those filters. Try another weapon, price order, or rarity.</p>';
@@ -403,8 +407,9 @@ function inspectNpcListing(k){
     '<p class="muted tiny">'+escapeHTML(attributes.join(' · ')||
       (item.kind==='skin'?'Approved cosmetic · exact listed item':item.kind==='case'?
        'Sealed Arsenal Case':'Base weapon · unskinned'))+'</p>'+
-    '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiated offers arrive in Patch 0.4.3.</p>'+
-    '<div class="row"><button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
+    '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiate a better price or buy at the asking price.</p>'+
+    '<div class="row"><button onclick="'+marketAction('negotiateNpcListing',listing.id)+'">Make offer</button>'+ 
+    '<button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
       money(listing.ask)+' coins</button><button onclick="closeDialog()">Back to market</button></div>');
 }
 function buyNpcListing(k){
@@ -417,6 +422,7 @@ function buyNpcListing(k){
   }
   const sale=window.LootHubMarketTransactions.buyNpcListing(s,k);
   if(!sale)return;
+  window.LootHubHaggling.closeForListing(s,'buy',k);
   recordActivity(s,'Bought '+listingItemName(sale.item)+' from '+sale.seller+
     ' for '+sale.price+' coins');
   save();
@@ -427,6 +433,8 @@ function buyNpcListing(k){
 function enhancedMarket(){
   if(isSaveCurrent()){
     window.LootHubNPCMarket.refreshNpcMarket(s,dropCatalog,Date.now(),Math.random);
+    for(const l of s.listings.slice(0,100))window.LootHubHaggling.begin(s,'sell',l.id);
+    window.LootHubHaggling.resolveUnavailable(s,Date.now());
   }
   const listingItems=(s.listings||[]).map(l=>{
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
@@ -438,7 +446,8 @@ function enhancedMarket(){
       '</div></div>'+
       '<div class="market-listing-controls"><b>'+money(l.ask)+' ◈ asking</b>'+
       '<span class="muted tiny">Receive '+(quote?money(quote.net):'—')+' ◈ after fee</span>'+
-      '<div class="row"><button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
+      '<div class="row"><button onclick="'+marketAction('reviewBuyerOffer',l.id)+'">Review offer</button>'+ 
+      '<button onclick="'+marketAction('editListing',l.id)+'">Edit price</button>'+
       '<button onclick="'+marketAction('cancelListing',l.id)+'">Cancel</button></div></div>'+
       '</div>';
   }).join('');
@@ -470,7 +479,7 @@ function enhancedMarket(){
         '<option value="'+x[0]+'"'+select(x[0],view.sort)+'>'+x[1]+'</option>').join('')+
       '</select></label></div>'+
     '<div class="npc-market-grid" id="npcMarketResults">'+renderNpcMarketResults()+'</div>'+
-    '<p class="muted tiny">NPC stock refreshes gradually over time and is unique to your saved game. No real players are connected. Make Offer functionality is planned for the next patch.</p>'+
+    '<p class="muted tiny">NPC stock refreshes gradually. Each listing supports a saved negotiation with up to three offers. No real players are connected.</p>'+
     '</section>'+
     '<section class="panel"><div class="row space"><h2>My Market Listings <span class="muted">('+
       (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
