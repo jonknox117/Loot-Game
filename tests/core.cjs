@@ -88,8 +88,8 @@ test('All Arsenal models have distinct, accessible vector artwork',()=>{
 
 test('Reel weapon paints use isolated SVG styles instead of globally shared accents',()=>{
   const g=boot();
-  const a=g.run("visualArt({kind:'skin',weapon:'AK-47',skin:'Ghostline',tier:2})");
-  const b=g.run("visualArt({kind:'skin',weapon:'AK-47',skin:'Crimson Circuit',tier:3})");
+  const a=g.run("window.ArsenalMasters.render({kind:'skin',weapon:'AK-47',skin:'Ghostline',tier:2})");
+  const b=g.run("window.ArsenalMasters.render({kind:'skin',weapon:'AK-47',skin:'Crimson Circuit',tier:3})");
   const idA=a.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
   const idB=b.match(/<svg id="([^"]+)" class="arsenal-master"/)?.[1];
   assert(idA&&idB&&idA!==idB,'Two cards must never share the same SVG root ID');
@@ -162,6 +162,31 @@ test('Catalog full-size art preview shows raster without granting or consuming i
   assert(html.includes('Glock-18 | Slate Grid'),'Preview has wrong finish');
   assert.equal(g.state().coins,before.coins,'Catalog preview must never charge coins');
   assert.deepEqual(g.state().items,before.items,'Catalog preview must not alter inventory');
+});
+test('AK raster masters share exact geometry and show matching reel-to-inspect finishes',()=>{
+  const g=boot();
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  for(const [skin,slug,tier] of [['Ghostline','ghostline',2],['Crimson Circuit','crimson-circuit',3]]){
+    const obj={kind:'skin',weapon:'AK-47',skin,tier};
+    const entry=manifest.items.find(x=>x.weapon==='AK-47'&&x.finish===skin);
+    assert(entry,'Missing AK pilot manifest entry '+skin);
+    assert.equal(entry.renderMode,'static-2d-webp');
+    for(const [context,size] of [['reel',400],['inventory',800],['inspect',1600]]){
+      const html=g.run('visualArt('+JSON.stringify(obj)+','+JSON.stringify(context)+')');
+      assert(html.includes('ak-47--'+slug+'-'+size+'.webp'),'Wrong AK image for '+context);
+      assert(html.includes('data-weapon-model="AK-47"'),'Bitmap metadata did not track its actual model');
+      assert(html.includes('data-finish="'+skin+'"'),'Bitmap metadata did not track the actual finish');
+      assert(html.includes('class="raster-fallback"'),'Fallback SVG absent');
+      const file=fs.readFileSync(path.join(root,'assets/renders/finishes','ak-47--'+slug+'-'+size+'.webp'));
+      assert.equal(file.toString('ascii',0,4),'RIFF','Invalid asset header');
+      assert.equal(file.toString('ascii',8,12),'WEBP','Invalid WebP format');
+      assert(file.length>10000,'Bitmap appears truncated');
+    }
+  }
+  for(const size of [400,800,1600]){
+    const file=fs.readFileSync(path.join(root,'assets/renders/masters','ak-47-neutral-'+size+'.webp'));
+    assert.equal(file.toString('ascii',8,12),'WEBP','Neutral AK master invalid');
+  }
 });
 test('Brand-new profile starts at zero and persists baseline',()=>{
   const g=boot();
