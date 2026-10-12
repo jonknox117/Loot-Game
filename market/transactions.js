@@ -51,7 +51,7 @@ function repriceListing(game,listingId,ask,now){
 function permittedPrice(game,kind,listing,requested){
   if(requested===undefined)return listing.ask;
   const deals=game.market&&game.market.negotiations;
-  const n=Array.isArray(deals)&&deals.find(x=>x&&x.id===kind+':'+listing.id);
+  const n=Array.isArray(deals)&&root.LootHubHaggling.get(game,kind,listing.id);
   if(!n||n.kind!==kind||n.listingId!==listing.id||
     n.itemId!==listing.item.id||n.initialAsk!==listing.ask||
     n.status!=='agreed'||n.agreedPrice!==requested||!core.validAsk(requested))return null;
