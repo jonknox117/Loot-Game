@@ -25,7 +25,7 @@ const fs = require('fs');
 
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
     await page.getByRole('button', { name: 'Purchase case' }).click();
-    await waitForVisible('text=Sealed Arsenal Case');
+    await page.getByRole('heading', { name: 'Sealed Arsenal Case', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
     assert((await page.locator('#wallet').textContent()).includes('0'), 'Case purchase must debit wallet');
 
     await page.getByRole('button', { name: 'Keep item' }).click();
