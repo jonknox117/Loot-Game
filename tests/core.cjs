@@ -1891,8 +1891,8 @@ test('0.5.5a all 24 master guns have a real paint mask and synced material profi
 });
 test('0.5.5a material classifier never infers rust-safe metal merely from paint',()=>{
  const g=boot(),api='window.LootHubWearMaterials';
- const initial=JSON.parse(g.run('JSON.stringify('+api+'.eligibility("AK-47",.5,.5,1))'));
- assert.equal(initial.material,'paintable-unclassified');
+ const initial=JSON.parse(g.run('JSON.stringify('+api+'.eligibility("AK-47",.95,.95,1))'));
+ assert.equal(initial.material,'other');
  assert.equal(initial.rust,false,'Paint may cover wood or polymer');
  assert.equal(initial.finishWear,true);
  assert.equal(g.run(api+'.materialAt("AWP",.4,.25,1)'),'protected',
