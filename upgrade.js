@@ -1,5 +1,8 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
+function isApprovedSkin(item){
+  return !!(item&&item.kind==='skin'&&approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin));
+}
 function ensureMarketData(data){return window.LootHubMarketCore.ensureMarketState(data)}
 let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null, lastPersistedSnapshot=null, saveRevisionSequence=0;
 function isSaveCurrent(){
@@ -39,7 +42,7 @@ function migrateLegacyFinishData(data){
   const migrate=item=>{
     if(!item||typeof item!=='object'||item.kind==='case')return;
     // Keep user-selected approved finish intact; retire only older unapproved skins.
-    if(item.kind==='skin'&&item.weapon==='MAC-10'&&item.skin==='Red Devil')return;
+    if(isApprovedSkin(item))return;
     if(item.kind==='skin'){
       const base=Number(item.base);
       if(Number.isFinite(base)&&base>=0){
@@ -154,7 +157,7 @@ function safeUpload(data) {
        typeof item.weapon!=='string'||item.weapon.length<1||item.weapon.length>120))return false;
     if(item.kind==='skin'){
       if(typeof item.skin!=='string'||item.skin.length>120)return false;
-      const approved=item.weapon==='MAC-10'&&item.skin==='Red Devil';
+      const approved=isApprovedSkin(item);
       const legacyWear=Number.isFinite(item.float)&&item.float>=0&&item.float<=1&&
         Number.isFinite(item.pattern)&&item.pattern>=0;
       if(!approved&&!legacyWear)return false;
@@ -207,7 +210,7 @@ function safeUpload(data) {
       if(l.item.kind!=='case'&&(!Number.isInteger(l.item.tier)||l.item.tier<0||
          l.item.tier>4||!Number.isFinite(l.item.base)||l.item.base<=0||
          typeof l.item.weapon!=='string'||l.item.weapon.length>120))return false;
-      if(l.item.kind==='skin'&&!(l.item.weapon==='MAC-10'&&l.item.skin==='Red Devil'))return false;
+      if(l.item.kind==='skin'&&!isApprovedSkin(l.item))return false;
       listingIds.add(l.id);
       ids.add(l.item.id);
     }
@@ -862,18 +865,17 @@ const lootHubOriginalBaseMasters=Object.freeze({
   'Karambit':'assets/renders/masters/karambit-neutral-1600.webp'
 });
 function visualArt(item,context='inventory') {
-  // Only the explicitly user-approved skin may replace a neutral master.
-  if(item&&item.kind==='skin'&&item.weapon==='MAC-10'&&item.skin==='Red Devil'){
-    const skin=typeof window!=='undefined'&&window.LootHubSkinArt&&window.LootHubSkinArt['MAC-10|Red Devil'];
-    const size=context==='inspect'?'1600':context==='reel'?'400':'800';
-    if(skin&&skin[size]){
-      return '<div class="art weapon-art master-raster approved-skin" data-weapon-model="MAC-10" data-finish="Red Devil" data-art-status="approved-skin" data-resolution="'+size+'">'+
-        '<img src="data:image/webp;base64,'+skin[size]+'" alt="MAC-10 | Red Devil user-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+  const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const size=context==='inspect'?'1600':context==='reel'?'400':'800';
+  // Only explicitly approved skins have separate paint art; neutral masters remain unchanged.
+  if(isApprovedSkin(item)){
+    const art=typeof window!=='undefined'&&window.LootHubSkinArt&&window.LootHubSkinArt[item.weapon+'|'+item.skin];
+    if(art&&art[size]){
+      return '<div class="art weapon-art master-raster approved-skin" data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'" data-art-status="approved-skin" data-resolution="'+size+'">'+
+        '<img src="data:image/webp;base64,'+art[size]+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+' user-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
   }
   if(item&&item.kind!=='case'){
-    const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-    const size=context==='inspect'?'1600':context==='reel'?'400':'800';
     const modelSlug=lootHubNeutralModels[item.weapon];
     const art=typeof window!=='undefined'&&window.LootHubNeutralArt&&window.LootHubNeutralArt[modelSlug];
     if(art&&art[size]){
