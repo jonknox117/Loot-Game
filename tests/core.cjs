@@ -265,7 +265,7 @@ test("Karambit Starfall uses same neutral geometry across contexts",()=>{
     const actual=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
     assert(actual.includes('karambit--starfall-'+size+'.webp'),'Incorrect Golden Talon '+context+' image');
     assert(actual.includes('data-weapon-model="Karambit"'),'Incorrect Golden Talon weapon identity');
-    assert(actual.includes("data-finish=\"Raptor&#39;s Gaze\""),'Incorrect Golden Talon finish identity');
+    assert(actual.includes("data-finish=\"Starfall\""),'Incorrect Golden Talon finish identity');
     assert(actual.includes('class="raster-fallback"'),'Karambit fallback SVG missing');
     for(const [part,filename] of [['masters','karambit-neutral'],['finishes','karambit--starfall']]){
       const bytes=fs.readFileSync(path.join(root,'assets/renders',part,filename+'-'+size+'.webp'));
@@ -300,16 +300,16 @@ test('Golden Talon legacy inventory and marketplace items retain their attribute
   assert.equal(saved.listings[0].item.skin,"Starfall");
   assert.equal(saved.coins,463);
 });
-test('Raptor catalog preview has apostrophe-safe handler and exact 1600px image',()=>{
+test('Starfall catalog preview uses stable numeric handler and exact 1600px image',()=>{
   const g=boot();
   const html=g.run('cases()');
   assert(html.includes('previewCatalogFinish(16)'));
-  assert(!html.includes("previewCatalogFinish('Karambit','Raptor"),'Do not put names in onclick JS');
+  assert(!html.includes("previewCatalogFinish('Karambit','Starfall"),'Do not put names in onclick JS');
   const prior=g.state();
   g.run('previewCatalogFinish(16)');
   const modal=g.byId('overlay').innerHTML;
   assert(modal.includes('karambit--starfall-1600.webp'));
-  assert(modal.includes('Karambit | Raptor&#39;s Gaze'));
+  assert(modal.includes('Karambit | Starfall'));
   assert.equal(g.state().coins,prior.coins);
   assert.deepEqual(g.state().items,prior.items);
 });
