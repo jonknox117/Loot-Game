@@ -90,8 +90,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await closedCase.waitFor({state:'visible',timeout:15000});
     const closedArt=await closedCase.evaluate(async img=>{
       await img.decode();
-      const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;
-      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,2,2);
+      const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
       return {width:img.naturalWidth,height:img.naturalHeight,
         alpha:ctx.getImageData(0,0,1,1).data[3],src:img.getAttribute('src')};
     });
