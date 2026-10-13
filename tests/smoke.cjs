@@ -887,7 +887,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
         left:inner.left-rect.left,right:rect.right-inner.right,fit:getComputedStyle(img).objectFit};
     });
     assert(chestShop.width===800&&chestShop.height===800&&chestShop.alpha===0&&
-      chestShop.src.includes('cartel-case-closed-800.webp'),'Cartel shop must load the owner's original transparent chest');
+      chestShop.src.includes('cartel-case-closed-800.webp'),'Cartel shop must load the original transparent chest');
     assert(chestShop.frameHeight>=230&&chestShop.fit==='contain'&&
       Math.min(chestShop.top,chestShop.bottom,chestShop.left,chestShop.right)>=-1,
       'Cartel shop chest must fit fully on iPhone: '+JSON.stringify(chestShop));
