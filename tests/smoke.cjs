@@ -185,7 +185,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
     assert(await page.locator('.npc-listing').count()>=1,'Skin type and approved-finish search must find matching listings');
-    await page.locator('.npc-listing').getByRole('button',{name:'Inspect'}).click();
+    await page.locator('.npc-listing').first().getByRole('button',{name:'Inspect'}).click();
     assert((await page.locator('.dialog h2').textContent()).includes(approvedName),'Inspect must show exact approved finish');
     await page.getByRole('button',{name:'Back to market'}).click();
     await page.locator('#npcSearch').fill('');
