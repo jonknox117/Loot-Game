@@ -35,6 +35,31 @@ function commit(game,ids,roll){
  game.pendingReveal=results[0].id;
  return {cases:selected,rewards:results};
 }
+// Atomic purchase of unopened cases. Keep separate IDs so each can be sold or opened later.
+function purchaseSealed(game,caseId,count,price,makeCase){
+ if(!game||!Array.isArray(game.items)||!Array.isArray(game.listings)||
+    !Number.isInteger(count)||count<1||count>MAX_CASES||
+    !Number.isSafeInteger(price)||price<1||
+    !Number.isSafeInteger(game.coins)||!Number.isSafeInteger(game.spent)||
+    typeof makeCase!=='function')return null;
+ const cost=count*price;
+ if(!Number.isSafeInteger(cost)||game.coins<cost||
+    !Number.isSafeInteger(game.spent+cost))return null;
+ const serial=game.serial;
+ try{
+  const cases=Array.from({length:count},()=>makeCase(caseId,price));
+  const existing=new Set(game.items.map(x=>x.id).concat(
+   game.listings.filter(x=>x&&x.item).map(x=>x.item.id)));
+  const ids=cases.map(x=>x&&x.id);
+  if(cases.some(x=>!x||x.kind!=='case'||typeof x.id!=='string'||!x.id||
+      x.paid!==price)||
+     new Set(ids).size!==count||ids.some(id=>existing.has(id)))
+     throw Error('Invalid case purchase');
+  game.items=game.items.concat(cases);
+  game.coins-=cost;game.spent+=cost;
+  return {cases,cost};
+ }catch(_){game.serial=serial;return null}
+}
 function purchaseAndCommit(game,caseId,count,price,makeCase,roll){
  if(!game||!Number.isInteger(count)||count<1||count>MAX_CASES||
     !Number.isSafeInteger(price)||price<1||
@@ -55,5 +80,5 @@ function purchaseAndCommit(game,caseId,count,price,makeCase,roll){
   return {...opened,cost:price*count};
  }catch(_){game.serial=serial;return null}
 }
-root.LootHubMultiOpen=Object.freeze({MAX_CASES,eligible,commit,purchaseAndCommit});
+root.LootHubMultiOpen=Object.freeze({MAX_CASES,eligible,commit,purchaseSealed,purchaseAndCommit});
 })(window);
