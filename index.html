@@ -166,7 +166,7 @@ function buyCartelCase(){
  if(purchase(cartelCase.casePrice,cartelCase.id))inspect(s.items[s.items.length-1].id);
 }
 function universalCases(){
-  if(!allSkinLines.length)return cases()+cartelSection();
+  if(!allSkinLines.length)return cartelSection()+cases();
   const extra=allSkinLines.map(line=>{
     const variants=lineCatalogs[line.id]||[];
     if(!variants.length)return '';
@@ -181,7 +181,7 @@ function universalCases(){
       '<button class="primary" onclick="buySkinLineCase(\''+line.id+'\')">Buy '+escapeHTML(line.name)+' Case</button>')+
       '</div>';
   }).join('');
-  return cases()+cartelSection()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
+  return cartelSection()+cases()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
     '</h2><p class="muted">Buy a sealed themed case to collect its skins. Drop chances follow the published rarity weights, normalized over rarities available in that case.</p>'+
     '<div class="cards">'+extra+'</div></section>';
 }
