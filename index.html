@@ -89,23 +89,28 @@ const allSkinLines=[...universalSkinLines.lines,...universalSkinLines.previewLin
 const lineCatalogs=Object.fromEntries(allSkinLines.map(line=>[line.id,universalSkinLines.variants(catalog,line.id)]));
 const allMarketCatalog=dropCatalog.concat(...universalSkinLines.lines.map(line=>lineCatalogs[line.id]));
 let s=loadGame(KEY);if(!s||!Array.isArray(s.items))s={coins:0,items:[],history:[],earned:0,spent:0,sales:0,rep:0,openings:0,serial:0,offers:{},tab:'Home'};if(!Array.isArray(s.listings))s.listings=[];if(!Array.isArray(s.ledger))s.ledger=[];if(!s.preferences)s.preferences={fastOpen:false};window.LootHubMarketCore.ensureMarketState(s);window.LootHubWear.ensureGame(s);
-let tab=s.tab||'Home',busy=false, pending=null,previewPending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
-const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?(x.caseId&&universalSkinLines.getLine(x.caseId)?'Sealed '+universalSkinLines.getLine(x.caseId).name+' Case':'Sealed Arsenal Case'):x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=(caseId='arsenal')=>({id:id(),kind:'case',paid:25,...(caseId==='arsenal'?{}:{caseId})}), rng=n=>Math.floor(Math.random()*n);
+let tab=s.tab||'Home',busy=false, pending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
+const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?(x.caseId&&universalSkinLines.getLine(x.caseId)?'Sealed '+universalSkinLines.getLine(x.caseId).name+' Case':'Sealed Arsenal Case'):x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=(caseId='arsenal',paid=25)=>({id:id(),kind:'case',paid,...(caseId==='arsenal'?{}:{caseId})}), rng=n=>Math.floor(Math.random()*n);
 function roll(caseId='arsenal'){
   if(caseId!=='arsenal'&&universalSkinLines.getLine(caseId)?.released!==true)throw Error('Unreleased case '+caseId);
   const lootPool=caseId==='arsenal'?dropCatalog:lineCatalogs[caseId];
   if(!lootPool||!lootPool.length)throw Error('Unregistered case '+caseId);
-  const r=Math.random()*100;
-  let tally=0;
-  for(let tier=0;tier<odds.length;tier++){
-    tally+=odds[tier];
-    if(r<tally){
-      const pool=lootPool.filter(x=>x.tier===tier);
-      if(!pool.length)throw Error('Empty weapon tier '+tier);
-      const item={id:id(),...pool[rng(pool.length)],paid:25};
+  // A themed case may not have a weapon at every rarity. Redistribute the
+  // original published tier weights proportionally across populated tiers.
+  // Arsenal continues using its original 70/20/7.5/2/0.5 distribution.
+  const buckets=odds.map((weight,tier)=>({weight,tier,pool:lootPool.filter(x=>x.tier===tier)}))
+    .filter(bucket=>bucket.pool.length);
+  const total=buckets.reduce((sum,bucket)=>sum+bucket.weight,0);
+  if(total<=0)throw Error('Drop table invalid');
+  let r=Math.random()*total;
+  for(const bucket of buckets){
+    if(r<bucket.weight){
+      const item={id:id(),...bucket.pool[rng(bucket.pool.length)],
+        paid:caseId==='arsenal'?25:universalSkinLines.getLine(caseId).casePrice};
       window.LootHubWear.assignRolled(item,Math.random);
       return item;
     }
+    r-=bucket.weight;
   }
   throw Error('Drop table invalid');
 }
@@ -132,7 +137,7 @@ function universalCases(){
       '</div>';
   }).join('');
   return cases()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
-    '</h2><p class="muted">Test cases are visual previews only: no coins charged, no saved inventory rewards, no market trades. Published cases remain separate.</p>'+
+    '</h2><p class="muted">Buy a sealed themed case to collect its skins. Drop chances follow the published rarity weights, normalized over rarities available in that case.</p>'+
     '<div class="cards">'+extra+'</div></section>';
 }
 function previewSkinLine(lineId){
@@ -148,39 +153,6 @@ function previewSkinLine(lineId){
 function buySkinLineCase(lineId){
   const line=universalSkinLines.getLine(lineId);
   if(line&&line.released===true&&purchase(line.casePrice,lineId))inspect(s.items[s.items.length-1].id);
-}
-function openPreviewCase(lineId){
-  const line=universalSkinLines.getLine(lineId),pool=lineCatalogs[lineId];
-  if(!line||line.preview!==true||line.released===true||!pool?.length||busy)return;
-  const reward={...pool[rng(pool.length)],id:'preview-'+Date.now()+'-'+rng(1000000),wearGrade:0};
-  const reel=Array.from({length:48},(_,i)=>i===42?reward:{...pool[rng(pool.length)],id:'preview-reel-'+i,wearGrade:0});
-  busy=true;
-  const tiles=reel.map((x,i)=>'<div class="tile" data-reel-index="'+i+'">'+visualArt(x,'reel')+
-    '<span>'+escapeHTML(x.weapon)+'</span></div>').join('');
-  dialog('<div class="section-eyebrow">BLACKOUT · TEST OPENING</div><h2>'+escapeHTML(line.name)+
-    ' Case</h2><div class="reel"><div class="pointer"></div><div class="track" id="track">'+
-    tiles+'</div></div><p class="muted tiny">Visual prototype only. No coins charged and no item added to your inventory.</p>'+
-    '<button class="primary" onclick="finishPreviewCase()">Skip animation</button>');
-  const track=document.getElementById('track');
-  track.style.transition='transform 4s cubic-bezier(.09,.75,.12,1)';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    track.style.transform='translateX('+Math.round(track.parentElement.clientWidth/2-(42*120+56))+'px)';
-  }));
-  previewPending={lineId,reward,timer:setTimeout(finishPreviewCase,4300)};
-}
-function finishPreviewCase(){
-  if(!previewPending)return;
-  clearTimeout(previewPending.timer);
-  const {lineId,reward}=previewPending;
-  previewPending=null;busy=false;
-  dialog('<div class="section-eyebrow">BLACKOUT · UNRELEASED TEST RESULT</div>'+
-    '<div class="tag '+cls(tiers[reward.tier])+'">'+tiers[reward.tier]+'</div>'+
-    '<div class="big reveal-art">'+visualArt(reward,'inspect')+'</div>'+
-    '<h2>'+escapeHTML(reward.weapon+' | '+reward.skin)+'</h2>'+
-    '<p class="muted">Procedurally rendered from your metal, wood and other textures. Not saved or tradeable.</p>'+
-    '<div class="row"><button class="primary" onclick="openPreviewCase(\''+lineId+'\')">Open another free test case</button>'+
-    '<button onclick="previewSkinLine(\''+lineId+'\')">Inspect all five</button>'+
-    '<button onclick="closeDialog()">Close</button></div>');
 }
 function previewCatalogWeapon(index){
   const a=catalog[index];
@@ -208,7 +180,7 @@ function market(){return enhancedMarket()}
 function earn(){return '<section class="panel"><h2>MicroTasks</h2><p class="muted">A tiny fallback income. Each click earns one coin. No energy system or cooldown. Your real wealth comes from trading.</p><div class="price">'+money(s.earned)+' earned lifetime</div><p><button class="primary" style="font-size:20px;padding:24px 36px" onclick="clickEarn()">◈ Earn 1 coin</button></p><p class="muted">Starter case: 25 coins · '+Math.max(0,25-s.coins)+' more needed</p></section>'}
 function portfolio(){return enhancedPortfolio()}
 function clickEarn(){if(!canMutate())return;s.coins++;s.earned++;save();render()}
-function purchase(price,caseId='arsenal'){if(!canMutate())return false;if(s.coins<price){alert('Not enough coins. Visit MicroTasks or sell an item.');return false}if(!window.LootHubMarketTransactions.purchaseCase(s,price,()=>caseItem(caseId)))return false;log('Purchased sealed '+(universalSkinLines.getLine(caseId)?.name||'Arsenal')+' Case for '+price+' coins');render();return true}
+function purchase(price,caseId='arsenal'){if(!canMutate())return false;if(s.coins<price){alert('Not enough coins. Visit MicroTasks or sell an item.');return false}if(!window.LootHubMarketTransactions.purchaseCase(s,price,()=>caseItem(caseId,price)))return false;log('Purchased sealed '+(universalSkinLines.getLine(caseId)?.name||'Arsenal')+' Case for '+price+' coins');render();return true}
 function buy(){if(purchase(25))inspect(s.items[s.items.length-1].id)}
 function marketBuy(price){if(purchase(price))inspect(s.items[s.items.length-1].id)}
 function wear(f){return f<.07?'Factory New':f<.15?'Minimal Wear':f<.38?'Field-Tested':f<.45?'Well-Worn':'Battle-Scarred'}

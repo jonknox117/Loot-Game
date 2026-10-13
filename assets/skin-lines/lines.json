@@ -4,9 +4,8 @@
     {
       "id": "blackout",
       "name": "Blackout",
-      "description": "Five-weapon material-map prototype: charcoal camouflage metal, dark wood, matte-black other.",
-      "released": false,
-      "preview": true,
+      "description": "Blackout finish with charcoal camouflage metal, dark wood, and matte-black polymer. Five weapons available now; more coming later.",
+      "released": true,
       "casePrice": 25,
       "multiplier": 2,
       "weapons": [

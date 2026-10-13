@@ -60,45 +60,81 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Blackout five-weapon preview is isolated from published cases and market',()=>{
+test('Blackout is a 25-coin purchasable five-weapon case with persistent rewards',()=>{
   const g=boot();
-  assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
-  assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),1);
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),1);
+  assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),0);
+  assert.equal(g.run('window.LootHubSkinLines.getLine("blackout").casePrice'),25);
   assert.equal(g.run('Object.keys(lineCatalogs).length'),1);
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
-  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length'));
-  const preview=JSON.parse(g.run('JSON.stringify(lineCatalogs.blackout)'));
-  assert.deepEqual(preview.map(x=>x.weapon),['Desert Eagle','SPAS-12','AWP','RPG-7','FN FAL']);
-  assert(preview.every(x=>x.kind==='skin'&&x.skin==='Blackout'&&x.skinLine==='blackout'));
-  for(const item of preview){
-    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),false);
-    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),true);
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+5);
+  const variants=JSON.parse(g.run('JSON.stringify(lineCatalogs.blackout)'));
+  assert.deepEqual(variants.map(x=>x.weapon),['Desert Eagle','SPAS-12','AWP','RPG-7','FN FAL']);
+  assert(variants.every(x=>x.kind==='skin'&&x.skin==='Blackout'&&x.skinLine==='blackout'));
+  for(const item of variants){
+    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
+    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),false);
     assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('assets/renders/lines/blackout/'));
     assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('data-art-status="universal-skin"'));
   }
   const neutral=JSON.parse(g.run('JSON.stringify(catalog)'));
-  const win={LootHubWeaponCatalog:JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog)')),LootHubSkinLineData:{schemaVersion:1,lines:[{
-    id:'test-line',name:'Test Line',released:true,multiplier:2,
-    palette:['#000000','#ffffff'],casePrice:25
-  }]}};
+  const win={LootHubWeaponCatalog:JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog)')),
+    LootHubSkinLineData:{schemaVersion:1,lines:[{id:'test-line',name:'Test Line',
+    released:true,multiplier:2,palette:['#000000','#ffffff'],casePrice:25}]}};
   vm.runInNewContext(universalRegistry,{window:win,Object,Map,Number,Math});
-  const variants=win.LootHubSkinLines.variants(neutral,'test-line');
-  assert.equal(variants.length,MASTER_COUNT);
-  assert(variants.every(x=>win.LootHubSkinLines.isRegistered(x)));
-  assert(win.LootHubSkinLines.imagePath(variants[0],800).endsWith('.webp'));
+  const allVariants=win.LootHubSkinLines.variants(neutral,'test-line');
+  assert.equal(allVariants.length,MASTER_COUNT);
+  assert(allVariants.every(x=>win.LootHubSkinLines.isRegistered(x)));
+  assert(win.LootHubSkinLines.imagePath(allVariants[0],800).endsWith('.webp'));
   const menu=g.run('universalCases()');
   assert(menu.includes('Arsenal Case'),'Original case was hidden');
-  assert(menu.includes('Blackout Case'),'Test case not available');
-  assert(menu.includes('Open free test case'),'Visual preview opening button missing');
+  assert(menu.includes('Blackout Case'),'Paid case missing from Cases shop');
+  assert(menu.includes('Buy Blackout Case'));
+  assert(!menu.includes('Open free test case'),'Unreleased visual test must not be offered');
   const before=g.state();
-  g.run("openPreviewCase('blackout')");
-  assert.equal(g.run('busy'),true);
-  assert.equal(g.run('previewPending.reward.skin'),'Blackout');
-  assert(g.byId('overlay').innerHTML.includes('BLACKOUT'));
-  g.run('finishPreviewCase()');
-  assert.equal(g.run('busy'),false);
-  assert(g.byId('overlay').innerHTML.includes('Open another free test case'));
-  assert.deepEqual(g.state(),before,'Preview must not change real saved inventory or coins');
+  g.run("buySkinLineCase('blackout')");
+  assert.equal(g.state().coins,before.coins,'Insufficient funds should leave balance intact');
+  assert.equal(g.state().items.length,before.items.length,'Insufficient funds should not grant a free case');
+  g.run("for(let i=0;i<25;i++)clickEarn();buySkinLineCase('blackout')");
+  const sealed=g.state();
+  assert.equal(sealed.coins,0,'Paid case must deduct 25 coins');
+  assert.equal(sealed.items.length,1);
+  assert.equal(sealed.items[0].kind,'case');
+  assert.equal(sealed.items[0].caseId,'blackout');
+  assert.equal(sealed.items[0].paid,25);
+  assert.equal(sealed.spent,25,'Case purchase must count toward lifetime spend');
+  assert(g.byId('overlay').innerHTML.includes('Sealed Blackout Case'));
+  g.run('openCase(s.items[0].id)');
+  const opened=g.state();
+  assert.equal(opened.items.length,1,'A sealed case must become exactly one collectible skin');
+  assert.equal(opened.openings,1);
+  assert.equal(opened.items[0].kind,'skin');
+  assert.equal(opened.items[0].skin,'Blackout');
+  assert.equal(opened.items[0].skinLine,'blackout');
+  assert(variants.some(v=>v.weapon===opened.items[0].weapon),'Only the five approved guns can drop');
+  assert.equal(g.run('window.LootHubSkinLines.isRegistered(s.items[0])'),true);
+  assert(Number.isInteger(opened.items[0].wearGrade)&&opened.items[0].wearGrade>=0&&
+    opened.items[0].wearGrade<=4,'Case reward must receive a persistent wear grade');
+  g.run('finishOpening()');
+  const reloaded=boot(g.store);
+  assert.equal(reloaded.state().items[0].id,opened.items[0].id,'Reward must survive reload');
+  assert.equal(reloaded.state().items[0].skin,'Blackout','Released skin must survive save migration');
+  assert.equal(reloaded.state().coins,0);
+  assert.equal(reloaded.state().openings,1);
+});
+test('Themed cases normalize original tier odds over the current case pool',()=>{
+  // Blackout currently includes tiers 1, 2, 3 only. It must never throw on
+  // empty Common and Legendary tiers, and must preserve the Arsenal roll.
+  for(const [random,tier] of [[.001,1],[.7,2],[.99,3]]){
+    const g=boot(new LocalStore(),()=>random);
+    for(let i=0;i<25;i++){
+      const got=JSON.parse(g.run('JSON.stringify(roll("blackout"))'));
+      assert.equal(got.tier,tier,'Incorrect normalized tier when random='+random);
+      assert.equal(got.skin,'Blackout');
+    }
+  }
+  const g=boot();
+  assert.equal(g.run('roll("arsenal").tier'),0,'Arsenal original tier odds changed');
 });
 test('Arsenal Case matches dynamically registered base weapons and ten owner-approved skins',()=>{
   const g=boot();
