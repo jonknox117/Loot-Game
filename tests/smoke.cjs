@@ -76,7 +76,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Paid Blackout case must be visible in the Cases store');
     assert((await paidPage.locator('#main').textContent()).includes('5 weapon variants'),
       'Blackout drop pool must remain limited to five guns');
-    await paidPage.getByRole('button',{name:'View collection'}).click();
+    await paidPage.locator('.item').filter({has:paidPage.getByRole('heading',{name:'Blackout Case',exact:true})}).getByRole('button',{name:'View collection'}).click();
     assert(await paidPage.locator('.dialog .item').count()===5,
       'Published Blackout collection must list five inspectable guns');
     await paidPage.waitForFunction(()=>[...document.querySelectorAll('.dialog .universal-skin img')].length===5&&
@@ -114,6 +114,59 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       persistence.coins===0&&persistence.openings===1,
       'Blackout collectible, coins and openings must survive reload');
     await paidPage.close();
+
+    // Damascus uses a different five-weapon roster and three independent
+    // material textures, but the same real paid-case inventory/opening flow.
+    const damascusPage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
+    await damascusPage.goto(url,{waitUntil:'load'});
+    await damascusPage.getByRole('button',{name:'Cases',exact:true}).click();
+    assert(await damascusPage.getByRole('button',{name:'Buy Damascus Case'}).count()===1,
+      'Damascus Case should be purchasable from the Cases shop');
+    const dCard=damascusPage.locator('.item').filter({
+      has:damascusPage.getByRole('heading',{name:'Damascus Case',exact:true})
+    });
+    assert((await dCard.textContent()).includes('5 weapon variants'),'Damascus should include exactly five skins');
+    await dCard.getByRole('button',{name:'View collection'}).click();
+    assert(await damascusPage.locator('.dialog .item').count()===5,
+      'Damascus collection preview must include five guns');
+    await damascusPage.waitForFunction(()=>{
+      const images=[...document.querySelectorAll('.dialog .universal-skin img')];
+      return images.length===5&&images.every(i=>i.complete&&i.naturalWidth>=800&&
+        i.src.includes('/damascus/'));
+    },null,{timeout:18000});
+    await damascusPage.getByRole('button',{name:'Close',exact:true}).last().click();
+    await damascusPage.evaluate(()=>{for(let i=0;i<25;i++)clickEarn()});
+    await damascusPage.getByRole('button',{name:'Buy Damascus Case'}).click();
+    await damascusPage.getByRole('heading',{name:'Sealed Damascus Case',exact:true}).waitFor();
+    const dBought=await damascusPage.evaluate(()=>({
+      coins:s.coins,spent:s.spent,caseId:s.items[0]?.caseId,
+      paid:s.items[0]?.paid,kind:s.items[0]?.kind
+    }));
+    assert(dBought.coins===0&&dBought.spent===25&&dBought.caseId==='damascus'&&
+      dBought.paid===25&&dBought.kind==='case',
+      'Damascus Case must cost 25 coins and store a sealed case');
+    await damascusPage.getByRole('button',{name:'Open case'}).click();
+    await damascusPage.getByRole('button',{name:'Skip animation'}).click();
+    await damascusPage.waitForFunction(()=>{
+      const image=document.querySelector('.dialog .universal-skin img');
+      return image&&image.complete&&image.naturalWidth===1600&&image.src.includes('/damascus/');
+    },null,{timeout:18000});
+    const dPrize=await damascusPage.evaluate(()=>({
+      id:s.items[0]?.id,weapon:s.items[0]?.weapon,skin:s.items[0]?.skin,
+      skinLine:s.items[0]?.skinLine,grade:s.items[0]?.wearGrade,
+      openings:s.openings,registered:window.LootHubSkinLines.isRegistered(s.items[0])
+    }));
+    assert(['Glock-18','Colt .45 Revolver','AK-47','M1 Garand','Karambit'].includes(dPrize.weapon)&&
+      dPrize.skin==='Damascus'&&dPrize.skinLine==='damascus'&&dPrize.registered&&
+      dPrize.openings===1&&dPrize.grade>=0&&dPrize.grade<=4,
+      'Damascus opening must award one real, registered five-weapon cosmetic');
+    await damascusPage.reload({waitUntil:'load'});
+    const dSaved=await damascusPage.evaluate(()=>({
+      id:s.items[0]?.id,skin:s.items[0]?.skin,coins:s.coins,openings:s.openings
+    }));
+    assert(dSaved.id===dPrize.id&&dSaved.skin==='Damascus'&&dSaved.coins===0&&dSaved.openings===1,
+      'Damascus reward and payment must survive mobile reload');
+    await damascusPage.close();
 
     // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
     await page.getByRole('button', { name: 'Market', exact: true }).click();

@@ -38,6 +38,44 @@
           "opacity": 1
         }
       }
+    },
+    {
+      "id": "damascus",
+      "name": "Damascus",
+      "description": "Layered black-and-silver Damascus steel, rich walnut wood, and brushed-silver synthetic surfaces. First five weapons; more can be added later.",
+      "released": true,
+      "casePrice": 25,
+      "multiplier": 2,
+      "weapons": [
+        "Glock-18",
+        "Colt .45 Revolver",
+        "AK-47",
+        "M1 Garand",
+        "Karambit"
+      ],
+      "materials": {
+        "metal": {
+          "texture": "assets/skin-lines/textures/damascus-metal.webp",
+          "tileWidth": 600,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 1
+        },
+        "wood": {
+          "texture": "assets/skin-lines/textures/damascus-wood.webp",
+          "tileWidth": 700,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 1
+        },
+        "other": {
+          "texture": "assets/skin-lines/textures/damascus-other.webp",
+          "tileWidth": 460,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 1
+        }
+      }
     }
   ]
 }
