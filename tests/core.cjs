@@ -60,13 +60,23 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Universal skin-line engine ships without speculative skin lines',()=>{
+test('Blackout five-weapon preview is isolated from published cases and market',()=>{
   const g=boot();
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
-  assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
+  assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),1);
+  assert.equal(g.run('Object.keys(lineCatalogs).length'),1);
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length'));
+  const preview=JSON.parse(g.run('JSON.stringify(lineCatalogs.blackout)'));
+  assert.deepEqual(preview.map(x=>x.weapon),['Desert Eagle','SPAS-12','AWP','RPG-7','FN FAL']);
+  assert(preview.every(x=>x.kind==='skin'&&x.skin==='Blackout'&&x.skinLine==='blackout'));
+  for(const item of preview){
+    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),false);
+    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),true);
+    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('assets/renders/lines/blackout/'));
+    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('data-art-status="universal-skin"'));
+  }
   const neutral=JSON.parse(g.run('JSON.stringify(catalog)'));
-  const blank=Object.create(null);
   const win={LootHubWeaponCatalog:JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog)')),LootHubSkinLineData:{schemaVersion:1,lines:[{
     id:'test-line',name:'Test Line',released:true,multiplier:2,
     palette:['#000000','#ffffff'],casePrice:25
@@ -74,13 +84,21 @@ test('Universal skin-line engine ships without speculative skin lines',()=>{
   vm.runInNewContext(universalRegistry,{window:win,Object,Map,Number,Math});
   const variants=win.LootHubSkinLines.variants(neutral,'test-line');
   assert.equal(variants.length,MASTER_COUNT);
-  for(const variant of variants){
-    assert(win.LootHubSkinLines.isRegistered(variant));
-    assert(win.LootHubSkinLines.imagePath(variant,800).endsWith('.webp'));
-  }
-  const emptyCatalogView=g.run('universalCases()');
-  assert(emptyCatalogView.includes('Arsenal Case'),'Original case was hidden');
-  assert(!emptyCatalogView.includes('Universal skin-line cases'),'Unapproved themed cases visible');
+  assert(variants.every(x=>win.LootHubSkinLines.isRegistered(x)));
+  assert(win.LootHubSkinLines.imagePath(variants[0],800).endsWith('.webp'));
+  const menu=g.run('universalCases()');
+  assert(menu.includes('Arsenal Case'),'Original case was hidden');
+  assert(menu.includes('Blackout Case'),'Test case not available');
+  assert(menu.includes('Open free test case'),'Visual preview opening button missing');
+  const before=g.state();
+  g.run("openPreviewCase('blackout')");
+  assert.equal(g.run('busy'),true);
+  assert.equal(g.run('previewPending.reward.skin'),'Blackout');
+  assert(g.byId('overlay').innerHTML.includes('BLACKOUT'));
+  g.run('finishPreviewCase()');
+  assert.equal(g.run('busy'),false);
+  assert(g.byId('overlay').innerHTML.includes('Open another free test case'));
+  assert.deepEqual(g.state(),before,'Preview must not change real saved inventory or coins');
 });
 test('Arsenal Case matches dynamically registered base weapons and ten owner-approved skins',()=>{
   const g=boot();

@@ -890,7 +890,7 @@ function visualArt(item,context='inventory') {
       ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
       ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
   // Universal finishes are generated from the exact approved neutral silhouette.
-  if(window.LootHubSkinLines?.isRegistered(item)){
+  if(window.LootHubSkinLines?.isRegistered(item)||window.LootHubSkinLines?.isPreview(item)){
     const file=window.LootHubSkinLines.imagePath(item,Number(size));
     return '<div class="art weapon-art master-raster approved-skin universal-skin" data-weapon-model="'+safeAttr(item.weapon)+
       '" data-finish="'+safeAttr(item.skin)+'" data-art-status="universal-skin" data-resolution="'+size+'"'+wearMeta+'>'+
