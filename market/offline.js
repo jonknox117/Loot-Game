@@ -27,6 +27,11 @@ function advance(game,catalog,now=Date.now(),random=Math.random){
   report.elapsedMinutes=Math.floor(elapsed/60000);
   report.processedMinutes=Math.floor(bounded/60000);
   root.LootHubTraders.ensure(game);
+  const auctions=root.LootHubAuctions.advance(game,now);
+  report.auctionBids=auctions.bids;
+  report.auctionSales=auctions.sales.length;
+  report.auctionExpired=auctions.expired;
+  if(auctions.changed)report.changed=true;
   // Retain historical per-listing 120-minute sales cap, even for long absences.
   // Move the checked time forward afterward so skipped days cannot replay on refresh.
   const cappedListings=new Set(game.listings.filter(l=>l&&Number.isFinite(l.checkedAt)&&
@@ -75,18 +80,19 @@ function advance(game,catalog,now=Date.now(),random=Math.random){
   if(refill.changed||countBefore!==m.npcListings.length)report.changed=true;
   if(root.LootHubHaggling.resolveUnavailable(game,now))report.changed=true;
   for(const listing of game.listings.slice(0,100)){
-    if(!root.LootHubHaggling.get(game,'sell',listing.id)){
+    if(listing.mode!=='auction'&&!root.LootHubHaggling.get(game,'sell',listing.id)){
       const offer=root.LootHubHaggling.begin(game,'sell',listing.id,now);
       if(offer){report.newOffers++;report.changed=true;}
     }
   }
   const meaningful=steps>0||report.playerSales.length+report.npcSales+report.expired+
-    report.restocked+report.newOffers>0;
+    report.restocked+report.newOffers+report.auctionBids+report.auctionExpired>0;
   if(meaningful){
     m.lastOfflineReport={at:now,elapsedMinutes:report.elapsedMinutes,
       processedMinutes:report.processedMinutes,playerSales:report.playerSales.length,
       npcSales:report.npcSales,expired:report.expired,restocked:report.restocked,
-      newOffers:report.newOffers};
+      newOffers:report.newOffers,auctionBids:report.auctionBids,
+      auctionSales:report.auctionSales,auctionExpired:report.auctionExpired};
   }
   return report;
 }
