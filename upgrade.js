@@ -927,7 +927,7 @@ function visualArt(item,context='inventory') {
     return '<div class="art weapon-art cartel-crate cartel-case-image cartel-case-'+pose+'" data-art-status="owner-supplied-cartel-case"'+
       ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
       '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Cartel Case, original owner-supplied chest artwork"'+
-      ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+      ' decoding="async" loading="eager"></div>';
   }
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)||window.LootHubSkinLines?.isPreview(item)){
