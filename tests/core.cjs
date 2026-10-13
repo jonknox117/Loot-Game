@@ -617,7 +617,7 @@ test('Earn, buy, open once, and keep the reward across reload',()=>{
   reloaded.run("openCase("+JSON.stringify(caseId)+")");
   assert.equal(reloaded.state().openings,1);
 });
-test('Listing escrow, cancel, and NPC purchase are journaled',()=>{
+test('Trading Desk listings remain escrowed until an active agreement or cancellation',()=>{
   const g=boot();
   g.run('for(let i=0;i<25;i++)clickEarn();buy();openCase(s.items[0].id);finishOpening()');
   g.byId('listPrice').value='1';
@@ -631,8 +631,10 @@ test('Listing escrow, cancel, and NPC purchase are journaled',()=>{
   again.byId('listPrice').value='1';
   again.run('submitListing(s.items[0].id)');
   again.run('s.listings[0].checkedAt=Date.now()-61000;marketTick()');
-  assert.equal(again.state().listings.length,0);
-  assert.equal(again.state().coins,1);
+  assert.equal(again.state().listings.length,1,'Desk listings must not sell passively');
+  assert.equal(again.state().coins,0);
+  again.run('cancelListing(s.listings[0].id)');
+  assert.equal(again.state().items.length,1);
   assert(again.state().ledger.length>=5);
 });
 test('Corrupted primary recovers from last validated snapshot',()=>{
@@ -710,12 +712,19 @@ test('Market transaction helper rejects a duplicate escrow settlement',()=>{
   assert.equal(g.state().listings.length,1);
   const listingId='listing-'+id;
   assert.equal(g.run("window.LootHubMarketTransactions.createListing(s,"+JSON.stringify(id)+",30,Date.now())"),null);
-  g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+")");
-  assert.equal(g.state().coins,28);
-  assert.equal(g.state().sales,28);
+  assert.equal(g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+")"),null,
+    'Trading Desk cannot settle without an accepted buyer offer');
+  g.run("window.LootHubHaggling.begin(s,'sell',"+JSON.stringify(listingId)+")");
+  g.run("window.LootHubHaggling.acceptCounter(s,'sell',"+JSON.stringify(listingId)+")");
+  const price=g.run("window.LootHubHaggling.get(s,'sell',"+JSON.stringify(listingId)+").agreedPrice");
+  const result=JSON.parse(g.run("JSON.stringify(window.LootHubMarketTransactions.settleListing(s,"+
+    JSON.stringify(listingId)+","+price+"))"));
+  assert(result&&result.net===Math.max(1,Math.floor(price*.95)));
+  assert.equal(g.state().coins,result.net);
+  assert.equal(g.state().sales,result.net);
   assert.equal(g.state().listings.length,0);
-  assert.equal(g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+")"),null);
-  assert.equal(g.state().coins,28);
+  assert.equal(g.run("window.LootHubMarketTransactions.settleListing(s,"+JSON.stringify(listingId)+","+price+")"),null);
+  assert.equal(g.state().coins,result.net);
 });
 test('Universal listing quote uses the exact 5% success-only fee',()=>{
   const g=boot();
@@ -1235,14 +1244,14 @@ test('Completed NPC item purchases register unique trade activity and persist af
   assert.equal(g.state().market.priceHistory[id].volume,1,'No duplicate sale signal');
   assert.deepEqual(boot(g.store).state().market.priceHistory[id],entry);
 });
-test('Settling an NPC purchase from a player-owned listing adds a sale signal once',()=>{
+test('Legacy pre-upgrade listings still settle once and record their sale signal',()=>{
   const g=boot();
   g.run('for(let i=0;i<25;i++)clickEarn();buy()');
   g.byId('listPrice').value='30';
   g.run('submitListing(s.items[0].id)');
   const item=g.state().listings[0].item;
   const id=g.run('window.LootHubEconomy.key('+JSON.stringify(item)+')');
-  g.run('s.listings[0].checkedAt=Date.now()-60000');
+  g.run('s.listings[0].mode="legacy";s.listings[0].checkedAt=Date.now()-60000');
   g.run('window.LootHubMarketSimulation.advanceListings(s,Date.now(),()=>0);save()');
   const state=g.state();
   assert.equal(state.listings.length,0);
