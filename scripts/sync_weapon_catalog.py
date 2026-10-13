@@ -29,7 +29,10 @@ def catalog_from_manifest():
             raise ValueError('Blank or duplicate weapon name: ' + repr(name))
         if not isinstance(slug, str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', slug) or slug in slugs:
             raise ValueError('Invalid or duplicate weapon slug: ' + repr(slug))
-        if item['id'] != slug + '--base' or item['id'] in ids or item.get('kind') != 'weapon':
+        # Existing original IDs do not always equal their art slugs
+        # (e.g. 12-gauge-pump-shotgun -> pump-shotgun). Preserve save IDs.
+        if (not isinstance(item['id'], str) or not item['id'].endswith('--base') or
+            item['id'] in ids or item.get('kind') != 'weapon'):
             raise ValueError('Weapon ID/kind mismatch for ' + name)
         if type(item['tier']) is not int or not 0 <= item['tier'] <= 4:
             raise ValueError('Invalid rarity tier for ' + name)
