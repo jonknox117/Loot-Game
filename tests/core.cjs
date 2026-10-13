@@ -2662,5 +2662,114 @@ test('0.6.1 failed local storage write rolls back entire reward and claim receip
  assert.equal(store.getItem(KEY),saveBefore);
 });
 
+
+test('0.6.2 NPC barter quotes exact items, rejects insufficient and cross-seller offers',()=>{
+ const g=boot();
+ g.run('s.coins=2000;s.spent=0;'+
+  's.items.push({id:"trade-my-rare",kind:"skin",weapon:"MAC-10",skin:"Red Devil",tier:4,base:1800,wearGrade:0},'+
+  '{id:"trade-my-pistol",kind:"weapon",weapon:"Glock-18",tier:0,base:30,wearGrade:2});'+
+  's.market.npcListings.push({id:"trade-npc-a",seller:"CaseRunner",ask:700,expiresAt:Date.now()+9999999,'+
+   'item:{id:"trade-reward-a",kind:"skin",weapon:"AK-47",skin:"Cartel",tier:2,base:350,wearGrade:1}},'+
+  '{id:"trade-npc-b",seller:"CaseRunner",ask:30,expiresAt:Date.now()+9999999,'+
+   'item:{id:"trade-reward-b",kind:"weapon",weapon:"M4A4",tier:2,base:250,wearGrade:2}});save()');
+ const baseline=JSON.stringify(g.state());
+ assert.equal(g.run('window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a"],[],0)'),null);
+ assert.equal(g.run('window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a"],["bad-id"],0)'),null);
+ assert.equal(g.run('window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a","trade-npc-a"],["trade-my-rare"],0)'),null);
+ assert.equal(g.run('window.LootHubBarter.quote(s,"OtherTrader",["trade-npc-a"],["trade-my-rare"],0)'),null);
+ assert.equal(g.run('window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a"],["trade-my-pistol"],0).accepted'),false);
+ assert.equal(g.run('window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a"],["trade-my-rare"],0).accepted'),true);
+ assert.equal(JSON.stringify(g.state()),baseline,'Preview must never transfer items or wallet');
+ const q=JSON.parse(g.run('JSON.stringify(window.LootHubBarter.quote(s,"CaseRunner",["trade-npc-a","trade-npc-b"],["trade-my-rare"],50))'));
+ assert.equal(q.listingItems.length,2);assert.equal(q.offeredItems.length,1);
+ assert.equal(q.coins,50);assert.equal(q.accepted,true);
+});
+
+test('0.6.2 settled barter exchanges exact saved IDs, wear and collection credit',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.coins=1500;s.items.push({id:"skin-to-swap",kind:"skin",weapon:"MAC-10",skin:"Red Devil",tier:4,base:1800,wearGrade:0});'+
+  's.market.npcListings.push({id:"swap-listing",seller:"CaseRunner",ask:600,expiresAt:Date.now()+9999999,'+
+  'item:{id:"swap-reward",kind:"skin",weapon:"AK-47",skin:"Cartel",tier:2,base:350,wearGrade:4}});save()');
+ g.run('openBarter("swap-listing")');
+ assert(g.byId('overlay').innerHTML.includes('Build a skin trade'));
+ g.run('barterToggle("items","skin-to-swap")');
+ const prior=g.state();
+ assert.equal(g.run('confirmBarter()'),true);
+ const after=g.state();
+ assert(!after.items.some(x=>x.id==='skin-to-swap'));
+ assert(!after.market.npcListings.some(x=>x.id==='swap-listing'));
+ assert.equal(after.items.find(x=>x.id==='swap-reward').wearGrade,4);
+ assert.equal(after.coins,prior.coins);
+ assert.equal(after.market.barterHistory.at(-1).seller,'CaseRunner');
+ assert(after.collections.progress['arsenal-v1'].seen.includes('mac-10--red-devil'),
+  'Offered skin must count as discovered forever after trading away');
+ assert(after.collections.progress['cartel-v1'].seen.includes('ak-47--cartel'),
+  'Received exact skin must enter collection progress');
+ assert.equal(g.run('confirmBarter()'),false,'Cannot re-settle a completed offer');
+ const reload=boot(store);
+ assert(reload.state().items.some(x=>x.id==='swap-reward'&&x.wearGrade===4));
+ assert(!reload.state().items.some(x=>x.id==='skin-to-swap'));
+ assert.equal(reload.state().market.barterHistory.length,after.market.barterHistory.length);
+});
+
+test('0.6.2 bundled case purchase supports 1–5 sealed, 1–5 direct, accurate prices',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.coins=550;s.spent=0;save();document.getElementById("multi-qty-cartel").value="5"');
+ assert.equal(g.run('buyCaseBundle("cartel")'),true);
+ let after=g.state();
+ assert.equal(after.coins,175);assert.equal(after.spent,375);
+ assert.equal(after.openings,0);assert.equal(after.items.filter(x=>x.kind==='case'&&x.caseId==='cartel').length,5);
+ assert(after.items.every(x=>x.paid===75));
+ assert.equal(new Set(after.items.map(x=>x.id)).size,5);
+ assert(g.byId('overlay').innerHTML.includes('5 sealed cases purchased'));
+ assert(g.run('cases()').includes('Buy &amp; open selected cases'));
+ assert(g.run('cartelSection()').includes('Buy sealed cases'));
+ assert(g.run('home()').includes('Buy &amp; open selected cases'));
+ g.run('closeDialog()');
+ g.run('showMultiPicker(recentCaseBundleIds)');
+ assert(g.byId('overlay').innerHTML.includes('5 / 5 selected'));
+ g.run('startMultiOpen()');
+ assert.equal(g.state().openings,5);
+ assert(g.byId('overlay').innerHTML.includes('5 CASES'));
+ g.run('finishMultiOpening()');
+ assert.equal(g.state().items.filter(x=>x.kind==='case').length,0);
+ assert.equal(boot(store).state().openings,5);
+ const h=boot();
+ h.run('s.coins=130;s.spent=0;document.getElementById("multi-qty-arsenal").value="5";save()');
+ assert.equal(h.run('buyAndMultiOpen("arsenal")'),true);
+ assert.equal(h.state().coins,5);assert.equal(h.state().spent,125);assert.equal(h.state().openings,5);
+ h.run('finishMultiOpening()');
+ const noMoney=JSON.stringify(h.state());
+ h.run('document.getElementById("multi-qty-cartel").value="5"');
+ assert.equal(h.run('buyCaseBundle("cartel")'),false);
+ assert.equal(JSON.stringify(h.state()),noMoney);
+ assert(h.alerts.some(x=>x.includes('Not enough coins')));
+});
+
+test('0.6.2 wallet and items roll back if barter or multi-open cannot be saved',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.coins=500;s.items.push({id:"failswap",kind:"skin",weapon:"MAC-10",skin:"Red Devil",tier:4,base:1800,wearGrade:0});'+
+  's.market.npcListings.push({id:"failnpc",seller:"CaseRunner",ask:500,expiresAt:Date.now()+9999999,'+
+  'item:{id:"failreward",kind:"skin",weapon:"AK-47",skin:"Cartel",tier:2,base:350,wearGrade:0}});save()');
+ const before=JSON.stringify(g.state()),onDisk=store.getItem(KEY);
+ const setter=store.setItem.bind(store);
+ store.setItem=(key,value)=>{if(key===KEY)throw Error('Storage quota');setter(key,value)};
+ g.run('openBarter("failnpc");barterToggle("items","failswap")');
+ assert.equal(g.run('confirmBarter()'),false);
+ assert.deepEqual(g.state().items,JSON.parse(before).items);
+ assert.equal(g.state().coins,500);
+ assert.equal(store.getItem(KEY),onDisk);
+ assert.equal(g.state().market.npcListings.some(x=>x.id==='failnpc'),true);
+ const h=boot(new LocalStore());
+ h.run('s.coins=400;document.getElementById("multi-qty-cartel").value="5";save()');
+ const base=JSON.stringify(h.state()),previous=h.store.getItem(KEY),saver=h.store.setItem.bind(h.store);
+ h.store.setItem=(k,v)=>{if(k===KEY)throw Error('Storage quota');saver(k,v)};
+ assert.equal(h.run('buyAndMultiOpen("cartel")'),false);
+ assert.deepEqual(h.state().items,JSON.parse(base).items);
+ assert.equal(h.state().coins,400);
+ assert.equal(h.state().openings,0);
+ assert.equal(h.store.getItem(KEY),previous);
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');
