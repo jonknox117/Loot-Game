@@ -181,14 +181,14 @@ function beginMultiSpin(result){
   '</div><p class="muted tiny spin-note">All '+result.rewards.length+
   ' rewards are already saved. Skipping cannot change the results.</p>'+
   '<button class="spin-skip" onclick="finishMultiOpening()">Reveal all</button></div>');
- const reduced=window.LootHubFX.motionReduced(),duration=reduced?0:5300;
+ const reduced=window.LootHubFX.motionReduced(),duration=reduced?0:6500;
  for(let i=0;i<result.rewards.length;i++){
   const track=document.getElementById('multi-track-'+i);
   const view=track.parentElement;
   const tileWidth=track.children?.[0]?.getBoundingClientRect?.().width||100;
   const target=Math.round((view.clientWidth||390)/2-(10*(tileWidth+6)+tileWidth/2));
   track.style.transition=reduced?'none':
-   'transform '+(4.6+i*.13).toFixed(2)+'s cubic-bezier(.10,.77,.12,1)';
+   'transform 6.5s cubic-bezier(.09,.75,.12,1)';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
    track.style.transform='translateX('+target+'px)';
   }));
