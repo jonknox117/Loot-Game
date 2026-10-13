@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-time v0.7.3 repair of clipped 400px Karambit Kryptonite artwork.
 
-Only adds a narrow transparent safety margin to its existing 400px derivative.
+Regenerates just the 400px derivative from the approved 1600px master, with padding.
 The approved 800px/1600px originals, skin design and all game data are unchanged.
 Idempotent: already transparent corners are not touched.
 """
@@ -39,8 +39,29 @@ def main():
     if max(corner_alpha) < 32:
         print("Kryptonite 400px artwork already has transparent corners; unchanged.")
         return
-    # Reframe the existing approved 400px pixels. No redraw, crop or color shifts.
-    scaled = image.resize((round(w * .94), round(h * .94)), Image.Resampling.LANCZOS)
+    # Derive the thumbnail from the approved 1600px inspection master, not
+    # the previously clipped 400px export; keeps exactly the same silhouette.
+    full = re.search(r'("1600"\s*:\s*)(.*?)(?=\s*}\s*;)', content, re.S)
+    if full is None:
+        raise ValueError("Cannot locate the approved 1600px render")
+    chunks = re.findall(r'"([A-Za-z0-9+/=]+)"', full.group(2))
+    if not chunks:
+        raise ValueError("Cannot decode 1600px reference")
+    with Image.open(io.BytesIO(base64.b64decode("".join(chunks), validate=True))) as reference:
+        if reference.format != "WEBP" or max(reference.size) != 1600:
+            raise ValueError("Invalid high-resolution original")
+        high_res = reference.convert("RGBA")
+    alpha_mask = high_res.getchannel("A").point(lambda v: 255 if v > 8 else 0)
+    bbox = alpha_mask.getbbox()
+    if bbox is None:
+        raise ValueError("1600px reference contains no visible artwork")
+    cropped = high_res.crop(bbox)
+    margin_x, margin_y = max(3, round(w * .015)), max(2, round(h * .015))
+    limit_w, limit_h = w - 2 * margin_x, h - 2 * margin_y
+    factor = min(limit_w/cropped.width, limit_h/cropped.height)
+    scaled = cropped.resize((max(1, round(cropped.width * factor)),
+                             max(1, round(cropped.height * factor))),
+                            Image.Resampling.LANCZOS)
     canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     canvas.alpha_composite(scaled, ((w-scaled.width)//2, (h-scaled.height)//2))
     result = io.BytesIO()
@@ -48,7 +69,7 @@ def main():
     encoded = base64.b64encode(result.getvalue()).decode("ascii")
     updated = content[:match.start(2)] + '"' + encoded + '"' + content[match.end(2):]
     FILE.write_text(updated, encoding="utf-8")
-    print(f"Reframed Kryptonite 400px thumbnail with a 3% transparent safety margin "
+    print(f"Reframed Kryptonite 400px thumbnail from 1600px master with a transparent margin "
           f"({w}x{h}); kept full-resolution originals untouched.")
 
 
