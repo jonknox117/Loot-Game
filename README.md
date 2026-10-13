@@ -1,5 +1,23 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Arsenal Case — original owner-supplied case art
+
+The **Arsenal Case** uses the user's two original case photographs, not the former
+placeholder SVG. The closed case is displayed on Home, Cases, in owned inventory,
+in marketplace cards and in item inspection. During opening the matching **open**
+case sits above the reel; when the saved reward is revealed, the weapon floats
+visually over the open case.
+
+The photographed designs and lettering were preserved. Only the white source
+background was removed and three transparent WebP exports were made per pose:
+400px for small/reel contexts, 800px for normal inventory/home, and **native
+1254px** for inspection, spin and prize reveal. Files live in
+`assets/cases/arsenal-case-{closed,open}-{400,800,1254}.webp` and are loaded as
+normal image resources to avoid long embedded base64 payloads. These images do
+not alter any weapon, skin, case price, rarity, odds, item ID, existing save or
+material-aware wear mapping. **Cartel retains its own dedicated case artwork.**
+
+
 ## Cartel Case — five exclusive original skins
 
 The live **Cartel Case** is separate from the existing 25-weapon Arsenal Case.
