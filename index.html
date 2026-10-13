@@ -21,7 +21,7 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 .tile{padding:8px 4px;font-size:11px}.tile .weapon-art{height:78px;width:100%;border-radius:6px}
 .reveal-art{padding:12px!important}.reveal-art .weapon-art{height:210px;width:100%;background:radial-gradient(circle,#263d58,#101a28 75%)}
 @media(max-width:600px){.reveal-art .weapon-art{height:155px}.reel{height:125px}.tile .weapon-art{height:74px}}
-</style><link rel="stylesheet" href="./design.css"></head><body><div class="shell"><header class="top"><div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.6.2 · QoL</small></div><div class="wallet">◈ <span id="wallet">0</span> coins<div id="saveStatus" class="save-status">● Checking save</div></div><button id="soundToggle" class="sound-toggle" aria-label="Toggle interface sounds" aria-pressed="true" onclick="toggleSound()" type="button">Sound: On</button></header><nav class="nav" id="nav"></nav><main class="layout"><div id="main"></div><aside><section class="panel"><b>PORTFOLIO</b><div id="stats"></div></section><section class="panel"><b>ACTIVITY</b><div class="feed" id="feed"></div></section></aside></main><footer>Fictional single-player economy · No real-money purchases, wagering, or cash-out · Progress saves on this device.</footer></div><div id="overlay"></div>
+</style><link rel="stylesheet" href="./design.css"></head><body><div class="shell"><header class="top"><div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.6.3 · Spec Ops</small></div><div class="wallet">◈ <span id="wallet">0</span> coins<div id="saveStatus" class="save-status">● Checking save</div></div><button id="soundToggle" class="sound-toggle" aria-label="Toggle interface sounds" aria-pressed="true" onclick="toggleSound()" type="button">Sound: On</button></header><nav class="nav" id="nav"></nav><main class="layout"><div id="main"></div><aside><section class="panel"><b>PORTFOLIO</b><div id="stats"></div></section><section class="panel"><b>ACTIVITY</b><div class="feed" id="feed"></div></section></aside></main><footer>Fictional single-player economy · No real-money purchases, wagering, or cash-out · Progress saves on this device.</footer></div><div id="overlay"></div>
 <script src="./assets/weapon-masters.js"></script>
 <script src="./assets/neutral-art/butterfly-knife.js"></script>
 <script src="./assets/neutral-art/pump-shotgun.js"></script>
@@ -55,6 +55,7 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 <script src="./assets/weapon-catalog.js"></script>
 <script src="./assets/skin-lines/line-data.js"></script>
 <script src="./assets/cartel-case.js"></script>
+<script src="./assets/spec-ops-case.js"></script>
 <script src="./assets/collections.js"></script>
 <script src="./assets/skins/ak-47--cartel.js"></script>
 <script src="./assets/skins/tactical-machete--cartel.js"></script>
@@ -98,17 +99,19 @@ const approvedSkins=[['MAC-10','Red Devil',4,1800,'🔫'],
 const cartelCase=window.LootHubCartelCase;
 const cartelSkins=cartelCase.items.map(x=>[x.weapon,x.skin,x.tier,x.base,x.emoji]);
 const cartelCatalog=cartelCase.items.map(x=>({...x}));
+const specOpsCase=window.LootHubSpecOpsCase;
+const specOpsCatalog=specOpsCase.items.map(x=>({...x}));
 const dropCatalog=catalog.map(a=>({kind:'weapon',weapon:a[0],tier:a[1],base:a[2],emoji:a[3]})).concat(approvedSkins.map(a=>({kind:'skin',weapon:a[0],skin:a[1],tier:a[2],base:a[3],emoji:a[4]})));
 const universalSkinLines=window.LootHubSkinLines;
 const allSkinLines=[...universalSkinLines.lines,...universalSkinLines.previewLines];
 const lineCatalogs=Object.fromEntries(allSkinLines.map(line=>[line.id,universalSkinLines.variants(catalog,line.id)]));
-const allMarketCatalog=dropCatalog.concat(cartelCatalog,...universalSkinLines.lines.map(line=>lineCatalogs[line.id]));
+const allMarketCatalog=dropCatalog.concat(cartelCatalog,specOpsCatalog,...universalSkinLines.lines.map(line=>lineCatalogs[line.id]));
 let s=loadGame(KEY);if(!s||!Array.isArray(s.items))s={coins:0,items:[],history:[],earned:0,spent:0,sales:0,rep:0,openings:0,serial:0,offers:{},tab:'Home'};if(!Array.isArray(s.listings))s.listings=[];if(!Array.isArray(s.ledger))s.ledger=[];if(!s.preferences)s.preferences={fastOpen:false};window.LootHubMarketCore.ensureMarketState(s);window.LootHubWear.ensureGame(s);window.LootHubFX.setMuted(s.preferences.fxMuted===true);
 let tab=s.tab||'Home',busy=false, pending=null; if(s.pendingReveal&&!recoveryRequired){s.pendingReveal=null;savePendingRecovery()} function savePendingRecovery(){localStorage.setItem(KEY,JSON.stringify(s))}
-const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?(x.caseId==='cartel'?'Sealed Cartel Case':x.caseId&&universalSkinLines.getLine(x.caseId)?'Sealed '+universalSkinLines.getLine(x.caseId).name+' Case':'Sealed Arsenal Case'):x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=(caseId='arsenal',paid=25)=>({id:id(),kind:'case',paid,...(caseId==='arsenal'?{}:{caseId})}), rng=n=>Math.floor(Math.random()*n);
+const id=()=>String(Date.now())+'-'+(++s.serial), money=n=>Math.round(n).toLocaleString(),save=()=>persistGame(s,tab),log=t=>{recordActivity(s,t);save()},itemName=x=>x.kind==='case'?(x.caseId==='cartel'?'Sealed Cartel Case':x.caseId==='spec-ops'?'Sealed Spec Ops Case':x.caseId&&universalSkinLines.getLine(x.caseId)?'Sealed '+universalSkinLines.getLine(x.caseId).name+' Case':'Sealed Arsenal Case'):x.kind==='skin'?x.weapon+' | '+x.skin:x.weapon, rarity=x=>x.kind==='case'?'Rare':tiers[x.tier],cls=t=>t.replace(/ /g,''),estimated=x=>window.LootHubMarketCore.estimated(x), caseItem=(caseId='arsenal',paid=25)=>({id:id(),kind:'case',paid,...(caseId==='arsenal'?{}:{caseId})}), rng=n=>Math.floor(Math.random()*n);
 function roll(caseId='arsenal'){
-  if(caseId!=='arsenal'&&caseId!=='cartel'&&universalSkinLines.getLine(caseId)?.released!==true)throw Error('Unreleased case '+caseId);
-  const lootPool=caseId==='arsenal'?dropCatalog:caseId==='cartel'?cartelCatalog:lineCatalogs[caseId];
+  if(caseId!=='arsenal'&&caseId!=='cartel'&&caseId!=='spec-ops'&&universalSkinLines.getLine(caseId)?.released!==true)throw Error('Unreleased case '+caseId);
+  const lootPool=caseId==='arsenal'?dropCatalog:caseId==='cartel'?cartelCatalog:caseId==='spec-ops'?specOpsCatalog:lineCatalogs[caseId];
   if(!lootPool||!lootPool.length)throw Error('Unregistered case '+caseId);
   // A themed case may not have a weapon at every rarity. Redistribute the
   // original published tier weights proportionally across populated tiers.
@@ -121,7 +124,7 @@ function roll(caseId='arsenal'){
   for(const bucket of buckets){
     if(r<bucket.weight){
       const item={id:id(),...bucket.pool[rng(bucket.pool.length)],
-        paid:caseId==='arsenal'?25:caseId==='cartel'?cartelCase.casePrice:universalSkinLines.getLine(caseId).casePrice};
+        paid:caseId==='arsenal'?25:caseId==='cartel'?cartelCase.casePrice:caseId==='spec-ops'?specOpsCase.casePrice:universalSkinLines.getLine(caseId).casePrice};
       window.LootHubWear.assignRolled(item,Math.random);
       return item;
     }
@@ -170,8 +173,28 @@ function previewCartelCase(){
 function buyCartelCase(){
  if(purchase(cartelCase.casePrice,cartelCase.id))inspect(s.items[s.items.length-1].id);
 }
+function specOpsSection(){
+ return '<section class="panel cartel-section"><div class="cartel-showcase">'+
+  '<div class="cartel-case-art">'+visualArt({kind:'case',caseId:'spec-ops'})+'</div>'+
+  '<div><div class="section-eyebrow">NEW COLLECTION · 003</div><h2>Spec Ops Case</h2>'+
+  '<p class="muted">Five original black Special Operations finishes. One exclusive skin at every rarity.</p>'+
+  '<div class="price">'+specOpsCase.casePrice+' coins</div>'+
+  '<div class="row">'+
+  '<button onclick="previewSpec OpsCase()">View five skins</button></div>'+multiPurchaseControl('spec-ops')+'</div></div>'+
+  '<div class="cartel-odds">'+specOpsCatalog.map(x=>
+   '<div class="cartel-reward"><div class="tag '+cls(tiers[x.tier])+'">'+tiers[x.tier]+' · '+odds[x.tier]+'%</div>'+
+   visualArt(x)+'<strong>'+escapeHTML(x.weapon+' | Spec Ops')+'</strong></div>').join('')+'</div></section>';
+}
+function previewSpecOpsCase(){
+ dialog('<div class="section-eyebrow">FIVE EXCLUSIVE FINISHES</div><h2>Spec Ops Case · '+specOpsCase.casePrice+' coins</h2>'+
+  '<p class="muted">One skin per rarity. Published tier odds are unchanged.</p><div class="cartel-collection">'+
+  specOpsCatalog.map(x=>'<div class="item"><div class="tag '+cls(tiers[x.tier])+'">'+tiers[x.tier]+' · '+
+   odds[x.tier]+'%</div>'+visualArt(x,'inspect')+'<h4>'+escapeHTML(x.weapon+' | Spec Ops')+'</h4></div>').join('')+
+  '</div><div class="row"><button class="primary" onclick="closeDialog();go(\'Cases\')">Shop Spec Ops Case · '+
+  specOpsCase.casePrice+' coins</button><button onclick="closeDialog()">Close</button></div>');
+}
 function universalCases(){
-  if(!allSkinLines.length)return collectionEntry()+multiOpenEntry()+cartelSection()+cases();
+  if(!allSkinLines.length)return collectionEntry()+multiOpenEntry()+cartelSection()+specOpsSection()+cases();
   const extra=allSkinLines.map(line=>{
     const variants=lineCatalogs[line.id]||[];
     if(!variants.length)return '';
@@ -186,7 +209,7 @@ function universalCases(){
       multiPurchaseControl(line.id))+
       '</div>';
   }).join('');
-  return collectionEntry()+multiOpenEntry()+cartelSection()+cases()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
+  return collectionEntry()+multiOpenEntry()+cartelSection()+specOpsSection()+cases()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
     '</h2><p class="muted">Buy a sealed themed case to collect its skins. Drop chances follow the published rarity weights, normalized over rarities available in that case.</p>'+
     '<div class="cards">'+extra+'</div></section>';
 }
@@ -247,8 +270,8 @@ function openCase(k){
  const owned=s.items.find(v=>v.id===k);
  if(!owned||owned.kind!=='case')return;
  const caseId=owned.caseId||'arsenal';
- if(caseId!=='arsenal'&&caseId!=='cartel'&&universalSkinLines.getLine(caseId)?.released!==true)return;
- const reelPool=caseId==='arsenal'?dropCatalog:caseId==='cartel'?cartelCatalog:lineCatalogs[caseId];
+ if(caseId!=='arsenal'&&caseId!=='cartel'&&caseId!=='spec-ops'&&universalSkinLines.getLine(caseId)?.released!==true)return;
+ const reelPool=caseId==='arsenal'?dropCatalog:caseId==='cartel'?cartelCatalog:caseId==='spec-ops'?specOpsCatalog:lineCatalogs[caseId];
  if(!reelPool?.length)return;
  // Commit the outcome before animation: skip, refresh and sound never reroll prizes.
  busy=true;
@@ -270,7 +293,7 @@ function openCase(k){
   return '<div class="tile" data-reel-index="'+i+'" style="border-color:'+colors[entry.tier]+';--tile-accent:'+colors[entry.tier]+'">'+
    visualArt(sample,'reel')+'<span class="tile-name">'+escapeHTML(entry.weapon)+'</span></div>';
  }).join('');
- dialog('<div class="reel-header"><span class="spin-eyebrow">'+(caseId==='cartel'?'CARTEL':'ARSENAL')+' • REWARD DROP</span><span class="spin-pulse">OPENING</span></div>'+
+ dialog('<div class="reel-header"><span class="spin-eyebrow">'+(caseId==='cartel'?'CARTEL':caseId==='spec-ops'?'SPEC OPS':'ARSENAL')+' • REWARD DROP</span><span class="spin-pulse">OPENING</span></div>'+
   '<h2 class="spin-title">Opening '+escapeHTML(itemName(owned))+'</h2>'+
   '<div class="reel-stage"><div class="reel" aria-label="Case opening reel"><div class="pointer"></div>'+
   '<div class="track" id="track">'+tiles+'</div></div></div>'+
@@ -297,8 +320,8 @@ function finishOpening(){
   '<div class="reward-sheen" aria-hidden="true"></div>'+
   '<div class="reward-kicker">NEW ITEM ACQUIRED</div>'+
   '<div class="tag '+tierClass+'">'+grade+'</div>'+
-  ((caseId==='arsenal'||caseId==='cartel')?
-   '<div class="big reveal-art reward-art arsenal-reward-display'+(caseId==='cartel'?' cartel-reward-display':'')+'">'+
+  ((caseId==='arsenal'||caseId==='cartel'||caseId==='spec-ops')?
+   '<div class="big reveal-art reward-art arsenal-reward-display'+(caseId==='cartel'?' cartel-reward-display':caseId==='spec-ops'?' spec-ops-reward-display':'')+'">'+
    '<div class="arsenal-reward-weapon">'+visualArt(reward,'inspect')+'</div>'+
    '<div class="arsenal-reward-crate">'+visualArt({kind:'case',caseId},'open')+'</div></div>':
    '<div class="big reveal-art reward-art">'+visualArt(reward,'inspect')+'</div>')+

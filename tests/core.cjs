@@ -22,6 +22,8 @@ assert(html.includes('<script src="./market/multi-open.js"></script>'));
 assert(html.includes('<script src="./market/multi-open-ui.js"></script>'));
 
 const cartelData=fs.readFileSync(path.join(root,'assets/cartel-case.js'),'utf8');
+const specOpsData=fs.readFileSync(path.join(root,'assets/spec-ops-case.js'),'utf8');
+assert(html.includes('<script src="./assets/spec-ops-case.js"></script>'));
 assert(html.includes('<script src="./assets/cartel-case.js"></script>'));
 for(const slug of ['ak-47','rpg-7','tactical-machete','12-gauge-pump-shotgun','desert-eagle'])assert(html.includes('<script src="./assets/skins/'+slug+'--cartel.js"></script>'));
 
@@ -41,7 +43,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+specOpsData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -82,7 +84,7 @@ test('Procedural cases are retired and material maps remain wear-only',()=>{
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
   assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),0);
   assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
-  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+5);
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+10);
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
   const menu=g.run('universalCases()');
   assert(menu.includes('Arsenal Case'));
@@ -166,7 +168,7 @@ test('Arsenal Case matches dynamically registered base weapons and ten owner-app
   const cat=JSON.parse(g.run('JSON.stringify(catalog)'));
   assert.equal(cat.length,MASTER_COUNT);
   assert.equal(manifest.items.length,MASTER_COUNT);
-  assert.equal(manifest.approvedSkins.length,15);
+  assert.equal(manifest.approvedSkins.length,20);
   assert.equal(manifest.approvedSkins[0].displayName,'MAC-10 | Red Devil');
   assert(manifest.catalogMode.includes('base-weapon-models'),'Catalog mode must describe base models');
   const weaponNames=new Set();
@@ -442,7 +444,7 @@ test('Red Devil is rendered and saved as a skin, not a replacement MAC-10 master
 });
 test('All four newly approved cosmetics have real WebP art and survive save migration',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.skinPipeline.activeSkinCount,15);
+  assert.equal(manifest.skinPipeline.activeSkinCount,20);
   const added=manifest.approvedSkins.slice(1,5), images={};
   assert.equal(added.length,4);
   for(const entry of added){
@@ -485,8 +487,8 @@ test('All four newly approved cosmetics have real WebP art and survive save migr
 
 test('October five original skins load with valid transparent WebP in every view and are obtainable and tradeable',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.approvedSkins.length,15);
-  assert.equal(manifest.skinPipeline.activeSkinCount,15);
+  assert.equal(manifest.approvedSkins.length,20);
+  assert.equal(manifest.skinPipeline.activeSkinCount,20);
   assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
   assert.deepEqual(JSON.parse(boot().run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
   const added=manifest.approvedSkins.slice(5,10);
@@ -2273,7 +2275,7 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.equal(g.run('cartelCase.casePrice'),75);
  assert.equal(g.run('cartelCatalog.length'),5);
  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+10,'The Arsenal drop pool must not be expanded');
- assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+15,'Cartel skins enter market listings');
+ assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+20,'Cartel and Spec Ops skins enter market listings');
  assert(g.run('universalCases()').includes('Buy Cartel Case'));
  assert(g.run('universalCases()').includes('View five skins'));
  assert(g.run('visualArt({kind:"case",caseId:"cartel"})').includes('cartel-crate'));
@@ -2593,13 +2595,15 @@ test('0.6.0 existing single-case workflow and controls remain available',()=>{
 });
 
 
-test('0.6.1 frozen collection registry identifies exactly 35 Arsenal and 5 Cartel approved designs',()=>{
+test('0.6.3 frozen collection registry includes five Spec Ops designs',()=>{
  const g=boot();
  const definitions=JSON.parse(g.run('JSON.stringify(window.LootHubCollections.definitions)'));
- assert.equal(definitions.length,2);
- const [arsenal,cartel]=definitions;
+ assert.equal(definitions.length,3);
+ const [arsenal,cartel,specOps]=definitions;
  assert.deepEqual([arsenal.id,arsenal.items.length,arsenal.reward],['arsenal-v1',35,25]);
  assert.deepEqual([cartel.id,cartel.items.length,cartel.reward],['cartel-v1',5,25]);
+ assert.deepEqual([specOps.id,specOps.items.length,specOps.reward],['spec-ops-v1',5,25]);
+ assert(specOps.items.every(x=>x.kind==='skin'&&x.skin==='Spec Ops'));
  assert.equal(arsenal.items.filter(x=>x.kind==='weapon').length,25);
  assert.equal(arsenal.items.filter(x=>x.kind==='skin').length,10);
  assert(cartel.items.every(x=>x.kind==='skin'&&x.skin==='Cartel'));
@@ -2614,6 +2618,7 @@ test('0.6.1 frozen collection registry identifies exactly 35 Arsenal and 5 Carte
  assert.equal(g.run('window.LootHubCollections.identity({kind:"case",weapon:"RPG-7"})'),null);
  assert.equal(g.run('window.LootHubCollections.identity({kind:"skin",weapon:"RPG-7",skin:"Blackout"})'),null);
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"cartel",paid:0})'),75);
+ assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"spec-ops",paid:0})'),75);
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",paid:0})'),25);
 });
 test('0.6.1 discovery survives duplicates, ownership transfer, grading and reload',()=>{
@@ -2715,6 +2720,48 @@ test('0.6.1 failed local storage write rolls back entire reward and claim receip
  assert.equal(g.state().serial,baseline.serial);
  assert.equal(g.state().history.length,baseline.history.length);
  assert.equal(store.getItem(KEY),saveBefore);
+});
+
+
+test('Spec Ops release has original assets, five fixed rarities, trading values and multi-opening',()=>{
+ const g=boot();
+ const variants=JSON.parse(g.run('JSON.stringify(specOpsCatalog.map(x=>[x.weapon,x.tier,x.base]))'));
+ assert.deepEqual(variants,[['Glock-18',0,40],['MP5',1,110],['SPAS-12',2,350],['AWP',3,1050],['Karambit',4,4200]]);
+ assert.equal(g.run('specOpsCase.casePrice'),75);
+ assert(g.run('universalCases()').includes('Spec Ops Case'));
+ assert(g.run('visualArt({kind:"case",caseId:"spec-ops"})').includes('spec-ops-case-closed-800.webp'));
+ assert(g.run('visualArt({kind:"case",caseId:"spec-ops"},"open")').includes('spec-ops-case-open-1254.webp'));
+ for(const [weapon,tier,base] of variants){
+  const item={kind:'skin',weapon,skin:'Spec Ops',tier,base,id:'spec-'+tier,wearGrade:2};
+  assert.equal(g.run('isApprovedSkin('+JSON.stringify(item)+')'),true);
+  assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('--spec-ops-1600.webp'));
+ }
+ for(const pose of ['closed','open'])for(const size of [400,800,1254]){
+  const bytes=fs.readFileSync(path.join(root,'assets/cases',`spec-ops-case-${pose}-${size}.webp`));
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+ }
+ for(const slug of ['glock-18','mp5','spas-12','awp','karambit'])for(const size of [400,800,1600]){
+  const bytes=fs.readFileSync(path.join(root,'assets/renders/lines/spec-ops',`${slug}--spec-ops-${size}.webp`));
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+ }
+ g.run('s.coins=450;save()');g.byId('multi-qty-spec-ops').value='5';
+ assert.equal(g.run('buyCases("spec-ops",false)'),true);
+ assert.equal(g.state().coins,75);
+ const cases=g.state().items.filter(x=>x.kind==='case'&&x.caseId==='spec-ops');
+ assert.equal(cases.length,5);
+ assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(cases.map(x=>x.id))+')'),true);
+ assert.equal(g.state().openings,5);
+ assert.equal(g.state().items.filter(x=>x.kind==='skin'&&x.skin==='Spec Ops').length,5);
+ g.run('finishMultiOpening()');
+});
+test('Legacy collection progress is extended for Spec Ops without losing discoveries',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items.push({id:"migrate-cartel",kind:"skin",weapon:"RPG-7",skin:"Cartel",tier:0,base:40,wearGrade:1});save()');
+ const old=g.state();delete old.collections.progress['spec-ops-v1'];
+ store.setItem(KEY,JSON.stringify(old));
+ const resumed=boot(store);
+ assert.equal(resumed.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ assert.equal(resumed.run('window.LootHubCollections.progress(s,"spec-ops-v1").found'),0);
 });
 
 if(process.exitCode)process.exit(process.exitCode);

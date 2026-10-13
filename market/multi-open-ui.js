@@ -4,7 +4,7 @@ let multiSelection=[];
 function multiOpenEntry(){
  const total=s.items.filter(x=>x.kind==='case').length;
  return '<section class="panel multi-entry"><div><div class="section-eyebrow">NEW · MULTI-OPEN</div>'+
- '<h2>Open up to five cases</h2><p class="muted">Five simultaneous spins. Mix Arsenal and Cartel cases. Rewards are saved before animation.</p></div>'+
+ '<h2>Open up to five cases</h2><p class="muted">Five simultaneous spins. Mix Arsenal, Cartel, and Spec Ops cases. Rewards are saved before animation.</p></div>'+
  '<button class="primary" onclick="showMultiPicker()" '+(total?'':'disabled')+
  '>Select owned cases ('+total+')</button></section>';
 }
@@ -98,6 +98,7 @@ function multiReelRow(reward,owned,index){
 function caseShopPrice(caseId){
  if(caseId==='arsenal')return 25;
  if(caseId==='cartel')return cartelCase.casePrice;
+ if(caseId==='spec-ops')return specOpsCase.casePrice;
  const line=universalSkinLines.getLine(caseId);
  return line&&line.released===true?line.casePrice:null;
 }

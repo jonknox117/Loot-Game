@@ -181,7 +181,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
     const releasedNames=await page.evaluate(()=>window.LootHubSkinLines.lines.map(x=>x.name));
-    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
+    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel','Spec Ops',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
     assert(await page.locator('.npc-listing').count()>=1,'Skin type and approved-finish search must find matching listings');
@@ -864,7 +864,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       return {out,masterCount:catalog.length,arsenal:dropCatalog.length,market:allMarketCatalog.length,
         casePrice:cartelCase.casePrice};
     });
-    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===40,
+    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===45,
       'Cartel must not change the 25-master Arsenal drop pool');
     assert(cartelArt.casePrice===75,'Cartel Case price must be 75 coins');
     assert(cartelArt.out.length===5&&cartelArt.out.every(x=>x.ok),
@@ -875,7 +875,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       go('Cases');
     });
     assert(await page.locator('#multi-qty-cartel').count()===1&&
-      await page.locator('.cartel-section .multi-shop-actions button').count()===2,
+      await page.locator('.cartel-section').first().locator('.multi-shop-actions button').count()===2,
       'Cartel shop must support one to five sealed or instant-open purchases');
     const cartelShopArt=page.locator('.cartel-case-art .cartel-case-closed img');
     await cartelShopArt.waitFor({state:'visible',timeout:15000});
@@ -1022,13 +1022,13 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();go('Cases');
     });
     await page.getByRole('button',{name:'Open Collection Book'}).click();
-    assert(await page.locator('.collection-panel').count()===2,
-      'The iPhone Collection Book must show both Arsenal and Cartel progress');
+    assert(await page.locator('.collection-panel').count()===3,
+      'The iPhone Collection Book must show Arsenal, Cartel and Spec Ops progress');
     assert((await page.locator('.collection-book').textContent()).includes('35 / 35'),
       'Owned original weapons and Arsenal skins must all count once');
     assert((await page.locator('.collection-book').textContent()).includes('5 / 5'),
       'Cartel collection should recognize five exact user-approved skins');
-    await page.getByRole('button',{name:'View collection'}).last().click();
+    await page.getByRole('button',{name:'View collection'}).nth(1).click();
     assert(await page.locator('.collection-tile').count()===5,
       'The Cartel book needs five actual collection item tiles');
     assert(await page.locator('.collection-tile.discovered').count()===5,

@@ -327,6 +327,96 @@
       "inventory": "assets/skins/tactical-machete--cartel.js#800",
       "inspection": "assets/skins/tactical-machete--cartel.js#1600",
       "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
+    },
+    {
+      "id": "glock-18--spec-ops",
+      "kind": "skin",
+      "weapon": "Glock-18",
+      "skin": "Spec Ops",
+      "displayName": "Glock-18 | Spec Ops",
+      "tier": 0,
+      "rarity": "Common",
+      "baseValue": 40,
+      "approved": true,
+      "caseId": "spec-ops",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/spec-ops/glock-18--spec-ops-400.webp",
+      "inventory": "assets/renders/lines/spec-ops/glock-18--spec-ops-800.webp",
+      "inspection": "assets/renders/lines/spec-ops/glock-18--spec-ops-1600.webp",
+      "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
+    },
+    {
+      "id": "mp5--spec-ops",
+      "kind": "skin",
+      "weapon": "MP5",
+      "skin": "Spec Ops",
+      "displayName": "MP5 | Spec Ops",
+      "tier": 1,
+      "rarity": "Uncommon",
+      "baseValue": 110,
+      "approved": true,
+      "caseId": "spec-ops",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/spec-ops/mp5--spec-ops-400.webp",
+      "inventory": "assets/renders/lines/spec-ops/mp5--spec-ops-800.webp",
+      "inspection": "assets/renders/lines/spec-ops/mp5--spec-ops-1600.webp",
+      "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
+    },
+    {
+      "id": "spas-12--spec-ops",
+      "kind": "skin",
+      "weapon": "SPAS-12",
+      "skin": "Spec Ops",
+      "displayName": "SPAS-12 | Spec Ops",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 350,
+      "approved": true,
+      "caseId": "spec-ops",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/spec-ops/spas-12--spec-ops-400.webp",
+      "inventory": "assets/renders/lines/spec-ops/spas-12--spec-ops-800.webp",
+      "inspection": "assets/renders/lines/spec-ops/spas-12--spec-ops-1600.webp",
+      "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
+    },
+    {
+      "id": "awp--spec-ops",
+      "kind": "skin",
+      "weapon": "AWP",
+      "skin": "Spec Ops",
+      "displayName": "AWP | Spec Ops",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 1050,
+      "approved": true,
+      "caseId": "spec-ops",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/spec-ops/awp--spec-ops-400.webp",
+      "inventory": "assets/renders/lines/spec-ops/awp--spec-ops-800.webp",
+      "inspection": "assets/renders/lines/spec-ops/awp--spec-ops-1600.webp",
+      "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
+    },
+    {
+      "id": "karambit--spec-ops",
+      "kind": "skin",
+      "weapon": "Karambit",
+      "skin": "Spec Ops",
+      "displayName": "Karambit | Spec Ops",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 4200,
+      "approved": true,
+      "caseId": "spec-ops",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/spec-ops/karambit--spec-ops-400.webp",
+      "inventory": "assets/renders/lines/spec-ops/karambit--spec-ops-800.webp",
+      "inspection": "assets/renders/lines/spec-ops/karambit--spec-ops-1600.webp",
+      "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
     }
   ],
   "items": [
@@ -890,7 +980,7 @@
     "removedItems": false
   },
   "skinPipeline": {
-    "activeSkinCount": 15,
+    "activeSkinCount": 20,
     "allowedSkinIds": [
       "mac-10--red-devil",
       "rpg-7--glory",
@@ -901,7 +991,12 @@
       "desert-eagle--blossom",
       "karambit--kryptonite",
       "spas-12--blood-thirsty",
-      "awp--crimson-delight"
+      "awp--crimson-delight",
+      "glock-18--spec-ops",
+      "mp5--spec-ops",
+      "spas-12--spec-ops",
+      "awp--spec-ops",
+      "karambit--spec-ops"
     ],
     "ownerApprovalRequired": true,
     "sourceImage": "D2CFA5D6-B927-46B6-9E12-99DAEC7897FC.jpeg",
@@ -949,6 +1044,26 @@
         "AK-47",
         "Desert Eagle",
         "Tactical Machete"
+      ]
+    },
+    {
+      "id": "spec-ops",
+      "name": "Spec Ops Case",
+      "casePrice": 75,
+      "contents": "Exactly five Special Operations skins, one per rarity",
+      "oddsPercent": [
+        70,
+        20,
+        7.5,
+        2,
+        0.5
+      ],
+      "weapons": [
+        "Glock-18",
+        "MP5",
+        "SPAS-12",
+        "AWP",
+        "Karambit"
       ]
     }
   ]

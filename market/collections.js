@@ -25,9 +25,13 @@ function valid(data){
  if(typeof data!=='object'||Array.isArray(data)||data.schemaVersion!==1||
     !data.progress||typeof data.progress!=='object'||Array.isArray(data.progress))return false;
  const keys=Object.keys(data.progress);
- if(keys.length!==definitions.length||keys.some(k=>!byCollection.has(k)))return false;
+ // Accept pre-Spec Ops two-collection saves; ensure() upgrades them in place.
+ if(keys.some(k=>!byCollection.has(k))||
+    !(keys.length===definitions.length||
+      (keys.length===definitions.length-1&&!Object.hasOwn(data.progress,'spec-ops-v1'))))return false;
  for(const c of definitions){
   const p=data.progress[c.id];
+  if(!p&&c.id==='spec-ops-v1')continue;
   if(!p||typeof p!=='object'||Array.isArray(p)||
      !Array.isArray(p.seen)||p.seen.length>c.items.length||
      !(p.claimedAt===null||(Number.isSafeInteger(p.claimedAt)&&p.claimedAt>0)))return false;
@@ -44,6 +48,10 @@ function ensure(game){
  if(!game||typeof game!=='object')return null;
  if(game.collections==null)game.collections=fresh();
  if(!valid(game.collections))return null;
+ for(const c of definitions){
+  if(!Object.hasOwn(game.collections.progress,c.id))
+    game.collections.progress[c.id]={seen:[],claimedAt:null};
+ }
  return game.collections;
 }
 function reconcile(game){
@@ -90,7 +98,7 @@ function claim(game,collectionId,createCase,now=Date.now()){
    const caseItem=createCase(c.caseId,0);
    if(!caseItem||caseItem.kind!=='case'||typeof caseItem.id!=='string'||
      !caseItem.id||used.has(caseItem.id)||caseItem.wearGrade!=null||
-     (c.caseId==='cartel'?caseItem.caseId!=='cartel':caseItem.caseId!=null))
+     (c.caseId==='arsenal'?caseItem.caseId!=null:caseItem.caseId!==c.caseId))
      throw Error('Invalid collection reward case');
    used.add(caseItem.id);
    caseItem.paid=0;

@@ -1,7 +1,7 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 function isApprovedSkin(item){
-  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||cartelSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
+  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||cartelSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSpecOpsCase?.items.some(a=>a.weapon===item.weapon&&a.skin===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
 }
 // Retired procedural collections no longer appear in shops or generate art.
 // Former sealed cases become regular Arsenal Cases with the same identity/value.
@@ -934,6 +934,28 @@ function visualArt(item,context='inventory') {
       ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
       '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Cartel Case, original owner-supplied chest artwork"'+
       ' decoding="async" loading="eager"></div>';
+  }
+  // Released owner-supplied Spec Ops case; sealed and open art use the same
+  // transparent source perspectives as the other curated cases.
+  if(item&&item.kind==='case'&&item.caseId==='spec-ops'){
+    const pose=context==='open'||context==='open-small'?'open':'closed';
+    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
+    const src='./assets/cases/spec-ops-case-'+pose+'-'+pixelSize+'.webp';
+    return '<div class="art weapon-art cartel-crate spec-ops-case-image spec-ops-case-'+pose+'" data-art-status="owner-supplied-spec-ops-case"'+
+      ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
+      '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Spec Ops Case, original owner-supplied artwork"'+
+      ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+  }
+  // Each Spec Ops skin has its own original artwork rather than a procedural overlay.
+  if(item&&item.kind==='skin'&&item.skin==='Spec Ops'&&
+     window.LootHubSpecOpsCase?.items.some(x=>x.weapon===item.weapon)){
+    const slug=window.LootHubWeaponCatalog.modelSlugs[item.weapon];
+    if(slug){
+      const src='./assets/renders/lines/spec-ops/'+slug+'--spec-ops-'+size+'.webp';
+      return '<div class="art weapon-art master-raster approved-skin spec-ops-skin"'+
+        ' data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="Spec Ops" data-art-status="approved-skin" data-resolution="'+size+'"'+wearMeta+'>'+
+        '<img src="'+src+'" alt="'+safeAttr(item.weapon)+' | Spec Ops owner-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+    }
   }
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)||window.LootHubSkinLines?.isPreview(item)){

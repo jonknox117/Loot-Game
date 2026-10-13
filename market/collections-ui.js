@@ -3,11 +3,13 @@
 let collectionBookOpen=false,selectedCollectionId=null;
 function collectionEntry(){
  const data=window.LootHubCollections.ensure(s);
- const a=data&&window.LootHubCollections.progress(s,'arsenal-v1');
- const c=data&&window.LootHubCollections.progress(s,'cartel-v1');
- return '<section class="panel collection-entry"><div><div class="section-eyebrow">COLLECTOR PROGRESSION · NEW</div>'+
+ const totals=window.LootHubCollections.definitions.map(c=>{
+  const p=data&&window.LootHubCollections.progress(s,c.id);
+  return '<span>'+escapeHTML(c.name)+' '+(p?p.found:0)+'/'+c.items.length+'</span>';
+ }).join('');
+ return '<section class="panel collection-entry"><div><div class="section-eyebrow">COLLECTOR PROGRESSION</div>'+
   '<h2>Collection Book</h2><p class="muted">Discover every unique item to earn 25 cases from that collection. Selling or trading an item never removes progress.</p>'+
-  '<div class="collection-summary"><span>Arsenal '+(a?a.found:0)+'/35</span><span>Cartel '+(c?c.found:0)+'/5</span></div></div>'+
+  '<div class="collection-summary">'+totals+'</div></div>'+
   '<button class="primary" onclick="openCollectionBook()">Open Collection Book</button></section>';
 }
 function openCollectionBook(){

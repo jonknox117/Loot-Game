@@ -1,5 +1,14 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.6.3 — Official Spec Ops Case
+
+- The **Spec Ops Case** is now a released, independent curated case at **75 coins**. Buy one to five sealed, or buy and open up to five simultaneously. Arsenal and Cartel drop tables remain unchanged.
+- Five owner-supplied Special Operations finishes are exclusive to this case: **Glock-18** (Common, 70%), **MP5** (Uncommon, 20%), **SPAS-12** (Rare, 7.5%), **AWP** (Super Rare, 2%) and **Karambit** (Legendary, 0.5%). Their reference base values are 40, 110, 350, 1050 and 4200 coins. The rarity weighting and coin values follow the existing curated Cartel case.
+- Original supplied weapon artwork is rendered as transparent WebP files at 400/800/1600px, retaining the black finish, white spade emblem and Special Operations lettering. Separate original **closed and open** case art appears in shop/inventory and reward reveals at 400/800/1254px. Backgrounds were removed without replacing the designs.
+- Full single-open and five-reel openings, item inspection, wear grading, market listings, NPC stock, inventory saves and free-case collection progression are supported.
+- **Spec Ops Collection Book:** discover each of the five approved Spec Ops skins to earn 25 sealed Spec Ops Cases once. Older two-collection saves are migrated in place, preserving earned progress and existing case rewards.
+- All assets and integration code are shipped together. Code and data regression coverage includes original WebP file availability, case names/pricing, collectible identity, batch buying/opening and legacy collection migration.
+
 ## Patch 0.6.2 — Batch case shopping and popup QoL
 
 - Case shops offer a visible **1–5 quantity selector** with a running total. Choose **Buy sealed** to add every case to Inventory, or **Buy & open** to launch the existing simultaneous five-reel opening directly. A sealed batch's confirmation also offers **Open now** without returning to Inventory. Cartel, Arsenal, and any released themed case lines use the same controls.
