@@ -485,6 +485,7 @@ function renderNpcMarketResults(){
       '<span class="muted tiny">Market '+money(info.value)+' ◈ · Condition value '+money(info.base)+' ◈</span>'+ 
       '<span class="muted tiny">'+npcPriceLabel(l)+'</span></div>'+
       '<div class="npc-listing-buttons">'+
+      '<button onclick="'+marketAction('openBarter',l.id)+'">Trade items</button>'+
       '<button onclick="'+marketAction('inspectNpcListing',l.id)+'">Inspect</button>'+ 
       '<button onclick="'+marketAction('negotiateNpcListing',l.id)+'">Make offer</button>'+
       '<button class="primary" onclick="'+marketAction('buyNpcListing',l.id)+'">Buy now</button></div>'+
@@ -517,7 +518,8 @@ function inspectNpcListing(k){
       (item.kind==='skin'?'Approved cosmetic · exact listed item':item.kind==='case'?
        'Sealed Arsenal Case':'Base weapon · unskinned'))+'</p>'+
     '<p class="muted tiny">This is a persistent NPC offer. Purchasing transfers this exact item to your inventory. Negotiate a better price or buy at the asking price.</p>'+
-    '<div class="row"><button onclick="'+marketAction('negotiateNpcListing',listing.id)+'">Make offer</button>'+ 
+    '<div class="row"><button onclick="'+marketAction('openBarter',listing.id)+'">Trade items / coins</button>'+
+    '<button onclick="'+marketAction('negotiateNpcListing',listing.id)+'">Make offer</button>'+ 
     '<button class="primary" onclick="'+marketAction('buyNpcListing',listing.id)+'">Buy for '+
       money(listing.ask)+' coins</button><button onclick="closeDialog()">Back to market</button></div>');
 }
