@@ -1,5 +1,13 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.6.2 — Batch case shopping and popup QoL
+
+- Case shops offer a visible **1–5 quantity selector** with a running total. Choose **Buy sealed** to add every case to Inventory, or **Buy & open** to launch the existing simultaneous five-reel opening directly. A sealed batch's confirmation also offers **Open now** without returning to Inventory. Cartel, Arsenal, and any released themed case lines use the same controls.
+- Sealed batch purchases debit once, create one tradeable case with a unique ID per unit, and reject insufficient funds, invalid counts and duplicate IDs without a partial purchase. The five-case opening engine still saves all rewards before the spin animation.
+- The owned-case picker groups matching case types into concise +/− quantity rows, rather than listing and scrolling through every duplicate case. Up to five cases of mixed types remain supported.
+- Popup dialogs no longer have their own nested scrolling areas; long content scrolls with the full backdrop instead. On small screens, main choice buttons remain available in a sticky action footer.
+- Original drop rates, item art, saved inventory, wallet schema and one-case opening gameplay are unchanged. Core regressions include five-case sealed buys, immediate opens, insufficient balance and mixed case groups.
+
 ## Patch 0.6.1 — Permanent Collection Book
 
 The Cases screen and Inventory now link to a **Collection Book** with the
