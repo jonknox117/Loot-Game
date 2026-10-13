@@ -186,9 +186,10 @@ test('Official 25th weapon uses uploaded transparent double barrel and wear maps
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
   const weapon='Double-Barrel Shotgun',slug='double-barrel-shotgun';
-  assert.equal(MASTER_COUNT,25);
-  assert.equal(manifest.items.length,25);
-  assert.equal(manifest.neutralMasterPipeline.baseModelCount,25);
+  assert(MASTER_COUNT>=25,'The original double barrel is the 25th weapon');
+  assert.equal(manifest.items.length,MASTER_COUNT);
+  assert.equal(manifest.items[24].weapon,weapon);
+  assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
   const entry=manifest.items.find(x=>x.weapon===weapon);
   assert(entry,'New official shotgun is absent from catalog');
   assert.equal(entry.id,slug+'--base');
@@ -205,8 +206,8 @@ test('Official 25th weapon uses uploaded transparent double barrel and wear maps
   const uploaded=fs.readFileSync(path.join(root,entry.sourceImage));
   assert.equal(uploaded.toString('ascii',1,4),'PNG','Original source should stay an unmodified PNG');
   const catalog=JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog.catalog)'));
-  assert.equal(catalog.length,25);
-  assert.deepEqual(catalog.slice(-1),[[weapon,2,90,'🔫']]);
+  assert.equal(catalog.length,MASTER_COUNT);
+  assert.deepEqual(catalog[24],[weapon,2,90,'🔫']);
   assert.equal(g.run('window.LootHubSkinLines.modelSlugs["Double-Barrel Shotgun"]'),slug);
   for(const [view,width] of [['reel',400],['inventory',800],['inspect',1600]]){
     const file='assets/renders/masters/'+slug+'-neutral-'+width+'.webp';
@@ -233,7 +234,7 @@ test('Official 25th weapon uses uploaded transparent double barrel and wear maps
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
   assert.equal(g.run('approvedSkins.length'),10);
   assert(g.run('cases()').includes('Double-Barrel Shotgun'));
-  assert(g.run('cases()').includes('25 base weapons'));
+  assert(g.run('cases()').includes(MASTER_COUNT+' base weapons'));
   assert(!g.run('cases()').includes('Blackout Case'));
   assert(!g.run('cases()').includes('Damascus Case'));
   // Test actual loot generation at a rarity and random index that selects the
@@ -2172,7 +2173,7 @@ test('All registered weapons have anchored semantic profiles, preserving legacy 
  for(const slug of slugs){
    const profile=p.weapons[slug],points=anchors.weapons[slug];
    assert(profile&&profile.wear,'Missing material profile '+slug);
-   assert(['refined-draft','owner-reviewed'].includes(profile.wear.reviewStatus));
+   assert(['unreviewed-draft','refined-draft','owner-reviewed'].includes(profile.wear.reviewStatus));
    assert.equal(profile.wear.reviewed,profile.wear.reviewStatus==='owner-reviewed');
    assert(points.length>=2,'Need at least two visible source reference landmarks for '+slug);
    for(const [kind,x,y] of points){

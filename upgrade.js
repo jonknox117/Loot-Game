@@ -931,7 +931,7 @@ function visualArt(item,context='inventory') {
     const master=lootHubOriginalBaseMasters[item.weapon];
     if(master){
       return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="'+size+'" data-art-status="base"'+wearMeta+'>'+
-        '<img src="./'+master+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+        '<img src="./'+master.replace(/-1600\.webp$/,'-'+size+'.webp')+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
     // Legacy retired weapon models from old saves remain accessible, never skinned.
     if(typeof window!=='undefined'&&window.ArsenalMasters&&window.ArsenalMasters.supports(item.weapon)){
