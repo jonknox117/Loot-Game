@@ -266,8 +266,7 @@ function openCase(k){
    visualArt(sample,'reel')+'<span class="tile-name">'+escapeHTML(entry.weapon)+'</span></div>';
  }).join('');
  dialog('<div class="reel-header"><span class="spin-eyebrow">'+(caseId==='cartel'?'CARTEL':'ARSENAL')+' • REWARD DROP</span><span class="spin-pulse">OPENING</span></div>'+
-  '<h2 class="spin-title">Opening '+escapeHTML(itemName(owned))+'</h2>'+ 
-  (caseId==='arsenal'?'<div class="arsenal-opening-prop" aria-label="Opened Arsenal Case">'+visualArt({kind:'case'},'open')+'</div>':'')+
+  '<h2 class="spin-title">Opening '+escapeHTML(itemName(owned))+'</h2>'+
   '<div class="reel-stage"><div class="reel" aria-label="Case opening reel"><div class="pointer"></div>'+
   '<div class="track" id="track">'+tiles+'</div></div></div>'+
   '<p class="muted tiny spin-note">Your reward is already saved. Skipping cannot change the result.</p>'+

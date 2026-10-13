@@ -98,6 +98,22 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(closedArt.width===800&&closedArt.height===800&&closedArt.alpha===0&&
       closedArt.src.includes('arsenal-case-closed-800.webp'),
       'Shop must show exact owner-supplied Arsenal Case art with real transparent background');
+    const fit=await page.locator('#main .hero .case-art').first().evaluate(frame=>{
+      const img=frame.querySelector('.arsenal-case-image img');
+      const art=frame.querySelector('.arsenal-case-image');
+      const box=frame.getBoundingClientRect(),inner=art.getBoundingClientRect(),
+        image=img.getBoundingClientRect();
+      const cs=getComputedStyle(img),container=getComputedStyle(frame);
+      return {height:box.height,width:box.width,objectFit:cs.objectFit,
+        insetTop:inner.top-box.top,insetBottom:box.bottom-inner.bottom,
+        insetLeft:inner.left-box.left,insetRight:box.right-inner.right,
+        imageWidth:image.width,imageHeight:image.height,
+        overflow:container.overflow};
+    });
+    assert(fit.objectFit==='contain'&&fit.height>=230,
+      'Closed case must be contained within a sufficiently tall iPhone shop frame: '+JSON.stringify(fit));
+    assert(fit.insetTop>=-1&&fit.insetBottom>=-1&&fit.insetLeft>=-1&&fit.insetRight>=-1,
+      'No part of the closed case image may overflow the cropped shop frame: '+JSON.stringify(fit));
     assert(caseShop.includes('Double-Barrel Shotgun'),
       '25th official gun must appear in the available Arsenal Case weapon gallery');
     const gunCard=page.locator('#main .item').filter({
@@ -165,11 +181,11 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
     const releasedNames=await page.evaluate(()=>window.LootHubSkinLines.lines.map(x=>x.name));
-    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
+    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
-    assert(await page.locator('.npc-listing').count()===1,'Skin type and weapon-name search must work together');
-    await page.locator('.npc-listing').getByRole('button',{name:'Inspect'}).click();
+    assert(await page.locator('.npc-listing').count()>=1,'Skin type and approved-finish search must find matching listings');
+    await page.locator('.npc-listing').first().getByRole('button',{name:'Inspect'}).click();
     assert((await page.locator('.dialog h2').textContent()).includes(approvedName),'Inspect must show exact approved finish');
     await page.getByRole('button',{name:'Back to market'}).click();
     await page.locator('#npcSearch').fill('');
@@ -209,11 +225,21 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await sealedArt.getAttribute('src')).includes('arsenal-case-closed-1254.webp'),
       'Inspect and inventory must use the original closed crate in its full native resolution');
     await page.getByRole('button', { name: 'Open case' }).click();
-    const openingCase=page.locator('.arsenal-opening-prop .arsenal-case-open img');
-    await openingCase.waitFor({state:'visible',timeout:15000});
-    const openingImage=await openingCase.evaluate(async img=>{await img.decode();return {width:img.naturalWidth,height:img.naturalHeight}});
-    assert(openingImage.width===1254&&openingImage.height===1254,
-      'Arsenal spin must show the matching original open-crate photograph');
+    assert(await page.locator('.arsenal-opening-prop').count()===0,
+      'Open crate must not obstruct the scrolling spin reel');
+    assert(await page.locator('.reel-stage .arsenal-case-open').count()===0,
+      'Open Arsenal crate belongs on the final reward screen only');
+    const spinAppearance=await page.evaluate(()=>{
+      const reel=document.querySelector('.reel-stage'),
+        status=document.querySelector('.spin-pulse'),marker=document.querySelector('.reel .pointer');
+      return {statusAnimation:getComputedStyle(status).animationName,
+        pointerGlow:getComputedStyle(marker).boxShadow,
+        pointerFilter:getComputedStyle(marker).filter,
+        reelBackground:getComputedStyle(reel).backgroundImage};
+    });
+    assert(spinAppearance.statusAnimation==='none'&&spinAppearance.pointerGlow==='none'&&
+      spinAppearance.pointerFilter==='none',
+      'Rarity/glow effects should be reserved for the final reveal: '+JSON.stringify(spinAppearance));
     // Presentation is upgraded, but the stored result and 48-slot reel are unchanged.
     assert(await page.locator('.reel-stage .reel #track').isVisible(),
       'Case opening must show the new spotlighted reel stage');

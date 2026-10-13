@@ -2334,14 +2334,24 @@ test('Original closed and opened Arsenal photos replace placeholder crate withou
  }
  assert(g.run('home()').includes('arsenal-case-closed-800.webp'));
  assert(g.run('cases()').includes('arsenal-case-closed-800.webp'));
+ const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
+ assert(css.includes('.hero .case-art:has(.arsenal-case-image)'),
+  'Shop must explicitly size the closed-case frame');
+ assert(css.includes('height:clamp(235px,72vw,315px)'),
+  'Shop should reserve enough mobile height for the entire square case image');
+ assert(css.includes('.spin-pulse{animation:none;box-shadow:none}'),
+  'Spinning animation must not have reward-specific pulsing glow');
+ assert(css.includes('.arsenal-reward-display .arsenal-reward-weapon'),
+  'Floating prize effect must be retained for the final reveal');
  const cartel=g.run('visualArt({kind:"case",caseId:"cartel"})');
  assert(cartel.includes('cartel-crate'),'Cartel artwork must stay separate');
  assert(!cartel.includes('arsenal-case-'));
  g.run('s.items.push({id:"case-art-open",kind:"case",paid:25})');
  g.run('openCase("case-art-open")');
  const spin=g.byId('overlay').innerHTML;
- assert(spin.includes('arsenal-opening-prop'));
- assert(spin.includes('arsenal-case-open-1254.webp'));
+ assert(!spin.includes('arsenal-opening-prop'),'Opened case should never overlap the spinning reel');
+ assert(!spin.includes('arsenal-case-open-1254.webp'),'Reserve the open crate for the winning reveal');
+ assert(!spin.includes('arsenal-reward-display'),'Rarity reward effects must appear only after the spin');
  assert(spin.includes('id="track"'));
  const prizeId=g.state().items.find(x=>x.kind==='weapon'||x.kind==='skin')?.id;
  g.run('finishOpening()');
