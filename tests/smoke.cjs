@@ -71,6 +71,22 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     // solely for wear, not procedural collectible finishes or themed cases.
     await page.getByRole('button',{name:'Cases',exact:true}).click();
     const caseShop=await page.locator('#main').textContent();
+    assert(caseShop.includes('Double-Barrel Shotgun'),
+      '25th official gun must appear in the available Arsenal Case weapon gallery');
+    const gunCard=page.locator('#main .item').filter({
+      has:page.getByRole('heading',{name:'Double-Barrel Shotgun',exact:true})
+    });
+    assert(await gunCard.count()===1,'New shotgun must have one separate official catalog entry');
+    await gunCard.getByRole('button',{name:'View weapon'}).click();
+    const gun=page.locator('.dialog .master-raster[data-weapon-model="Double-Barrel Shotgun"] img');
+    await gun.waitFor({state:'visible'});
+    await page.waitForFunction(()=>{
+      const element=document.querySelector('.dialog .master-raster[data-weapon-model="Double-Barrel Shotgun"] img');
+      return element&&element.complete&&element.naturalWidth===1600&&element.naturalHeight===800;
+    },null,{timeout:15000});
+    assert((await gun.getAttribute('src')).includes('double-barrel-shotgun-neutral-1600.webp'),
+      'Shotgun inspection must use its exact uploaded neutral master art');
+    await page.getByRole('button',{name:'Close',exact:true}).last().click();
     assert(caseShop.includes('Arsenal Case'),'Arsenal Case must remain in the store');
     assert(!caseShop.includes('Blackout Case')&&!caseShop.includes('Damascus Case'),
       'Retired procedural cases must no longer be displayed');
@@ -637,7 +653,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
         forbiddenOther:!api.eligibility('other',.5,.5,1).rust,
         metadata:document.querySelector('.dialog [data-material-mask]')?.dataset.materialMask};
     });
-    assert(maps.total===24&&maps.unique===24,'Material map must exist for every master');
+    assert(maps.total===25&&maps.unique===25,'Material map must exist for every master');
     assert(maps.samples.every(x=>x.ok&&x.w===1600&&x.h===800),
       'Silhouette and material PNGs must load at native 1600x800 resolution');
     assert(maps.allowedMetal&&maps.forbiddenWood&&maps.forbiddenOther,

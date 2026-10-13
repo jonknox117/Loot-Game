@@ -2,9 +2,9 @@
   "schemaVersion": 3,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "catalogMode": "24-base-weapon-models-plus-ten-user-approved-skins",
-  "assetStatus": "24-original-neutral-masters-and-ten-owner-approved-skins",
-  "notes": "24 distinct neutral base weapons and ten individually approved cosmetic skins, including the five new user-supplied October 12 designs. All neutral weapon masters remain unchanged and independently obtainable. All ten cosmetics can drop from the Arsenal Case and trade in the simulated marketplace, with original tier odds and save data retained.",
+  "catalogMode": "25-base-weapon-models-plus-ten-user-approved-skins",
+  "assetStatus": "25-original-neutral-masters-and-ten-owner-approved-skins",
+  "notes": "25 distinct neutral base weapon masters and ten hand-approved cosmetic skins. The 25th original is the owner-supplied transparent Double-Barrel Shotgun. Its silhouette and original color are preserved; wear masks remain separate from cosmetic artwork. Existing weapon art, inventories, rarity weights and cases remain unchanged.",
   "caseOddsPercent": [
     70,
     20,
@@ -711,11 +711,33 @@
       "inventory": "assets/neutral-art/m134-minigun.js#800",
       "thumbnail": "assets/neutral-art/m134-minigun.js#400",
       "sourceType": "user-supplied-original-image"
+    },
+    {
+      "id": "double-barrel-shotgun--base",
+      "weapon": "Double-Barrel Shotgun",
+      "modelSlug": "double-barrel-shotgun",
+      "kind": "weapon",
+      "displayName": "Double-Barrel Shotgun",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 90,
+      "emoji": "🔫",
+      "finish": null,
+      "skin": null,
+      "status": "approved-user-supplied-base-master-live",
+      "hasCosmeticSkin": false,
+      "master": "assets/renders/masters/double-barrel-shotgun-neutral-1600.webp",
+      "renderMode": "transparent-webp-file",
+      "inspection": "assets/renders/masters/double-barrel-shotgun-neutral-1600.webp",
+      "inventory": "assets/renders/masters/double-barrel-shotgun-neutral-800.webp",
+      "thumbnail": "assets/renders/masters/double-barrel-shotgun-neutral-400.webp",
+      "sourceType": "user-supplied-original-image",
+      "sourceImage": "assets/weapon-sources/double-barrel-shotgun-original.png"
     }
   ],
   "neutralMasterPipeline": {
     "format": "transparent-WebP",
-    "baseModelCount": 24,
+    "baseModelCount": 25,
     "modularBase64DataUriModels": [
       "butterfly-knife",
       "pump-shotgun",
@@ -742,7 +764,8 @@
       "ak-47",
       "awp",
       "m4a4",
-      "karambit"
+      "karambit",
+      "double-barrel-shotgun"
     ],
     "newAdditions": [
       "M60",
@@ -753,7 +776,8 @@
       "Kar98k",
       "FN SCAR-L",
       "FN FAL",
-      "M134 Minigun"
+      "M134 Minigun",
+      "Double-Barrel Shotgun"
     ],
     "masterRegistry": "assets/manifest.json",
     "skinsLive": 10

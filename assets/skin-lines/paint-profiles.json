@@ -873,6 +873,65 @@
         "reviewed": false,
         "reviewStatus": "refined-draft"
       }
+    },
+    "double-barrel-shotgun": {
+      "paint": "auto-material",
+      "protectDarkBelow": 16,
+      "patternScale": 1,
+      "protectedRects": [],
+      "wear": {
+        "metalRects": [
+          [
+            0.286,
+            0.339,
+            0.995,
+            0.461
+          ],
+          [
+            0.278,
+            0.395,
+            0.425,
+            0.49
+          ],
+          [
+            0.284,
+            0.455,
+            0.358,
+            0.531
+          ]
+        ],
+        "woodRects": [
+          [
+            0.013,
+            0.4,
+            0.279,
+            0.675
+          ],
+          [
+            0.211,
+            0.4,
+            0.309,
+            0.57
+          ],
+          [
+            0.423,
+            0.382,
+            0.659,
+            0.47
+          ]
+        ],
+        "polymerRects": [
+          [
+            0.009,
+            0.455,
+            0.029,
+            0.674
+          ]
+        ],
+        "protectedRects": [],
+        "reviewed": false,
+        "reviewStatus": "unreviewed-draft"
+      }
     }
   }
 }
