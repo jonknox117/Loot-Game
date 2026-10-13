@@ -874,6 +874,11 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Cartel case must be purchasable, with its own shop tile');
     const cartelShopArt=page.locator('.cartel-case-art .cartel-case-closed img');
     await cartelShopArt.waitFor({state:'visible',timeout:15000});
+    await cartelShopArt.scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>{
+      const img=document.querySelector('.cartel-case-art .cartel-case-closed img');
+      return img&&img.complete&&img.naturalWidth===800;
+    },null,{timeout:15000});
     const chestShop=await cartelShopArt.evaluate(async img=>{
       await img.decode();
       const cv=document.createElement('canvas');
