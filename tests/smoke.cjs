@@ -872,13 +872,38 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     });
     assert(await page.getByRole('button',{name:'Buy Cartel Case'}).count()===1,
       'Cartel case must be purchasable, with its own shop tile');
+    const cartelShopArt=page.locator('.cartel-case-art .cartel-case-closed img');
+    await cartelShopArt.waitFor({state:'visible',timeout:15000});
+    const chestShop=await cartelShopArt.evaluate(async img=>{
+      await img.decode();
+      const cv=document.createElement('canvas');
+      cv.width=img.naturalWidth;cv.height=img.naturalHeight;
+      const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+      const frame=img.closest('.cartel-case-art'),rect=frame.getBoundingClientRect();
+      const inner=img.getBoundingClientRect();
+      return {width:img.naturalWidth,height:img.naturalHeight,
+        alpha:ctx.getImageData(0,0,1,1).data[3],src:img.getAttribute('src'),
+        frameHeight:rect.height,top:inner.top-rect.top,bottom:rect.bottom-inner.bottom,
+        left:inner.left-rect.left,right:rect.right-inner.right,fit:getComputedStyle(img).objectFit};
+    });
+    assert(chestShop.width===800&&chestShop.height===800&&chestShop.alpha===0&&
+      chestShop.src.includes('cartel-case-closed-800.webp'),'Cartel shop must load the owner's original transparent chest');
+    assert(chestShop.frameHeight>=230&&chestShop.fit==='contain'&&
+      Math.min(chestShop.top,chestShop.bottom,chestShop.left,chestShop.right)>=-1,
+      'Cartel shop chest must fit fully on iPhone: '+JSON.stringify(chestShop));
     await page.getByRole('button',{name:'Buy Cartel Case'}).click();
     const cartelOwned=await page.evaluate(()=>s.items.find(x=>x.kind==='case'&&x.caseId==='cartel'));
     assert(cartelOwned&&cartelOwned.paid===75,
       'Cartel purchase must create one 75-coin sealed case');
     assert((await page.locator('.dialog').textContent()).includes('Cartel Case'),
       'Purchased Cartel case must be labeled distinctly from Arsenal');
+    const cartelInspect=page.locator('.dialog .cartel-case-closed img');
+    await cartelInspect.waitFor({state:'visible',timeout:15000});
+    assert((await cartelInspect.getAttribute('src')).includes('cartel-case-closed-1254.webp'),
+      'Cartel inspect should show the full-resolution owner-supplied closed chest');
     await page.getByRole('button',{name:'Open case'}).click();
+    assert(await page.locator('.arsenal-opening-prop,.cartel-opening-prop,.cartel-case-open').count()===0,
+      'Cartel chest should never obstruct the spinning weapon reel');
     const cartelSaved=await page.evaluate(()=>s.items.find(x=>x.kind==='skin'&&x.skin==='Cartel'));
     assert(cartelSaved&&cartelSaved.wearGrade>=0&&cartelSaved.wearGrade<=4,
       'Cartel drop must save as an approved skin with its own persistent wear grade');
@@ -887,6 +912,16 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.locator('#track .tile').count()===48,
       'Cartel opening must have the normal 48-item animation');
     await page.getByRole('button',{name:'Skip animation'}).click();
+    const cartelOpened=page.locator('.cartel-reward-display .arsenal-reward-crate .cartel-case-open img');
+    await cartelOpened.waitFor({state:'visible',timeout:15000});
+    const cartonSize=await cartelOpened.evaluate(async img=>{
+      await img.decode();return [img.naturalWidth,img.naturalHeight];
+    });
+    assert(cartonSize[0]===1254&&cartonSize[1]===1254&&
+      (await cartelOpened.getAttribute('src')).includes('cartel-case-open-1254.webp'),
+      'Final Cartel reveal needs the exact high-resolution open chest');
+    assert(await page.locator('.cartel-reward-display .arsenal-reward-weapon').count()===1,
+      'The won Cartel weapon should appear above the opened chest');
     assert((await page.locator('.dialog').textContent()).includes(cartelSaved.weapon+' | Cartel'),
       'Cartel reveal must match the committed prize');
     await page.getByRole('button',{name:'Keep item'}).click();
