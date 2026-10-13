@@ -267,6 +267,10 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(persistedReward.wearGrade===expectedReward.wearGrade,
       'Reward wear roll must be committed before case animation completes');
     await page.getByRole('button', { name: 'Skip animation' }).click();
+    await page.waitForFunction(()=>{
+      const img=document.querySelector('.reveal-art .master-raster img');
+      return img&&img.complete&&img.naturalWidth>0;
+    },null,{timeout:15000});
     const revealed=await page.evaluate(()=>{
       const art=document.querySelector('.reveal-art .master-raster');
       return {weapon:art?.dataset.weaponModel,finish:art?.dataset.finish,loaded:!!art?.querySelector('img')?.naturalWidth};
