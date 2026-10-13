@@ -2367,8 +2367,52 @@ test('Original closed and opened Arsenal photos replace placeholder crate withou
  cart.run('openCase("cartel-case-art-open")');
  assert(!cart.byId('overlay').innerHTML.includes('arsenal-opening-prop'));
  cart.run('finishOpening()');
- assert(!cart.byId('overlay').innerHTML.includes('arsenal-reward-crate'));
+ assert(cart.byId('overlay').innerHTML.includes('cartel-reward-display'));
+ assert(cart.byId('overlay').innerHTML.includes('cartel-case-open-1254.webp'));
  assert(cart.state().items.some(x=>x.kind==='skin'&&x.skin==='Cartel'));
+});
+
+
+test('Cartel Case uses exact closed/open chest assets with reveal-only open pose',()=>{
+ const g=boot();
+ for(const pose of ['closed','open'])for(const size of [400,800,1254]){
+  const file=path.join(root,'assets/cases/cartel-case-'+pose+'-'+size+'.webp');
+  const bin=fs.readFileSync(file);
+  assert(bin.length>40000,'Missing original Cartel chest artwork: '+file);
+  assert.equal(bin.toString('ascii',0,4),'RIFF',file);
+  assert.equal(bin.toString('ascii',8,12),'WEBP',file);
+ }
+ for(const [ctx,pose,size] of [['inventory','closed',800],['reel','closed',400],
+    ['inspect','closed',1254],['open','open',1254]]){
+  const html=g.run('visualArt({kind:"case",caseId:"cartel"},'+JSON.stringify(ctx)+')');
+  assert(html.includes('cartel-case-'+pose+'-'+size+'.webp'),ctx);
+  assert(html.includes('data-art-status="owner-supplied-cartel-case"'));
+  assert(html.includes('data-case-pose="'+pose+'"'));
+  assert(html.includes('cartel-crate'),'Existing Cartel selector remains supported');
+  assert(!html.includes('<svg'),'The placeholder SVG must no longer render');
+ }
+ assert(g.run('cartelSection()').includes('cartel-case-closed-800.webp'));
+ assert(g.run('cases()').includes('arsenal-case-closed-800.webp'),
+  'The Arsenal case must remain visually independent');
+ g.run('s.items.push({id:"cartel-image-test",kind:"case",caseId:"cartel",paid:75})');
+ g.run('openCase("cartel-image-test")');
+ const spinning=g.byId('overlay').innerHTML;
+ assert(!spinning.includes('cartel-case-open'),'The chest must not overlap moving reel tiles');
+ assert(!spinning.includes('cartel-reward-display'),'The final effect must not play during the spin');
+ assert(spinning.includes('id="track"'));
+ const winner=g.state().items.find(x=>x.kind==='skin'&&x.skin==='Cartel');
+ assert(winner,'Cartel case must retain its own exclusive item pool');
+ g.run('finishOpening()');
+ const shown=g.byId('overlay').innerHTML;
+ assert(shown.includes('cartel-reward-display'));
+ assert(shown.includes('arsenal-reward-weapon'));
+ assert(shown.includes('cartel-case-open-1254.webp'));
+ assert(!shown.includes('arsenal-case-open-'));
+ assert.equal(g.state().openings,1,'Changing case art must not re-roll the reward');
+ assert(g.state().items.some(x=>x.id===winner.id&&x.skin==='Cartel'));
+ const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
+ assert(css.includes('.cartel-case-art')&&css.includes('height:clamp(235px,72vw,315px)'),
+  'Mobile shop needs an unclipped chest frame');
 });
 
 if(process.exitCode)process.exit(process.exitCode);

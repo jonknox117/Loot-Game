@@ -292,9 +292,10 @@ function finishOpening(){
   '<div class="reward-sheen" aria-hidden="true"></div>'+
   '<div class="reward-kicker">NEW ITEM ACQUIRED</div>'+
   '<div class="tag '+tierClass+'">'+grade+'</div>'+
-  (caseId==='arsenal'?'<div class="big reveal-art reward-art arsenal-reward-display">'+
+  ((caseId==='arsenal'||caseId==='cartel')?
+   '<div class="big reveal-art reward-art arsenal-reward-display'+(caseId==='cartel'?' cartel-reward-display':'')+'">'+
    '<div class="arsenal-reward-weapon">'+visualArt(reward,'inspect')+'</div>'+
-   '<div class="arsenal-reward-crate">'+visualArt({kind:'case'},'open')+'</div></div>':
+   '<div class="arsenal-reward-crate">'+visualArt({kind:'case',caseId},'open')+'</div></div>':
    '<div class="big reveal-art reward-art">'+visualArt(reward,'inspect')+'</div>')+
   '<h2 class="reward-name">'+escapeHTML(itemName(reward))+'</h2>'+
   '<p class="muted">'+(reward.kind==='skin'?'Approved skin · '+reward.skin:'Base weapon · unskinned')+'</p>'+
