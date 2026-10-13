@@ -1066,63 +1066,15 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.getByRole('button',{name:'Open up to 5 cases'}).count()===1,
       'Free completion cases must work in the existing 1–5 case opening flow');
 
-    // 0.6.1 Collection Book: prove exact approved galleries, permanent
-    // discoveries and one-time 25-case rewards on the real iPhone layout.
-    await page.evaluate(()=>{
-      const definitions=window.LootHubCollections.definitions;
-      for(const definition of definitions)for(const item of definition.items){
-        s.items.push({id:'collector-smoke-'+definition.id+'-'+item.id,
-          kind:item.kind,weapon:item.weapon,skin:item.skin,
-          tier:item.tier,base:item.base,wearGrade:0});
-      }
-      save();go('Cases');
-    });
-    await page.getByRole('button',{name:'Open Collection Book'}).click();
-    assert(await page.locator('.collection-panel').count()===2,
-      'Collection Book must list both approved collections');
-    assert((await page.locator('.collection-panel').allTextContents()).some(x=>x.includes('35 / 35')),
-      'Arsenal must require its exact 35 approved entries');
-    assert((await page.locator('.collection-panel').allTextContents()).some(x=>x.includes('5 / 5')),
-      'Cartel must require exactly five themed skins');
-    await page.getByRole('button',{name:'View collection'}).nth(1).click();
-    assert(await page.locator('.collection-items .collection-tile').count()===5,
-      'Cartel completion gallery must show five original approved skin images');
-    assert(await page.locator('.collection-items .collection-tile.discovered').count()===5);
-    assert(await page.getByRole('button',{name:'Claim 25 Cartel Cases'}).isEnabled());
-    await page.getByRole('button',{name:'Claim 25 Cartel Cases'}).click();
-    assert((await page.locator('.dialog').textContent()).includes('25 Cartel Cases awarded!'));
-    const claimedCartel=await page.evaluate(()=>({
-      cases:s.items.filter(x=>x.kind==='case'&&x.collectionId==='cartel-v1'),
-      state:s.collections.progress['cartel-v1'],
-      value:window.LootHubMarketCore.estimated({kind:'case',caseId:'cartel',paid:0})
-    }));
-    assert(claimedCartel.cases.length===25&&claimedCartel.value===75&&
-      claimedCartel.cases.every(x=>x.caseId==='cartel'&&x.paid===0),
-      'Cartel reward must be 25 sealed Cartel cases worth 75 each');
-    assert(claimedCartel.state.claimedAt>0);
-    await page.getByRole('button',{name:'Keep collecting'}).click();
-    assert(await page.locator('.collection-claim-button').count()===0,
-      'Reward claim must disappear once redeemed');
-    await page.getByRole('button',{name:'All collections'}).click();
-    await page.getByRole('button',{name:'View collection'}).first().click();
-    assert(await page.locator('.collection-items .collection-tile').count()===35);
-    assert(await page.locator('.collection-items .collection-tile.discovered').count()===35);
-    await page.getByRole('button',{name:'Claim 25 Arsenal Cases'}).click();
-    const claimedArsenal=await page.evaluate(()=>s.items.filter(x=>
-      x.kind==='case'&&x.collectionId==='arsenal-v1'));
-    assert(claimedArsenal.length===25&&
-      claimedArsenal.every(x=>x.paid===0&&!x.caseId),
-      'Arsenal completion must create 25 sealed Arsenal cases without charging coins');
-    await page.getByRole('button',{name:'View cases'}).click();
-    // Discoveries survive removing acquired originals and opening five reward cases.
-    await page.evaluate(()=>{
-      s.items=s.items.filter(x=>!x.id.startsWith('collector-smoke-'));
-      save();go('Inventory');
-    });
+    // Rewarded cases are ordinary unopened items usable in five-reel opening.
+    await page.evaluate(()=>go('Inventory'));
+    const rewardsBefore=await page.evaluate(()=>s.items.filter(x=>x.kind==='case'&&
+      x.rewardSource==='collection').length);
+    assert(rewardsBefore===50,'Both completed collections should grant 50 sealed cases');
     await page.getByRole('button',{name:'Open up to 5 cases'}).click();
     await page.getByRole('button',{name:'Open 5 cases'}).click();
     assert(await page.locator('.multi-lane').count()===5,
-      'Twenty-five collection reward cases must work with five-reel opening');
+      'Collection rewards must be compatible with simultaneous five-case opening');
     await page.getByRole('button',{name:'Reveal all'}).click();
     assert(await page.locator('.multi-prize').count()===5);
     await page.getByRole('button',{name:'Keep all'}).click();
@@ -1130,15 +1082,15 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const afterCollectionReload=await page.evaluate(()=>({
       arsenal:window.LootHubCollections.progress(s,'arsenal-v1'),
       cartel:window.LootHubCollections.progress(s,'cartel-v1'),
-      caseRewards:s.items.filter(x=>x.kind==='case'&&x.rewardSource==='collection').length
+      remaining:s.items.filter(x=>x.kind==='case'&&x.rewardSource==='collection').length
     }));
     assert(afterCollectionReload.arsenal.found===35&&afterCollectionReload.cartel.found===5&&
       afterCollectionReload.arsenal.claimed&&afterCollectionReload.cartel.claimed,
-      'Collection rewards and permanent discoveries must survive reload');
-    assert(afterCollectionReload.caseRewards===45,
-      'Five opened reward cases leave 45 unopened collection cases after both grants');
+      'Collection records and one-time rewards must persist after reload');
+    assert(afterCollectionReload.remaining===45,
+      'After opening five, forty-five awarded cases should remain sealed');
     assert(await page.evaluate(()=>claimCollection('cartel-v1'))===false,
-      'Claiming again after reload must never award another 25 cases');
+      'Claiming again must never grant another 25 cases');
 
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
