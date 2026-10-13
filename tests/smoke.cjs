@@ -957,8 +957,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       const r=x.getBoundingClientRect();
       return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};
     }));
-    assert(dims.length===5&&dims.every(d=>d.top>=0&&d.bottom<=window.innerHeight&&
-      d.left>=0&&d.right<=window.innerWidth),
+    const viewport=page.viewportSize();
+    assert(dims.length===5&&dims.every(d=>d.top>=0&&d.bottom<=viewport.height&&
+      d.left>=0&&d.right<=viewport.width),
       'All five compact reels must fit on the iPhone viewport: '+JSON.stringify(dims));
     const savedMulti=await page.evaluate(()=>({
       n:s.items.length,c:s.coins,opened:s.openings,spent:s.spent,items:s.items.slice(-5)
