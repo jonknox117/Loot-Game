@@ -7,13 +7,14 @@ function ensureMarketState(game,now=Date.now()){
   if(!game||typeof game!=='object')return null;
   if(!game.market||typeof game.market!=='object'||Array.isArray(game.market)){
     game.market={schemaVersion:SCHEMA_VERSION,npcListings:[],negotiations:[],
-      traders:[],priceHistory:{},lastSimulatedAt:Number.isFinite(game.lastMarketCheck)?game.lastMarketCheck:now};
+      traders:[],notifications:[],priceHistory:{},lastSimulatedAt:Number.isFinite(game.lastMarketCheck)?game.lastMarketCheck:now};
   }
   const m=game.market;
   if(!Number.isSafeInteger(m.schemaVersion)||m.schemaVersion<1)m.schemaVersion=SCHEMA_VERSION;
   if(!Array.isArray(m.npcListings))m.npcListings=[];
   if(!Array.isArray(m.negotiations))m.negotiations=[];
   if(!Array.isArray(m.traders))m.traders=[];
+  if(!Array.isArray(m.notifications))m.notifications=[];
   if(!m.priceHistory||typeof m.priceHistory!=='object'||Array.isArray(m.priceHistory))m.priceHistory={};
   if(!Number.isFinite(m.lastSimulatedAt))m.lastSimulatedAt=now;
   return m;

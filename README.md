@@ -1,5 +1,15 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.0 — Auction House & Trading Desk
+
+- **Two independent selling options.** Inventory and Market now offer Auction (passive NPC bidding) and Trading Desk (active one-on-one negotiation). Both escrow the exact collectible; no duplicate sales.
+- **Auctions** accept a starting bid and a 1, 6, 12, or 24-hour duration. NPC bidders enter deterministic 15-minute bidding windows, consider item condition and market demand, obey personal wallet limits, compete by minimum increments, and settle only once when time expires. The winner transfers coins after the existing 5% success fee, and unsold weapons return unchanged. Auctions with bids cannot be cancelled.
+- **Browser-offline progression:** auctions process elapsed time when you return, independent of the shorter NPC trading catch-up window. Saved bid histories and a Market notification inbox summarize new bids, completed sales, and unsold returns. A browser-only game cannot send real push notifications while fully closed.
+- **Trading Desk** offers counteroffer, hold firm, concede 5%, final offer, accept offer, and walk away, with saved buyer patience and finite budgets. Desk items cannot auto-sell through the old passive listing simulator.
+- **Economy exploit closed:** NPC offers and maximum buying prices are calculated from independent, condition-aware market estimates and preferences, never from the player's inflated asking price. Previously open exploit-prone offers are re-capped to true buyer budgets on next review. A high starting price cannot manufacture a high buyer valuation.
+- **Save compatibility:** Existing listings default to the previous legacy state; no previously escrowed items or accepted agreements are deleted. New auctions and notifications are validated and saved with existing revision guards and transaction accounting.
+- **Tests:** covered deterministic bidding, inflated opening prices, escrow duplication guards, unsold returns, offline expiry, one-time payouts, saved notifications, iPhone auction controls, and real rejection of inflated final offers.
+
 ## Patch 0.6.3 — Official Spec Ops Case
 
 - The **Spec Ops Case** is now a released, independent curated case at **75 coins**. Buy one to five sealed, or buy and open up to five simultaneously. Arsenal and Cartel drop tables remain unchanged.

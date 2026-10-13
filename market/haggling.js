@@ -16,14 +16,25 @@ function locate(game,kind,listingId){
 function get(game,kind,listingId){
   const listing=locate(game,kind,listingId);
   const id=kind+':'+listingId+(kind==='sell'&&listing?':'+listing.createdAt:'');
-  return game.market.negotiations.find(x=>x&&x.id===id)||null;
+  const deal=game.market.negotiations.find(x=>x&&x.id===id)||null;
+  // Existing open saves from the old asking-price-based economy must not
+  // retain exploitable buyer ceilings or bids after the rules are upgraded.
+  if(deal&&deal.kind==='sell'&&deal.status==='open'&&listing){
+    const trader=root.LootHubTraders.get(game,deal.traderId);
+    if(trader){
+      const limit=root.LootHubTraders.buyerValue(game,trader,listing.item,listing.id);
+      deal.threshold=Math.min(deal.threshold,limit);
+      deal.npcOffer=Math.min(deal.npcOffer,deal.threshold);
+    }
+  }
+  return deal;
 }
 function begin(game,kind,listingId,now=Date.now()){
   if(!game||!game.market||!Array.isArray(game.market.negotiations)||!Number.isFinite(now))return null;
   const existing=get(game,kind,listingId);
   if(existing)return existing;
   const listing=locate(game,kind,listingId);
-  if(!listing||!listing.item||!core.validAsk(listing.ask))return null;
+  if(!listing||listing.mode==='auction'||!listing.item||!core.validAsk(listing.ask))return null;
   const terms=root.LootHubTraders.terms(game,kind,listing);
   if(!terms)return null;
   const {threshold,npcOffer,traderId,persona,description,focus,maxRounds,concession}=terms;
@@ -76,6 +87,25 @@ function submit(game,kind,listingId,amount,now=Date.now()){
   }
   return n;
 }
+function tactic(game,kind,listingId,action,amount,now=Date.now()){
+  const n=get(game,kind,listingId);
+  if(!n||n.status!=='open'||!['counter','hold','concede','final'].includes(action)||
+     !core.validAsk(amount))return null;
+  // Firm demands cost patience, concessions actually lower the player's price,
+  // and a rejected final offer ends this discussion rather than rerolling.
+  if(action==='hold'&&n.rounds>0)n.rounds=Math.min(n.maxRounds||MAX_ROUNDS,n.rounds+1);
+  const proposed=action==='concede'?
+    (kind==='sell'?Math.max(1,Math.floor(amount*.95)):
+     Math.max(1,Math.ceil(amount*1.05))):amount;
+  const outcome=submit(game,kind,listingId,proposed,now);
+  if(!outcome)return null;
+  if(action==='final'&&outcome.status==='open'){
+    outcome.status='walked';outcome.updatedAt=now;
+    outcome.history.push({by:'npc',at:now,message:'Final offer declined; trader left'});
+  }
+  if(action!=='counter')outcome.history.push({by:'system',at:now,message:{hold:'You held firm',concede:'You made a concession',final:'Final offer'}[action]});
+  return outcome;
+}
 function acceptCounter(game,kind,listingId,now=Date.now()){
   const n=get(game,kind,listingId);
   if(!n||n.status!=='open'||!core.validAsk(n.npcOffer)||!Number.isFinite(now))return null;
@@ -111,7 +141,7 @@ function closeForListing(game,kind,listingId,now=Date.now()){
   }
 }
 root.LootHubHaggling=Object.freeze({
-  MAX_ROUNDS,hash,get,begin,submit,acceptCounter,walkAway,stillAvailable,
+  MAX_ROUNDS,hash,get,begin,submit,tactic,acceptCounter,walkAway,stillAvailable,
   resolveUnavailable,closeForListing
 });
 })(window);

@@ -29,21 +29,21 @@ function sellOwned(game,itemId,price,reputation){
   game.rep+=reputation;
   return {item,price};
 }
-function createListing(game,itemId,ask,now){
-  if(!core.validAsk(ask)||!Number.isFinite(now)||!Array.isArray(game.items)||
+function createListing(game,itemId,ask,now,mode='legacy'){
+  if(!['legacy','desk','auction'].includes(mode)||!core.validAsk(ask)||!Number.isFinite(now)||!Array.isArray(game.items)||
     !Array.isArray(game.listings))return null;
   const index=game.items.findIndex(x=>x.id===itemId);
   if(index<0||!core.eligible(game.items[index])||
     game.listings.some(x=>x.id==='listing-'+itemId||(x.item&&x.item.id===itemId)))return null;
   const item=game.items.splice(index,1)[0];
-  const listing={id:'listing-'+itemId,item,ask,createdAt:now,checkedAt:now};
+  const listing={id:'listing-'+itemId,item,ask,createdAt:now,checkedAt:now,mode};
   game.listings.push(listing);
   return listing;
 }
 function repriceListing(game,listingId,ask,now){
   if(!core.validAsk(ask)||!Number.isFinite(now)||!Array.isArray(game.listings))return null;
   const listing=game.listings.find(x=>x.id===listingId);
-  if(!listing||!listing.item||!core.eligible(listing.item)||!core.validAsk(listing.ask))return null;
+  if(!listing||listing.mode==='auction'||!listing.item||!core.eligible(listing.item)||!core.validAsk(listing.ask))return null;
   if(listing.ask===ask)return {listing,oldAsk:ask,changed:false};
   const oldAsk=listing.ask;
   listing.ask=ask;
@@ -109,7 +109,7 @@ function cancelListing(game,listingId){
   const index=game.listings.findIndex(x=>x.id===listingId);
   if(index<0)return null;
   const listing=game.listings[index];
-  if(!listing.item||game.items.some(x=>x.id===listing.item.id))return null;
+  if(!listing.item||listing.mode==='auction'||game.items.some(x=>x.id===listing.item.id))return null;
   game.listings.splice(index,1);
   game.items.push(listing.item);
   return listing;
@@ -119,7 +119,7 @@ function settleListing(game,listingId,negotiatedPrice){
   const index=game.listings.findIndex(x=>x.id===listingId);
   if(index<0)return null;
   const listing=game.listings[index];
-  if(!listing.item)return null;
+  if(!listing.item||listing.mode==='auction'||listing.mode==='desk'&&negotiatedPrice===undefined)return null;
   const price=negotiatedPrice===undefined?listing.ask:
     permittedPrice(game,'sell',listing,negotiatedPrice);
   if(!core.validAsk(price))return null;

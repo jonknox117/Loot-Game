@@ -43,6 +43,7 @@ function canMutate(){
 function reloadLatestProgress(){location.reload();}
 function isValidSave(data) {
   return !!(data && typeof data==='object' && !Array.isArray(data) &&
+    window.LootHubAuctions.validate(data) &&
     Number.isSafeInteger(data.coins) && data.coins>=0 &&
     Array.isArray(data.items) && Array.isArray(data.history) &&
     window.LootHubCollections.valid(data.collections));
@@ -146,7 +147,7 @@ function persistGame(data,activeTab){
     }else if(lastPersistedSnapshot!==null){
       saveConflict=true;throw Error('This save was removed outside the active tab')
     }
-    if(!window.LootHubCollections.valid(data.collections))throw Error('Invalid collection progress');
+    if(!window.LootHubCollections.valid(data.collections)||!window.LootHubAuctions.validate(data))throw Error('Invalid collection or auction state');
     window.LootHubCollections.reconcile(data);
     data.tab=activeTab;
     data.savedAt=Date.now();
@@ -177,7 +178,8 @@ function safeUpload(data) {
   // Missing grades are valid for old backups. Present grades must be 0–4;
   // unopened cases must never carry a weapon condition.
   if(!window.LootHubWear.validGame(data,true)||
-     !window.LootHubCollections.valid(data&&data.collections))return false;
+     !window.LootHubCollections.valid(data&&data.collections)||
+     !window.LootHubAuctions.validate(data))return false;
   if(!isValidSave(data) || data.items.length>50000 ||
      !Array.isArray(data.listings||[]) || (data.listings||[]).length>50000 ||
      !Number.isFinite(data.earned) || data.earned<0 ||
@@ -380,13 +382,13 @@ function listingEditor(item,ask,mode,listingId){
   const safeAsk=window.LootHubMarketCore.validAsk(ask)?ask:reference;
   const quote=window.LootHubMarketCore.listingQuote(safeAsk,reference);
   const suggested=window.LootHubMarketCore.suggestedPrices(reference);
-  const label=mode==='edit'?'EDIT LISTING PRICE':'CREATE A LISTING';
+  const label=mode==='edit'?'EDIT TRADING DESK PRICE':'TRADING DESK · FIND A BUYER';
   const action=mode==='edit'?marketAction('submitPriceEdit',listingId):marketAction('submitListing',item.id);
   const back=mode==='edit'?'closeDialog()':marketAction('inspect',item.id);
   dialog('<div class="section-eyebrow">'+label+'</div>'+
     '<h2>'+escapeHTML(listingItemName(item))+'</h2>'+
     '<div class="listing-editor-art">'+visualArt(item,'inspect')+'</div>'+
-    '<p class="muted tiny">The exact owned item stays in escrow until it sells or you cancel. Changing the price costs nothing. A 5% fee applies only when it sells.</p>'+
+    '<p class="muted tiny">This item stays in escrow while you negotiate. The buyer values the weapon independently of your asking price. You must actively complete an agreed deal; the fee is 5% on success.</p>'+
     '<div class="stat"><span>Market value</span><b>'+money(reference)+' coins</b></div>'+ 
     conditionPriceRows(item)+
     '<label class="listing-price-label" for="listPrice">Your asking price</label>'+
@@ -418,7 +420,7 @@ function submitListing(k){
   if(!item)return;
   const ask=listingInputAsk();
   if(ask===null)return;
-  const listing=window.LootHubMarketTransactions.createListing(s,k,ask,Date.now());
+  const listing=window.LootHubMarketTransactions.createListing(s,k,ask,Date.now(),'desk');
   if(!listing)return;
   recordActivity(s,'Listed '+listingItemName(item)+' for '+ask+' coins');
   save();
@@ -431,7 +433,7 @@ function listItem(k){
   listingEditor(item,marketEstimate(item),'create',null);
 }
 function editListing(k){
-  const listing=(s.listings||[]).find(v=>v.id===k);
+  const listing=(s.listings||[]).find(v=>v.id===k&&v.mode!=='auction');
   if(!listing||!listing.item)return;
   listingEditor(listing.item,listing.ask,'edit',listing.id);
 }
@@ -580,7 +582,9 @@ function renderMarketNegotiation(kind,k){
     status==='completed'?'<p class="notice">Trade completed. The item and coins have already transferred.</p>':
     status==='unavailable'?'<p class="notice">This listing is no longer available at its negotiated price.</p>':'';
   const roundLeft=Math.max(0,(n.maxRounds||window.LootHubHaggling.MAX_ROUNDS)-n.rounds);
-  const suggest=buy?Math.max(1,Math.round(n.npcOffer*.9)):Math.min(100000000,Math.round(n.npcOffer*1.1));
+  const reference=item?marketEstimate(item):n.npcOffer;
+  const suggest=buy?Math.max(1,Math.round(n.npcOffer*.9)):
+    Math.min(100000000,Math.max(n.npcOffer,Math.round(reference*1.08)));
   const controls=status==='open'?
     '<label for="negotiationAmount">'+(buy?'Your purchase offer':'Your counter asking price')+
     '</label><input id="negotiationAmount" aria-label="Your offer" class="field" type="number" min="1" max="'+
@@ -588,6 +592,10 @@ function renderMarketNegotiation(kind,k){
     '<div class="row offer-actions"><button class="primary" onclick="'+marketActionWithKind('sendNegotiationOffer',kind,k)+'">Send offer</button>'+
     '<button onclick="'+marketActionWithKind('acceptMarketCounter',kind,k)+'">Accept '+
       money(n.npcOffer)+' ◈</button>'+
+    (!buy?'<div class="negotiation-tactics">'+
+      '<button onclick="'+marketActionWithKind('holdMarketOffer',kind,k)+'">Hold firm</button>'+
+      '<button onclick="'+marketActionWithKind('concedeMarketOffer',kind,k)+'">Concede 5%</button>'+
+      '<button onclick="'+marketActionWithKind('finalMarketOffer',kind,k)+'">Final offer</button></div>':'')+
     '<button onclick="'+marketActionWithKind('leaveMarketNegotiation',kind,k)+'">Walk away</button></div>':
     status==='agreed'?
     '<button class="primary" onclick="'+marketActionWithKind('completeMarketNegotiation',kind,k)+'">'+
@@ -616,6 +624,19 @@ function sendNegotiationOffer(kind,k){
   save();
   renderMarketNegotiation(kind,k);
 }
+function marketTactic(kind,k,choice){
+ if(!canMutate())return;
+ const input=document.getElementById('negotiationAmount');
+ if(!input)return;
+ const ask=Number(input.value);
+ if(!window.LootHubMarketCore.validAsk(ask))return;
+ const outcome=window.LootHubHaggling.tactic(s,kind,k,choice,ask,Date.now());
+ if(!outcome)return;
+ save();renderMarketNegotiation(kind,k);
+}
+function holdMarketOffer(kind,k){marketTactic(kind,k,'hold')}
+function concedeMarketOffer(kind,k){marketTactic(kind,k,'concede')}
+function finalMarketOffer(kind,k){marketTactic(kind,k,'final')}
 function acceptMarketCounter(kind,k){
   if(!canMutate())return;
   const outcome=window.LootHubHaggling.acceptCounter(s,kind,k,Date.now());
@@ -685,7 +706,8 @@ function renderMarketOwnedResults(){
     '<p class="muted tiny">'+conditionTag(item)+'</p>'+ 
     '<p class="muted tiny">Market '+money(marketEstimate(item))+' ◈ · Condition value '+
       money(estimated(item))+' ◈</p>'+
-    '<button onclick="'+marketAction('listItem',item.id)+'">List item</button></div>').join('');
+    '<div class="auction-item-actions"><button onclick="'+marketAction('listItem',item.id)+'">Trading Desk</button>'+ 
+    '<button onclick="window.LootHubAuctionUI.openEditor('+escapeHTML(JSON.stringify(String(item.id)))+')">Auction</button></div></div>').join('');
   return (cards?'<div class="cards">'+cards+'</div>':
     '<p class="muted">No available collectibles match these filters.</p>')+
     (all.length>marketOwnedView.limit?'<button id="marketOwnedMore" class="market-more" onclick="showMoreMarketOwned()">Show more ('+
@@ -797,7 +819,7 @@ function marketPulse(){
     '<p class="muted tiny">At most six completed trades per collectible per day affect prices. Refreshing the page cannot move the index.</p></section>';
 }
 function enhancedMarket(){
-  const listingItems=(s.listings||[]).map(l=>{
+  const listingItems=(s.listings||[]).filter(l=>l.mode!=='auction').map(l=>{
     const offer=window.LootHubHaggling.get(s,'sell',l.id);
     const quote=window.LootHubMarketCore.listingQuote(l.ask,estimated(l.item));
     return '<div class="listing-line market-listing-row">'+
@@ -839,11 +861,11 @@ function enhancedMarket(){
       '<div class="stat"><span>'+label+'</span><b>'+n+'</b></div>').join('')+'</div>'+
     '<p class="muted tiny">Offline catch-up is capped at 8 hours per return. Skipped time cannot be replayed by refreshing.</p></section>':'';
   const shortcuts='<nav class="market-shortcuts" aria-label="Market sections">'+
-    [['market-browse','Browse market'],['market-listings','My listings'],
-     ['market-offers','Offers & history'],['market-sell','Sell inventory']]
+    [['market-auctions','Auction House'],['market-offers','Trading Desk'],
+     ['market-browse','Browse market'],['market-sell','Sell inventory']]
       .map(([id,label])=>'<button onclick="'+marketAction('jumpMarketSection',id)+'">'+label+'</button>').join('')+
     '</nav>';
-  return shortcuts+offlineText+marketPulse()+'<section class="panel npc-market-section" id="market-browse">'+
+  return shortcuts+window.LootHubAuctionUI.alerts()+window.LootHubAuctionUI.house()+offlineText+marketPulse()+'<section class="panel npc-market-section" id="market-browse">'+
     '<div class="section-eyebrow">LOOTBAY · SIMULATED TRADERS</div>'+
     '<div class="row space"><h2>Live Weapon Market</h2><span id="npcMarketCount" class="muted tiny">'+
       count+' listings</span></div>'+
@@ -869,17 +891,17 @@ function enhancedMarket(){
     '<div class="npc-market-grid" id="npcMarketResults">'+renderNpcMarketResults()+'</div>'+
     '<p class="muted tiny">NPC stock refreshes gradually. Each listing supports a saved negotiation with up to three offers. No real players are connected.</p>'+
     '</section>'+
-    '<section class="panel" id="market-listings"><div class="row space"><h2>My Market Listings <span class="muted">('+
-      (s.listings||[]).length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
-    (listingItems||'<p class="muted">No active listings. Choose an owned item below to set your price.</p>')+
-    '<p class="muted tiny">Your listings stay in escrow. Simulated buyers have finite budgets. Successful sales deduct the 5% fee.</p></section>'+ 
+    '<section class="panel" id="market-listings"><div class="row space"><h2>My Trading Desk Listings <span class="muted">('+
+      (s.listings||[]).filter(l=>l.mode!=='auction').length+')</span></h2><button onclick="go(\'Inventory\')">Full inventory</button></div>'+
+    (listingItems||'<p class="muted">No active Trading Desk listings. Pick an item below and find a buyer.</p>')+
+    '<p class="muted tiny">Trading Desk inventory stays in escrow until an agreement is completed or cancelled. Buyers have independent finite budgets.</p></section>'+ 
     tradeCenter()+
     '<section class="panel"><div class="section-eyebrow">TRADER PROFILES</div><h2>Meet the Buyers</h2>'+ 
     '<p class="muted tiny">Different collectors value different item types and negotiate with varying patience. Budgets are saved and decrease after purchases.</p>'+ 
     '<div class="market-trader-directory">'+traderDirectory+'</div></section>'+
     '<section class="panel" id="market-sell"><div class="row space"><h3>List from Inventory</h3>'+
     '<span class="muted tiny" id="marketOwnedCount">'+ownable.length+' available</span></div>'+
-    '<p class="muted tiny">Search every available collectible directly here; opening a listing moves only that item into escrow.</p>'+
+    '<p class="muted tiny">Choose Auction for a passive sale or Trading Desk for active negotiation. Both use safe inventory escrow.</p>'+
     '<div class="market-owned-controls">'+
     '<label>Find an item<input id="marketOwnedSearch" class="field" type="search" placeholder="Weapon or finish..." value="'+
       escapeHTML(marketOwnedView.search)+'" oninput="updateMarketOwnedFilter(\'search\',this.value)"></label>'+

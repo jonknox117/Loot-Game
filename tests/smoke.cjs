@@ -388,7 +388,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await page.locator('#listingNet').textContent()).includes('20'), 'Live listing proceeds should account for fees');
     assert((await page.locator('#listingFee').textContent()).includes('2'), 'Live listing fee quote missing');
     await page.getByRole('button', { name: 'List for sale' }).click();
-    assert(await page.getByText('My Market Listings').count() === 1, 'Listing must show in marketplace');
+    assert(await page.getByText('My Trading Desk Listings').count() === 1, 'Listing must show in marketplace');
     assert((await page.locator('.listing-line').count())===1,'Listed case must be escrowed');
     const marketFoundation=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market);
     assert(marketFoundation?.schemaVersion===1&&Array.isArray(marketFoundation.npcListings),'Marketplace schema missing from saved game');
@@ -612,7 +612,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     }
     assert(await page.locator('#marketOwnedResults .item').count()===matchingCount,
       'Show more must reveal every matching inventory item, including earlier earned weapons');
-    await page.locator('#marketOwnedResults .item').first().getByRole('button',{name:'List item'}).click();
+    await page.locator('#marketOwnedResults .item').first().getByRole('button',{name:'Trading Desk'}).click();
     await page.locator('#listPrice').fill('35');
     await page.getByRole('button',{name:'List for sale'}).click();
     const listed=await page.evaluate(()=>{
@@ -1140,6 +1140,93 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'After opening five, forty-five awarded cases should remain sealed');
     assert(await page.evaluate(()=>claimCollection('cartel-v1'))===false,
       'Claiming again must never grant another 25 cases');
+
+
+    // 0.7 iPhone auction and independent-price negotiation end-to-end.
+    await page.evaluate(()=>{
+      s.items.push({id:'mobile-auction-spas',kind:'skin',weapon:'SPAS-12',
+        skin:'Spec Ops',tier:2,base:350,wearGrade:1});
+      save();go('Inventory');
+      window.LootHubAuctionUI.openEditor('mobile-auction-spas');
+    });
+    await page.locator('#auctionStartingBid').waitFor({state:'visible'});
+    await page.locator('#auctionStartingBid').fill('220');
+    await page.locator('#auctionDuration').selectOption('1');
+    await page.getByRole('button',{name:'Start auction'}).click();
+    assert(await page.locator('#market-auctions .auction-listing').count()===1,
+      'Auction should appear in the Auction House after the item enters escrow');
+    const auctionView=await page.locator('#market-auctions .auction-listing').evaluate(node=>{
+      const rect=node.getBoundingClientRect();
+      const button=node.querySelector('button');
+      return {left:rect.left,right:rect.right,width:window.innerWidth,
+        hasBids:!!button,buttonHeight:button?.getBoundingClientRect().height};
+    });
+    assert(auctionView.left>=-1&&auctionView.right<=auctionView.width+1&&
+      auctionView.hasBids&&auctionView.buttonHeight>=42,
+      'Auction House must fit iPhone width with usable controls: '+JSON.stringify(auctionView));
+    await page.getByRole('button',{name:'View bids'}).click();
+    assert(await page.locator('.dialog .auction-bid-history').count()===1);
+    await page.getByRole('button',{name:'Close',exact:true}).click();
+    const auctionBefore=await page.evaluate(()=>({
+      coins:s.coins,owned:s.items.some(x=>x.id==='mobile-auction-spas')
+    }));
+    assert(!auctionBefore.owned,'Auction escrow must remove the owned item');
+    await page.evaluate(()=>{
+      const auction=s.listings.find(x=>x.item.id==='mobile-auction-spas');
+      auction.createdAt=Date.now()-3600000-1500;
+      auction.endsAt=auction.createdAt+3600000;
+      auction.nextSlot=0;auction.bids=[];auction.highestBid=0;auction.highestBidder=null;
+      save();render();
+    });
+    assert(await page.locator('#market-auctions .auction-listing').count()===0,
+      'Expired auction must settle or return the weapon after offline catch-up');
+    const auctionAfter=await page.evaluate(()=>({
+      coins:s.coins,owned:s.items.some(x=>x.id==='mobile-auction-spas'),
+      notices:s.market.notifications,
+      sold:s.market.notifications.some(x=>x.type==='sold')
+    }));
+    assert(auctionAfter.sold?auctionAfter.coins>auctionBefore.coins:auctionAfter.owned,
+      'Expired auction must either pay out or return the identical item');
+    assert(auctionAfter.notices.length>=1,'Auction results must produce notifications');
+    assert(await page.locator('#market-alerts .market-notice').count()>=1,
+      'Auction notifications should be visible on an iPhone');
+    await page.reload({waitUntil:'load'});
+    const stable=await page.evaluate(()=>({
+      coins:s.coins,notifications:s.market.notifications.length,
+      auction:s.listings.some(x=>x.item.id==='mobile-auction-spas')
+    }));
+    assert(stable.coins===auctionAfter.coins&&stable.notifications===auctionAfter.notices.length&&
+      stable.auction===false,'Refreshing must not duplicate the sale or reset the auction');
+
+    await page.evaluate(()=>{
+      s.items.push({id:'mobile-desk-spas',kind:'skin',weapon:'SPAS-12',
+        skin:'Spec Ops',tier:2,base:350,wearGrade:1});
+      save();go('Market');
+      listItem('mobile-desk-spas');
+    });
+    await page.locator('#listPrice').fill('519');
+    await page.getByRole('button',{name:'List for sale'}).click();
+    assert(await page.locator('#market-listings .listing-line').count()>=1,
+      'Trading Desk listing must remain separate from completed auctions');
+    await page.locator('#market-listings .listing-line').last().getByRole('button',{name:'Review offer'}).click();
+    const deskOffer=await page.evaluate(()=>{
+      const n=s.market.negotiations.find(x=>x.listingId==='listing-mobile-desk-spas');
+      const l=s.listings.find(x=>x.id==='listing-mobile-desk-spas');
+      return {bid:n.npcOffer,ceiling:n.threshold,ask:n.initialAsk,
+        reference:window.LootHubEconomy.marketValue(s,l.item)};
+    });
+    assert(deskOffer.ceiling<=Math.ceil(deskOffer.reference*1.25)&&
+      deskOffer.bid<=deskOffer.ceiling&&deskOffer.bid<519,
+      'NPCs must not scale their valuation with the inflated 519 coin asking price');
+    await page.locator('#negotiationAmount').fill('543');
+    await page.getByRole('button',{name:'Final offer'}).click();
+    assert((await page.locator('.dialog').textContent()).includes('walked away'),
+      'Unreasonable final offers must be rejected, not guaranteed deals');
+    assert(await page.evaluate(()=>s.items.every(x=>x.id!=='mobile-desk-spas')),
+      'A rejected negotiation must leave the weapon in escrow without a payout');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.listings.some(x=>x.id==='listing-mobile-desk-spas')),
+      'Pending Trading Desk escrow and rejection history survive reload');
 
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');

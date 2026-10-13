@@ -28,8 +28,8 @@ assert(html.includes('<script src="./assets/cartel-case.js"></script>'));
 for(const slug of ['ak-47','rpg-7','tactical-machete','12-gauge-pump-shotgun','desert-eagle'])assert(html.includes('<script src="./assets/skins/'+slug+'--cartel.js"></script>'));
 
 assert(html.includes('<script src="./market/feedback.js"></script>'),'Missing interaction feedback module');
-const marketModules=['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
-for(const name of ['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
+const marketModules=['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','auctions','auction-ui','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
+for(const name of ['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','auctions','auction-ui','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
 const catalogData=fs.readFileSync(path.join(root,'assets/weapon-catalog.js'),'utf8');
 assert(html.includes('<script src="./assets/weapon-catalog.js"></script>'));
@@ -1454,10 +1454,10 @@ test('Full owned inventory is searchable, sorted and paginated in Market without
   g.run('for(let i=0;i<22;i++)s.items.push({id:"owned-"+i,kind:"weapon",weapon:i%2?"AK-47":"MP5",tier:1,base:i+10})');
   g.run("go('Market')");
   assert.equal(g.run('window.LootHubTradingTools.filterOwned(s,{}).length'),22);
-  assert.equal((g.run('renderMarketOwnedResults()').match(/>List item<\/button>/g)||[]).length,12);
+  assert.equal((g.run('renderMarketOwnedResults()').match(/>Trading Desk<\/button>/g)||[]).length,12);
   assert(g.run('renderMarketOwnedResults()').includes('Show more'));
   g.run('showMoreMarketOwned()');
-  assert.equal((g.run('renderMarketOwnedResults()').match(/>List item<\/button>/g)||[]).length,22);
+  assert.equal((g.run('renderMarketOwnedResults()').match(/>Trading Desk<\/button>/g)||[]).length,22);
   assert(!g.run('renderMarketOwnedResults()').includes('Show more'));
   g.run('updateMarketOwnedFilter("search","AK-47")');
   assert.equal(g.run('window.LootHubTradingTools.filterOwned(s,marketOwnedView).length'),11);
@@ -2805,6 +2805,98 @@ test('Legacy collection progress is extended for Spec Ops without losing discove
  const resumed=boot(store);
  assert.equal(resumed.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
  assert.equal(resumed.run('window.LootHubCollections.progress(s,"spec-ops-v1").found'),0);
+});
+
+
+test('0.7 independent buyer valuations do not increase when a player inflates the asking price',()=>{
+ const g=boot();
+ const item={id:'high-ask-spas',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:1};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ const fair=g.run('window.LootHubEconomy.marketValue(s,s.items.find(x=>x.id==="high-ask-spas"))');
+ const offers=[];
+ for(const ask of [Math.round(fair*1.05),Math.round(fair*1.55),Math.round(fair*25)]){
+  g.run('window.LootHubMarketTransactions.createListing(s,"high-ask-spas",'+ask+',Date.now(),"desk")');
+  const terms=JSON.parse(g.run('JSON.stringify(window.LootHubTraders.terms(s,"sell",s.listings[0]))'));
+  assert(terms&&terms.threshold>0,'There is a buyer with independent funds');
+  assert(terms.threshold<=Math.ceil(fair*1.26),'Buyer ceiling must track market not asking');
+  assert(terms.npcOffer<=terms.threshold,'Opening bid never exceeds budget');
+  offers.push([terms.threshold,terms.npcOffer]);
+  g.run('window.LootHubMarketTransactions.cancelListing(s,s.listings[0].id)');
+ }
+ assert(offers.every(x=>x[0]<=Math.ceil(fair*1.26)));
+});
+test('0.7 auction bid sequence, escrow, settlement and notifications persist without duplicated coins',()=>{
+ const g=boot();
+ const item={id:'auction-spas-a',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:2};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ const start=Date.now()-24*3600000-1000;
+ const a=JSON.parse(g.run('JSON.stringify(window.LootHubAuctions.create(s,"auction-spas-a",200,24,'+start+'))'));
+ assert(a&&a.mode==='auction'&&a.bids.length===0);
+ assert(!g.state().items.some(x=>x.id===item.id),'Item is held in auction escrow');
+ assert.equal(g.run('window.LootHubMarketTransactions.settleListing(s,"listing-auction-spas-a")'),null,
+  'Legacy sale API cannot bypass the auction winner');
+ assert.equal(g.run('window.LootHubMarketTransactions.cancelListing(s,"listing-auction-spas-a")'),null,
+  'Legacy cancellation cannot evade outstanding auction bids');
+ const before=g.state().coins;
+ const result=JSON.parse(g.run('JSON.stringify(window.LootHubAuctions.advance(s,Date.now()))'));
+ assert.equal(result.expired,1);
+ assert(result.bids>0,'24-hour auction should attract independent bidders');
+ assert.equal(result.sales.length,1);
+ assert(result.sales[0].price>=200&&result.sales[0].price<=Math.round(350*1.23*1.35));
+ assert.equal(g.state().coins,before+result.sales[0].net);
+ assert(!g.state().listings.some(x=>x.id==='listing-auction-spas-a'));
+ assert(g.state().market.notifications.some(x=>x.type==='sold'&&!x.read));
+ assert.equal(JSON.parse(g.run('JSON.stringify(window.LootHubAuctions.advance(s,Date.now()))')).sales.length,0);
+ g.run('save()');
+ const resumed=boot(g.store);
+ assert.equal(resumed.state().coins,g.state().coins,'No duplicate payout on reload');
+ assert(resumed.state().market.notifications.some(x=>x.type==='sold'));
+ assert.equal(resumed.run('window.LootHubAuctions.advance(s,Date.now()).sales.length'),0);
+});
+test('0.7 auctions with unaffordable starting bids return the exact original item',()=>{
+ const g=boot();
+ const item={id:'auction-unsold',kind:'weapon',weapon:'MP5',tier:1,base:110,wearGrade:1};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ const start=Date.now()-3600000-1000;
+ assert(g.run('window.LootHubAuctions.create(s,"auction-unsold",100000000,1,'+start+')'));
+ const result=JSON.parse(g.run('JSON.stringify(window.LootHubAuctions.advance(s,Date.now()))'));
+ assert.equal(result.expired,1);
+ assert.equal(result.sales.length,0);
+ assert.equal(g.state().items.filter(x=>x.id===item.id).length,1);
+ assert(!g.state().listings.some(x=>x.item?.id===item.id));
+ assert(g.state().market.notifications.some(x=>x.type==='unsold'));
+ assert.equal(g.run('window.LootHubAuctions.advance(s,Date.now()).expired'),0);
+});
+test('0.7 active Trading Desk never passively settles while player is away',()=>{
+ const g=boot();
+ const item={id:'desk-no-auto',kind:'weapon',weapon:'AWP',tier:3,base:1000,wearGrade:1};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ const t=Date.now()-3*3600000;
+ g.run('window.LootHubMarketTransactions.createListing(s,"desk-no-auto",500,'+t+',"desk")');
+ const sales=JSON.parse(g.run('JSON.stringify(window.LootHubMarketSimulation.advanceListings(s,Date.now(),()=>0))'));
+ assert.equal(sales.sales.length,0);
+ assert.equal(g.state().listings.filter(x=>x.mode==='desk').length,1);
+ assert.equal(g.run('window.LootHubMarketTransactions.settleListing(s,"listing-desk-no-auto")'),null,
+  'Desk cannot sell without an agreed negotiation');
+ const desk=g.run('enhancedMarket()');
+ assert(desk.includes('Auction House')&&desk.includes('Trading Desk'));
+ assert(desk.includes('Auction')&&desk.includes('market-alerts'));
+});
+test('0.7 active negotiation offers can reject aggressive player counters and walk away',()=>{
+ const g=boot();
+ const item={id:'desk-tactics',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:1};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ g.run('window.LootHubMarketTransactions.createListing(s,"desk-tactics",519,Date.now(),"desk")');
+ const id='listing-desk-tactics';
+ const bid=JSON.parse(g.run('JSON.stringify(window.LootHubHaggling.begin(s,"sell",'+JSON.stringify(id)+'))'));
+ const reference=g.run('window.LootHubEconomy.marketValue(s,s.listings[0].item)');
+ assert(bid.threshold<=Math.round(reference*1.26));
+ assert(bid.npcOffer<519);
+ assert(g.run('window.LootHubHaggling.tactic(s,"sell",'+JSON.stringify(id)+',"final",543,Date.now())'));
+ const record=g.state().market.negotiations.find(x=>x.listingId===id);
+ assert.equal(record.status,'walked','Buyer declines final offer above independent budget');
+ assert(!record.agreedPrice);
+ assert.equal(g.state().listings.length,1,'Item remains in escrow until cancelled');
 });
 
 if(process.exitCode)process.exit(process.exitCode);

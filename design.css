@@ -1113,3 +1113,36 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  width:100%;
  height:100%!important;
 }
+
+
+/* LootHub 0.7.0 Auction House + Trading Desk: distinct mobile-friendly actions. */
+.auction-house,.market-alerts{border-color:rgba(146,172,205,.32)}
+.auction-house{background:linear-gradient(155deg,#1d2b3d,#121d2c 78%)}
+.auction-house .section-eyebrow{color:#e8c082}
+.auction-listing{align-items:center}
+.auction-listing .listing-identity{min-width:0}
+.auction-listing .market-listing-controls{gap:8px}
+.auction-item-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:auto}
+.auction-item-actions button{font-size:12px;padding:8px 4px;min-width:0}
+.market-alerts .row{align-items:center;gap:10px}
+.market-alerts h2{font-size:clamp(20px,3vw,27px)}
+.market-notice{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+ padding:11px 10px;border-bottom:1px solid rgba(127,157,191,.15);font-size:13px;color:#b9c7da}
+.market-notice-unread{border-left:3px solid #f0bd6c;background:rgba(233,173,87,.055);color:#ecf2fc}
+.market-notice small{font-size:10px;color:#8fa5bd;white-space:nowrap}
+.auction-bid-history{margin:12px 0;border:1px solid #354960;border-radius:12px;padding:8px}
+.auction-bid-history .stat{gap:12px;flex-wrap:wrap}
+.auction-bid-history .stat span{min-width:0;overflow-wrap:anywhere}
+.negotiation-tactics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
+.negotiation-tactics button{min-width:0;font-size:12px;padding:9px 5px}
+@media(max-width:700px){
+ .auction-listing{flex-direction:column;align-items:stretch}
+ .auction-listing .listing-identity{width:100%}
+ .auction-listing .market-listing-controls{width:100%}
+ .auction-listing .market-listing-controls .row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .auction-listing .market-listing-controls button{min-height:42px}
+ .market-notice{flex-direction:column;gap:3px}
+ .market-notice small{white-space:normal}
+ .negotiation-tactics{grid-template-columns:1fr 1fr}
+ .negotiation-tactics button:last-child{grid-column:1/-1}
+}

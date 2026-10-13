@@ -80,8 +80,9 @@ function buyingPower(game,trader){
 }
 function chooseBuyer(game,listing){
   if(!listing||!listing.item||!core.validAsk(listing.ask))return null;
+  const reference=root.LootHubEconomy.marketValue(game,listing.item);
   const candidates=ensure(game).filter(x=>x.role==='buyer'&&
-    buyingPower(game,x)>=Math.max(1,Math.round(listing.ask*.5)));
+    buyingPower(game,x)>=Math.max(1,Math.round(reference*.5)));
   if(!candidates.length)return null;
   candidates.sort((a,b)=>{
     const score=x=>(likes(x,listing.item)?2:0)+hash(x.id+'|'+listing.item.id)*.8+
@@ -102,14 +103,24 @@ function terms(game,kind,listing){
       description:traits.description,focus:[...trader.focus],maxRounds:traits.patience,
       concession:traits.concession,threshold:floor,npcOffer:listing.ask};
   }
+  // The seller's ask must NEVER control a buyer's private value or opening bid.
+  // Demand and condition are determined independently by the market economy.
+  const reference=Math.max(1,root.LootHubEconomy.marketValue(game,listing.item));
   const ceiling=Math.max(1,Math.min(buyingPower(game,trader),Math.round(
-    listing.ask*(traits.buyCeiling+(favor?.11:-.065)+spread))));
+    reference*(traits.buyCeiling+(favor?.11:-.065)+spread))));
   if(!core.validAsk(ceiling))return null;
   const bid=Math.max(1,Math.min(ceiling,Math.round(
-    listing.ask*(traits.firstOffer+(favor?.08:-.04)+spread))));
+    reference*(traits.firstOffer+(favor?.08:-.04)+spread))));
   return {traderId:trader.id,seller:trader.name,persona:traits.label,
     description:traits.description,focus:[...trader.focus],maxRounds:traits.patience,
     concession:traits.concession,threshold:ceiling,npcOffer:bid};
+}
+function buyerValue(game,trader,item,seed=''){
+  const t=style(trader),favor=likes(trader,item);
+  const reference=Math.max(1,root.LootHubEconomy.marketValue(game,item));
+  const spread=(hash('buyer:'+trader.id+':'+seed)-.5)*.04;
+  const factor=Math.min(1.23,Math.max(.55,t.buyCeiling+(favor?.11:-.065)+spread));
+  return Math.max(1,Math.min(buyingPower(game,trader),Math.round(reference*factor)));
 }
 function canSettleOffer(game,offer,price){
   if(!offer||!offer.traderId||!core.validAsk(price))return false;
@@ -151,5 +162,5 @@ function summary(trader){
     wallet:trader?trader.wallet:0};
 }
 root.LootHubTraders=Object.freeze({PROFILES,STYLES,ensure,get,style,likes,categories,
-  buyingPower,chooseBuyer,terms,canFund,canSettleOffer,finishPurchase,finishSale,summary});
+  buyingPower,chooseBuyer,terms,buyerValue,canFund,canSettleOffer,finishPurchase,finishSale,summary});
 })(window);

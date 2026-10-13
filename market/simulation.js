@@ -15,7 +15,7 @@ function advanceListings(game,now,random=Math.random){
   let changed=false;
   if(!game||!Array.isArray(game.listings)||!Number.isFinite(now))return {changed,sales};
   for(const listing of [...game.listings]){
-    if(!listing||!listing.item)continue;
+    if(!listing||!listing.item||listing.mode==='auction'||listing.mode==='desk')continue;
     // An accepted buyer offer reserves this exact escrow item for its negotiated deal.
     // Consume the elapsed listing clock, so a later voided deal cannot backfill sales.
     const offer=root.LootHubHaggling.get(game,'sell',listing.id);

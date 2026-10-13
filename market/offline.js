@@ -32,7 +32,7 @@ function advance(game,catalog,now=Date.now(),random=Math.random){
   const cappedListings=new Set(game.listings.filter(l=>l&&Number.isFinite(l.checkedAt)&&
     now-l.checkedAt>120*60000).map(l=>l.id));
   const player=root.LootHubMarketSimulation.advanceListings(game,now,random);
-  report.playerSales=player.sales;
+  report.playerSales=player.sales.concat(auctions.sales);
   if(player.changed)report.changed=true;
   for(const listing of game.listings){
     if(listing&&cappedListings.has(listing.id)&&
