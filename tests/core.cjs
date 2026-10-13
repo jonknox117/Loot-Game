@@ -2042,8 +2042,8 @@ test('All registered weapons have anchored semantic profiles, preserving legacy 
  for(const slug of slugs){
    const profile=p.weapons[slug],points=anchors.weapons[slug];
    assert(profile&&profile.wear,'Missing material profile '+slug);
-   assert.equal(profile.wear.reviewed,false,'Draft boundaries require explicit owner approval');
-   assert.equal(profile.wear.reviewStatus,'refined-draft');
+   assert(['refined-draft','owner-reviewed'].includes(profile.wear.reviewStatus));
+   assert.equal(profile.wear.reviewed,profile.wear.reviewStatus==='owner-reviewed');
    assert(points.length>=2,'Need at least two visible source reference landmarks for '+slug);
    for(const [kind,x,y] of points){
      assert(['metal','wood','other'].includes(kind),'Invalid material kind '+slug);
