@@ -162,6 +162,36 @@ test('Retired cases become Arsenal Cases and retired skins become neutral weapon
   assert(reload.state().items.some(x=>x.kind==='weapon'&&x.weapon==='Glock-18'),
     'Converted Arsenal Case must open through the normal reward pool');
 });
+test('Mosin-Nagant rename preserves legacy weapons, listings and trade history',()=>{
+ const fresh=boot();
+ assert.equal(fresh.run('window.LootHubWeaponCatalog.modelSlugs["Mosin-Nagant"]'),'kar98k');
+ const entry=JSON.parse(fresh.run('JSON.stringify(window.LootHubCollections.definitions[0].items.find(x=>x.id==="kar98k--base"))'));
+ assert.equal(entry.weapon,'Mosin-Nagant');
+ const now=Date.now(),store=new LocalStore();
+ const priceHistory={'weapon:kar98k':{momentum:.06,volume:2,updatedAt:now,
+   lastDay:Math.floor(now/86400000),eventsToday:1,recent:[]}};
+ store.setItem(KEY,JSON.stringify({coins:200,items:[{id:'owned-rifle',kind:'weapon',
+   weapon:'Kar98k',tier:2,base:96,paid:25,wearGrade:2}],history:[],earned:225,
+   spent:25,sales:0,rep:0,openings:1,serial:1,offers:{},tab:'Inventory',
+   listings:[{id:'listed-rifle',item:{id:'escrow-rifle',kind:'weapon',weapon:'Kar98k',
+     tier:2,base:96,wearGrade:1},ask:125,createdAt:now,checkedAt:now}],
+   market:{schemaVersion:1,npcListings:[],negotiations:[],traders:[],priceHistory,
+     lastSimulatedAt:now}}));
+ const g=boot(store),state=g.state();
+ assert.equal(state.items[0].weapon,'Mosin-Nagant');
+ assert.equal(state.items[0].id,'owned-rifle');
+ assert.equal(state.items[0].wearGrade,2);
+ assert.equal(state.listings[0].item.weapon,'Mosin-Nagant');
+ assert.equal(state.listings[0].ask,125);
+ assert.equal(state.market.priceHistory['weapon:mosin-nagant'].volume,2);
+ assert(!Object.hasOwn(state.market.priceHistory,'weapon:kar98k'));
+ assert(state.collections.progress['arsenal-v1'].seen.includes('kar98k--base'));
+ assert(g.run('window.LootHubWearMaterials.materialPath("Mosin-Nagant")').includes('kar98k'));
+ g.run('save()');
+ const reload=boot(store);
+ assert.equal(reload.state().items[0].weapon,'Mosin-Nagant');
+ assert.equal(reload.state().listings[0].item.weapon,'Mosin-Nagant');
+});
 test('Arsenal Case matches dynamically registered base weapons and ten owner-approved skins',()=>{
   const g=boot();
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
@@ -188,7 +218,7 @@ test('Arsenal Case matches dynamically registered base weapons and ten owner-app
     assert.equal(entry.finish,null);
   }
   assert(weaponNames.has('M60')&&weaponNames.has('RPG-7'));
-  for(const weapon of ['M1911','M1 Garand','Kar98k','Thompson SMG','FN SCAR-L','FN FAL','M134 Minigun'])assert(weaponNames.has(weapon));
+  for(const weapon of ['M1911','M1 Garand','Mosin-Nagant','Thompson SMG','FN SCAR-L','FN FAL','M134 Minigun'])assert(weaponNames.has(weapon));
   const live=JSON.parse(g.run('JSON.stringify(approvedSkins)'));
   assert.deepEqual(live,[['MAC-10','Red Devil',4,1800,'🔫'],
     ['RPG-7','Glory',3,1200,'🔫'],

@@ -156,7 +156,7 @@ Wear grade effects continue to apply independently per obtained instance. Existi
 | --- | --- |
 | Common | Glock-18, MP5, MAC-10, Tec-9, 12 Gauge Pump Shotgun |
 | Uncommon | Desert Eagle, Colt .45 Revolver, SPAS-12, M1911, Thompson SMG |
-| Rare | AK-47, M4A4, Tactical Machete, M60, M1 Garand, Kar98k, FN SCAR-L, FN FAL |
+| Rare | AK-47, M4A4, Tactical Machete, M60, M1 Garand, Mosin-Nagant, FN SCAR-L, FN FAL |
 | Super Rare | AWP, Tactical Tomahawk, RPG-7 |
 | Legendary | Karambit, Butterfly Knife, M134 Minigun, **MAC-10 | Red Devil (approved skin)** |
 
@@ -181,7 +181,7 @@ All five can drop from the Arsenal Case and are eligible for inventory sales and
 
 - `assets/manifest.json` is the canonical **24-base-model plus one-approved-skin registry**.
 - 19 supplied/approved weapon models load right-facing, transparent neutral masters through individual `assets/neutral-art/<model>.js` files containing 400/800/1600-pixel WebP images.
-- Newest user-supplied masters: **M1911, M1 Garand, Kar98k, Thompson SMG, FN SCAR-L, FN FAL, and M134 Minigun**. Original silhouettes and orientation are kept; supplied JPEG white backgrounds are converted to actual transparency.
+- Newest user-supplied masters: **M1911, M1 Garand, Mosin-Nagant, Thompson SMG, FN SCAR-L, FN FAL, and M134 Minigun**. Original silhouettes and orientation are kept; supplied JPEG white backgrounds are converted to actual transparency.
 - First approved skin: **MAC-10 | Red Devil**, sourced directly from the user's finished image and kept in `assets/skins/mac-10--red-devil.js`. The unpainted MAC-10 master stays separate.
 - Glock-18, AK-47, AWP, M4A4 and Karambit use the original `assets/renders/masters/<model>-neutral-1600.webp` raster files.
 - `assets/weapon-masters.js` is a neutral-only vector fallback for retired weapon models from older saves. Its colorful procedural finish palettes were removed.

@@ -56,6 +56,8 @@ function migrateLegacyFinishData(data){
     if(!item||typeof item!=='object')return;
     if(isRetiredProceduralCase(item)){delete item.caseId;return}
     if(item.kind==='case')return;
+    // Retain the legacy kar98k asset/save ID while displaying the correct rifle name.
+    if(item.weapon==='Kar98k')item.weapon='Mosin-Nagant';
     // Keep user-selected approved finish intact; retire only older unapproved skins.
     if(isApprovedSkin(item))return;
     if(item.kind==='skin'){
@@ -81,6 +83,14 @@ function migrateLegacyFinishData(data){
   if(Array.isArray(data.listings))data.listings.forEach(l=>migrate(l&&l.item));
   if(data.market&&Array.isArray(data.market.npcListings))
     data.market.npcListings.forEach(l=>migrate(l&&l.item));
+  // Carry existing market history forward under the corrected display name.
+  const history=data.market&&data.market.priceHistory;
+  if(history&&typeof history==='object'&&!Array.isArray(history)&&
+     Object.prototype.hasOwnProperty.call(history,'weapon:kar98k')&&
+     !Object.prototype.hasOwnProperty.call(history,'weapon:mosin-nagant')){
+    history['weapon:mosin-nagant']=history['weapon:kar98k'];
+    delete history['weapon:kar98k'];
+  }
   return data;
 }
 function loadGame(key) {
