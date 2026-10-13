@@ -106,11 +106,19 @@ function multiPurchaseControl(caseId){
  if(!Number.isSafeInteger(price)||price<1)return '';
  const safeId=encodeURIComponent(caseId);
  return '<div class="multi-shop-buy"><label>Quantity <select class="field" id="multi-qty-'+escapeHTML(caseId)+
-  '" aria-label="Number of '+escapeHTML(caseId)+' cases to buy">'+
+  '" aria-label="Number of '+escapeHTML(caseId)+' cases to buy" onchange="updateCasePurchaseTotal(decodeURIComponent(\''+safeId+'\'))">'+
   [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===5?' selected':'')+'>'+n+'</option>').join('')+
   '</select></label><div class="multi-shop-actions"><button onclick="buyCases(decodeURIComponent(\''+safeId+'\'),false)">Buy sealed</button>'+
   '<button class="primary" onclick="buyCases(decodeURIComponent(\''+safeId+'\'),true)">Buy &amp; open</button></div>'+
-  '<small class="muted">1–5 cases · '+price+' coins each</small></div>';
+  '<small class="muted" id="multi-total-'+escapeHTML(caseId)+'">5 cases · '+(price*5)+' coins total</small></div>';
+}
+function updateCasePurchaseTotal(caseId){
+ const price=caseShopPrice(caseId);
+ const qty=document.getElementById('multi-qty-'+caseId);
+ const label=document.getElementById('multi-total-'+caseId);
+ const count=Number(qty&&qty.value);
+ if(!label||!Number.isSafeInteger(price)||!Number.isSafeInteger(count)||count<1||count>5)return;
+ label.textContent=count+' case'+(count===1?'':'s')+' · '+(count*price)+' coins total';
 }
 function buyAndMultiOpen(caseId){return buyCases(caseId,true)}
 function buyCases(caseId,openNow){
