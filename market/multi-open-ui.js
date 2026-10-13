@@ -70,39 +70,80 @@ function multiReelRow(reward,owned,index){
   '<div class="reel" aria-label="Case '+(index+1)+' spinning reel"><div class="pointer"></div>'+
   '<div class="track" id="multi-track-'+index+'">'+tiles+'</div></div></div>';
 }
+let recentCaseBundleIds=[];
+function caseBundleCount(caseId){
+ const el=document.getElementById('multi-qty-'+caseId);
+ const count=Number(el&&el.value);
+ return Number.isSafeInteger(count)&&count>=1&&count<=5?count:null;
+}
+function updateBundlePrice(caseId){
+ const count=caseBundleCount(caseId),price=caseId==='cartel'?cartelCase.casePrice:25;
+ const label=document.getElementById('multi-total-'+caseId);
+ if(label)label.textContent=count?count+' × '+price+' = '+money(count*price)+' coins':'Choose 1–5 cases';
+}
 function multiPurchaseControl(caseId){
  const price=caseId==='cartel'?cartelCase.casePrice:25;
- return '<div class="multi-shop-buy"><label>Quantity <select class="field" id="multi-qty-'+caseId+
-  '" aria-label="Number of '+caseId+' cases to buy and open">'+
+ return '<div class="multi-shop-buy"><div class="multi-buy-title">BUNDLE OPENING · 1–5 CASES</div>'+
+  '<div class="multi-buy-details"><label>How many? <select class="field" id="multi-qty-'+caseId+
+  '" aria-label="Number of '+caseId+' cases to buy and open" onchange="updateBundlePrice(\''+caseId+'\')">'+
   [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===5?' selected':'')+'>'+n+'</option>').join('')+
-  '</select></label><button onclick="buyAndMultiOpen(\''+caseId+'\')">Buy &amp; open · '+
-  price+' coins each</button></div>';
+  '</select></label><div class="multi-bundle-cost" id="multi-total-'+caseId+
+  '">5 × '+price+' = '+money(price*5)+' coins</div></div>'+
+  '<div class="multi-bundle-actions"><button class="primary" onclick="buyAndMultiOpen(\''+caseId+'\')">'+
+  'Buy &amp; open selected cases</button><button onclick="buyCaseBundle(\''+caseId+'\')">'+
+  'Buy sealed cases</button></div></div>';
+}
+function buyCaseBundle(caseId){
+ if(busy||!canMutate()||!['arsenal','cartel'].includes(caseId))return false;
+ const count=caseBundleCount(caseId),price=caseId==='cartel'?cartelCase.casePrice:25;
+ if(!count)return false;
+ if(s.coins<count*price){window.LootHubFX.play('error');
+  alert('Not enough coins: '+(count*price)+' required.');return false}
+ const prior=JSON.stringify(s);
+ const pack=window.LootHubMultiOpen.purchaseBundle(s,caseId,count,price,caseItem);
+ if(!pack)return false;
+ recordActivity(s,'Bought '+count+' sealed '+(caseId==='cartel'?'Cartel':'Arsenal')+' Cases for '+pack.cost+' coins');
+ if(!save()){s=JSON.parse(prior);alert('The case purchase could not be saved. Your coins were restored.');return false}
+ recentCaseBundleIds=pack.items.map(x=>x.id);
+ render();
+ dialog('<div class="multi-bundle-confirm"><h2>'+count+' sealed cases purchased</h2>'+
+  '<p class="muted">Total: '+money(pack.cost)+' coins. Your cases are saved in Inventory.</p>'+
+  '<div class="multi-bundle-art">'+visualArt({kind:'case',caseId},'inventory')+'</div>'+
+  '<div class="row"><button class="primary" onclick="showMultiPicker(recentCaseBundleIds)">Open these cases</button>'+
+  '<button onclick="closeDialog();go(\'Inventory\')">Keep sealed</button></div></div>');
+ return true;
 }
 function buyAndMultiOpen(caseId){
  if(busy||!canMutate()||!['arsenal','cartel'].includes(caseId))return false;
- const el=document.getElementById('multi-qty-'+caseId),count=Number(el&&el.value);
- const price=caseId==='cartel'?cartelCase.casePrice:25;
- if(!Number.isSafeInteger(count)||count<1||count>5)return false;
+ const count=caseBundleCount(caseId),price=caseId==='cartel'?cartelCase.casePrice:25;
+ if(!count)return false;
  if(s.coins<count*price){window.LootHubFX.play('error');
   alert('Not enough coins for '+count+' cases ('+(count*price)+' needed).');return false}
+ const snapshot=JSON.stringify(s);
  const result=window.LootHubMultiOpen.purchaseAndCommit(s,caseId,count,price,caseItem,roll);
  if(!result){window.LootHubFX.play('error');return false}
  busy=true;
- return beginMultiSpin(result);
+ return beginMultiSpin(result,snapshot);
 }
 function startMultiOpenWithIds(ids){
  if(busy||!canMutate())return false;
  if(!window.LootHubMultiOpen.eligible(s,ids))return false;
+ const snapshot=JSON.stringify(s);
  busy=true;
  const result=window.LootHubMultiOpen.commit(s,ids,roll);
  if(!result){busy=false;window.LootHubFX.play('error');return false}
- return beginMultiSpin(result);
+ return beginMultiSpin(result,snapshot);
 }
-function beginMultiSpin(result){
+function beginMultiSpin(result,snapshot){
  multiSelection=[];
- log('Multi-open: '+result.rewards.length+' cases → '+
+ recordActivity(s,'Multi-open: '+result.rewards.length+' cases → '+
    result.rewards.map(x=>itemName(x)).join(', '));
- save(); // The five results are in persistent inventory before the first frame.
+ if(!save()){
+  s=JSON.parse(snapshot);busy=false;
+  alert('Could not save this opening. Cases and coins were restored; please check your storage.');
+  return false;
+ }
+ // All five outcomes are durable before displaying any animation.
  window.LootHubFX.play('open');
  dialog('<div class="multi-spin-screen"><div class="reel-header"><span class="spin-eyebrow">MULTI-OPEN · '+
   result.rewards.length+' CASE'+(result.rewards.length===1?'':'S')+
