@@ -2132,7 +2132,7 @@ test('0.5.5a material maps fully cover every weapon silhouette, one surface per 
       assert.equal(fs.readFileSync(name).toString('hex',0,8),'89504e470d0a1a0a');
     }
   }
-  for(const weapon of ['AK-47','Glock-18','M1 Garand','Kar98k','FN FAL','RPG-7']){
+  for(const weapon of ['AK-47','Glock-18','M1 Garand','Mosin-Nagant','FN FAL','RPG-7']){
     const masks=JSON.parse(g.run('JSON.stringify(({a:window.LootHubWearMaterials.materialPath('+JSON.stringify(weapon)+'),'+
       'b:window.LootHubWearMaterials.silhouettePath('+JSON.stringify(weapon)+')}))'));
     assert(masks.a.includes('--material-1600.png'));
