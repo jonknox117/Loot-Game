@@ -12,6 +12,12 @@ const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
 const feedback=fs.readFileSync(path.join(root,'market/feedback.js'),'utf8');
 const multiCore=fs.readFileSync(path.join(root,'market/multi-open.js'),'utf8');
 const multiUI=fs.readFileSync(path.join(root,'market/multi-open-ui.js'),'utf8');
+const collectionCatalog=fs.readFileSync(path.join(root,'assets/collections.js'),'utf8');
+const collectionCore=fs.readFileSync(path.join(root,'market/collections.js'),'utf8');
+const collectionUI=fs.readFileSync(path.join(root,'market/collections-ui.js'),'utf8');
+for(const p of ['assets/collections.js','market/collections.js','market/collections-ui.js'])
+ assert(html.includes('<script src="./'+p+'"></script>'));
+
 assert(html.includes('<script src="./market/multi-open.js"></script>'));
 assert(html.includes('<script src="./market/multi-open-ui.js"></script>'));
 
@@ -35,7 +41,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -2525,6 +2531,131 @@ test('0.6.0 existing single-case workflow and controls remain available',()=>{
  assert(ui.includes('.multi-lane .reel{height:65px}'));
  assert(ui.includes('.multi-prize-grid'));
  assert(ui.includes('@media(prefers-reduced-motion:reduce)'));
+});
+
+
+test('0.6.1 frozen collection registry identifies exactly 35 Arsenal and 5 Cartel approved designs',()=>{
+ const g=boot();
+ const definitions=JSON.parse(g.run('JSON.stringify(window.LootHubCollections.definitions)'));
+ assert.equal(definitions.length,2);
+ const [arsenal,cartel]=definitions;
+ assert.deepEqual([arsenal.id,arsenal.items.length,arsenal.reward],['arsenal-v1',35,25]);
+ assert.deepEqual([cartel.id,cartel.items.length,cartel.reward],['cartel-v1',5,25]);
+ assert.equal(arsenal.items.filter(x=>x.kind==='weapon').length,25);
+ assert.equal(arsenal.items.filter(x=>x.kind==='skin').length,10);
+ assert(cartel.items.every(x=>x.kind==='skin'&&x.skin==='Cartel'));
+ for(const c of definitions)for(const item of c.items){
+  const m=item.kind==='weapon'?CURRENT_MANIFEST.items:
+   CURRENT_MANIFEST.approvedSkins;
+  assert(m.some(x=>x.id===item.id&&x.weapon===item.weapon&&
+   (item.kind==='weapon'||x.skin===item.skin)),'Catalog entry must be approved: '+item.id);
+ }
+ assert.equal(g.run('window.LootHubCollections.identity({kind:"skin",weapon:"RPG-7",skin:"Cartel"}).collection'),'cartel-v1');
+ assert.equal(g.run('window.LootHubCollections.identity({kind:"weapon",weapon:"RPG-7"}).collection'),'arsenal-v1');
+ assert.equal(g.run('window.LootHubCollections.identity({kind:"case",weapon:"RPG-7"})'),null);
+ assert.equal(g.run('window.LootHubCollections.identity({kind:"skin",weapon:"RPG-7",skin:"Blackout"})'),null);
+ assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"cartel",paid:0})'),75);
+ assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",paid:0})'),25);
+});
+test('0.6.1 discovery survives duplicates, ownership transfer, grading and reload',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items.push({id:"test-rpg-1",kind:"weapon",weapon:"RPG-7",tier:3,base:450,wearGrade:4},'+
+  '{id:"test-rpg-2",kind:"weapon",weapon:"RPG-7",tier:3,base:450,wearGrade:0},'+
+  '{id:"test-cartel",kind:"skin",weapon:"RPG-7",skin:"Cartel",tier:0,base:40,wearGrade:3});save()');
+ assert.equal(g.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ assert.equal(g.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ g.run('window.LootHubMarketTransactions.createListing(s,"test-rpg-1",480,Date.now());save()');
+ g.run('s.items=s.items.filter(x=>x.id!=="test-rpg-2");save()');
+ assert.equal(g.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ g.run('s.listings=[];s.items=s.items.filter(x=>x.id!=="test-cartel");save()');
+ assert.equal(g.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ assert.equal(g.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ const reload=boot(store);
+ assert.equal(reload.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ assert.equal(reload.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+});
+test('0.6.1 older backups are backfilled only from owned and player escrow, never NPC stock',()=>{
+ const store=new LocalStore(),old={coins:400,items:[
+  {id:'legacy-ak',kind:'weapon',weapon:'AK-47',tier:2,base:85}],
+  listings:[{id:'legacy-listing',item:{id:'legacy-cartel',kind:'skin',skin:'Cartel',
+   weapon:'AK-47',tier:2,base:350},ask:425,createdAt:Date.now(),checkedAt:Date.now()}],
+  history:[],earned:3,spent:12,sales:0,rep:0,openings:7,serial:80,
+  offers:{},tab:'Inventory'};
+ store.setItem(KEY,JSON.stringify(old));
+ const g=boot(store);
+ assert.equal(g.state().items.length,1);
+ assert.equal(g.state().listings[0].item.id,'legacy-cartel');
+ assert.equal(g.state().coins,400);
+ assert.equal(g.state().openings,7);
+ assert.equal(g.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ assert.equal(g.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ assert(g.run('safeUpload('+JSON.stringify(old)+')'),'Prior save versions must remain importable');
+ g.run('save()');
+ const reloaded=boot(store);
+ assert.equal(reloaded.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),1);
+ assert.equal(reloaded.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ const tampered=JSON.parse(JSON.stringify(reloaded.state()));
+ tampered.collections.progress['cartel-v1'].seen.push('nonexistent--cartel');
+ assert.equal(reloaded.run('safeUpload('+JSON.stringify(tampered)+')'),false);
+ const repeat=JSON.parse(JSON.stringify(reloaded.state()));
+ repeat.collections.progress['arsenal-v1'].seen.push('ak-47--base');
+ assert.equal(reloaded.run('safeUpload('+JSON.stringify(repeat)+')'),false);
+ const forged=JSON.parse(JSON.stringify(reloaded.state()));
+ forged.collections.progress['arsenal-v1'].claimedAt=Date.now();
+ assert.equal(reloaded.run('safeUpload('+JSON.stringify(forged)+')'),false);
+});
+test('0.6.1 Arsenal 35/35 grants 25 cases once and stays claimed when cases are gone',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items=window.LootHubCollections.definitions[0].items.map((x,i)=>'+
+  '({id:"arsenal-"+i,kind:x.kind,weapon:x.weapon,skin:x.skin,tier:x.tier,base:x.base,wearGrade:2}));save()');
+ assert.equal(g.run('window.LootHubCollections.progress(s,"arsenal-v1").found'),35);
+ assert.equal(g.run('claimCollection("arsenal-v1")'),true);
+ const claimed=g.state(), cases=claimed.items.filter(x=>x.kind==='case');
+ assert.equal(cases.length,25);
+ assert.equal(claimed.openings,0);
+ assert.equal(claimed.coins,0);
+ assert(cases.every(x=>!x.caseId&&x.paid===0&&x.collectionId==='arsenal-v1'&&x.wearGrade==null));
+ assert.equal(new Set(cases.map(x=>x.id)).size,25);
+ assert.equal(g.run('claimCollection("arsenal-v1")'),false);
+ const one=cases[0].id;
+ g.run('openCase('+JSON.stringify(one)+');finishOpening()');
+ assert.equal(g.state().openings,1);
+ assert.equal(g.state().items.filter(x=>x.kind==='case').length,24);
+ assert.equal(boot(store).run('window.LootHubCollections.progress(s,"arsenal-v1").claimed'),true);
+});
+test('0.6.1 Cartel 5/5 grants 25 cartel cases valued at 75 each and opens five safely',()=>{
+ const g=boot();
+ g.run('s.items=window.LootHubCollections.definitions[1].items.map((x,i)=>'+
+  '({id:"cartel-"+i,kind:x.kind,weapon:x.weapon,skin:x.skin,tier:x.tier,base:x.base,wearGrade:1}));save()');
+ assert.equal(g.run('window.LootHubCollections.progress(s,"cartel-v1").found'),5);
+ assert.equal(g.run('claimCollection("cartel-v1")'),true);
+ const items=g.state().items.filter(x=>x.kind==='case');
+ assert.equal(items.length,25);
+ assert(items.every(x=>x.caseId==='cartel'&&x.paid===0&&x.collectionId==='cartel-v1'));
+ assert.equal(g.run('window.LootHubMarketCore.estimated(s.items.find(x=>x.kind==="case"))'),75);
+ g.run('closeDialog()');
+ assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(items.slice(0,5).map(x=>x.id))+')'),true);
+ assert.equal(g.state().openings,5);
+ assert.equal(g.state().items.filter(x=>x.kind==='case').length,20);
+ g.run('finishMultiOpening()');
+ assert.equal(g.run('claimCollection("cartel-v1")'),false);
+ assert(g.run('collectionBook()').includes('Collection Book'));
+ assert(g.run('inventory()').includes('Collection Book'));
+});
+test('0.6.1 failed local storage write rolls back entire reward and claim receipt',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items=window.LootHubCollections.definitions[1].items.map((x,i)=>'+
+  '({id:"failed-"+i,kind:x.kind,weapon:x.weapon,skin:x.skin,tier:x.tier,base:x.base,wearGrade:0}));save()');
+ const baseline=g.state();
+ const saveBefore=store.getItem(KEY);
+ const originalSet=store.setItem.bind(store);
+ store.setItem=(k,v)=>{if(k===KEY)throw Error('No storage');originalSet(k,v)};
+ assert.equal(g.run('claimCollection("cartel-v1")'),false);
+ assert.equal(g.state().items.filter(x=>x.kind==='case').length,0);
+ assert.equal(g.state().collections.progress['cartel-v1'].claimedAt,null);
+ assert.equal(g.state().serial,baseline.serial);
+ assert.equal(g.state().history.length,baseline.history.length);
+ assert.equal(store.getItem(KEY),saveBefore);
 });
 
 if(process.exitCode)process.exit(process.exitCode);

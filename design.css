@@ -960,3 +960,63 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .multi-shop-buy{justify-content:center}
  .multi-shop-buy button{flex:1;min-width:0}
 }
+
+/* 0.6.1: permanent collection progress without an eighth mobile nav tab. */
+.collection-entry{display:flex;justify-content:space-between;align-items:center;gap:15px;
+ background:linear-gradient(130deg,#26354b,#151e2d);border-color:rgba(232,187,103,.32)}
+.collection-entry h2{margin:3px 0 7px}
+.collection-entry p{max-width:550px}
+.collection-entry>button{flex:none}
+.collection-summary{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#e5c186}
+.collection-book h2{margin:4px 0 10px}
+.collection-list{display:grid;gap:14px}
+.collection-panel{display:grid;grid-template-columns:175px 1fr;gap:14px;border:1px solid #354760;
+ background:linear-gradient(145deg,#233148,#121d2c);padding:13px;border-radius:13px}
+.collection-cover{min-width:0;display:flex;align-items:center;justify-content:center;max-height:150px}
+.collection-cover .weapon-art{height:140px;width:100%;background:transparent!important}
+.collection-cover img,.collection-detail-case img,.collection-grant-art img{object-fit:contain}
+.collection-panel-body{min-width:0}
+.collection-panel-body h3{margin:5px 0 8px}
+.collection-stats{display:flex;align-items:center;gap:13px;font-size:13px;margin:5px 0}
+.collection-stats b{font-size:21px;color:#e8c47f}
+.collection-meter{height:11px;background:#0b1622;border:1px solid #344259;border-radius:30px;overflow:hidden;margin:10px 0}
+.collection-meter>div{height:100%;background:linear-gradient(90deg,#a57330,#e4bb70);border-radius:30px}
+.collection-panel-body button{margin-top:4px}
+.collection-detail-head{display:grid;grid-template-columns:160px 1fr;gap:15px;
+ align-items:center;background:#1b283b;border:1px solid #34445b;border-radius:12px;padding:12px;margin:13px 0 20px}
+.collection-detail-case{height:140px;min-width:0;display:flex;justify-content:center;align-items:center}
+.collection-detail-case .weapon-art{width:100%;height:100%;background:transparent!important}
+.collection-detail-info strong{font-size:22px;color:#eed19b}
+.collection-claimed{font-weight:750;color:#8bd2a3}
+.collection-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+.collection-tile{min-width:0;display:flex;flex-direction:column;gap:5px;
+ background:linear-gradient(160deg,#263448,#152032);border:1px solid #39516a;border-radius:10px;padding:9px}
+.collection-tile.undiscovered{border-color:#2f4055;background:linear-gradient(155deg,#1a2535,#121b27)}
+.collection-tile strong{font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+.collection-tile small{font-size:10px}
+.collection-tile-art{height:103px;position:relative;display:flex;align-items:center}
+.collection-tile-art .weapon-art{height:94px!important;width:100%}
+.collection-tile.undiscovered .weapon-art{opacity:.36;filter:grayscale(1)}
+.collection-check,.collection-lock{position:absolute;right:2px;bottom:1px;z-index:2;
+ font-weight:900;letter-spacing:.05em;border-radius:6px;padding:4px 6px;font-size:10px}
+.collection-check{background:#176b4a;color:#edfff3}
+.collection-lock{background:#161d2c;color:#a7b2c2;border:1px solid #44556d}
+.collection-claim-button{font-size:13px}
+.collection-grant{text-align:center}
+.collection-grant-art{width:min(280px,90%);height:210px;margin:9px auto}
+.collection-grant-art .weapon-art{height:100%;width:100%;background:transparent!important}
+.collection-grant .row{justify-content:center}
+@media(max-width:700px){
+ .collection-entry{flex-direction:column;align-items:stretch}
+ .collection-entry>button{width:100%}
+ .collection-panel{grid-template-columns:105px 1fr;gap:8px;padding:9px}
+ .collection-cover .weapon-art{height:100px}
+ .collection-panel-body h3{font-size:16px}
+ .collection-detail-head{grid-template-columns:105px 1fr;gap:8px}
+ .collection-detail-case{height:103px}
+ .collection-detail-info strong{font-size:18px}
+ .collection-items{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .collection-tile{padding:7px}
+ .collection-tile-art{height:87px}
+ .collection-tile-art .weapon-art{height:80px!important}
+}

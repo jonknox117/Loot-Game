@@ -1,5 +1,31 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.6.1 — Permanent Collection Book
+
+The Cases screen and Inventory now link to a **Collection Book** with the
+original approved weapon artwork, an item-by-item discovery grid and progress
+bars. Entries count **once ever acquired**, not once per copy; sold items remain
+discovered. Armor/weapon condition grades have no impact on progress.
+
+- **Arsenal v1:** discover the 25 original neutral weapons plus the 10
+  originally approved Arsenal skins (**35 distinct items**) to claim exactly
+  **25 sealed Arsenal Cases**, once.
+- **Cartel v1:** discover its **five approved Cartel skins** to claim exactly
+  **25 sealed Cartel Cases**, once.
+- Reward cases are **free, tradeable, unopened inventory items** with unique
+  IDs, and can be opened singly or five at once. Completion does not
+  automatically open or spin cases.
+- Discovery and the one-time claim receipt are stored in the same existing
+  locally saved progress, included in backups and subject to stale-tab and
+  save-failure protections. Previously listed player-owned items are credited
+  on first load; historic sold items absent from the old save cannot be reliably
+  recreated. A past backup can intentionally roll back a local save because
+  cloud accounts do not yet exist.
+- Approved case estimates now distinguish **Arsenal Case (25 coins)** from
+  **Cartel Case (75 coins)** even when their owner obtained them for free.
+  Case odds, weapon art, wear grades, and all other purchases remain unchanged.
+
+
 ## Arsenal Case — original owner-supplied case art
 
 The **Arsenal Case** uses the user's two original case photographs, not the former
