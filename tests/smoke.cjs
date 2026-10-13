@@ -156,6 +156,60 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       Math.min(specOpsFit.top,specOpsFit.bottom,specOpsFit.left,specOpsFit.right)>=-1,
       'Spec Ops artwork must be fully centered and contained inside its mobile frame: '+JSON.stringify(specOpsFit));
 
+
+    // 0.7.2: Both case poses and all five user-uploaded Lavish skins
+    // must load uncropped on the same iPhone viewport as the other cases.
+    const lavishPreview=await page.locator('.lavish-section .curated-case-image img').evaluate(async img=>{
+      await img.decode();
+      const frame=img.closest('.cartel-case-art'),holder=img.closest('.curated-case-image');
+      const box=frame.getBoundingClientRect(),pic=img.getBoundingClientRect(),
+        wrap=holder.getBoundingClientRect();
+      const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);
+      return {src:img.getAttribute('src'),width:img.naturalWidth,height:img.naturalHeight,
+       transparent:ctx.getImageData(0,0,1,1).data[3]===0,
+       frameHeight:box.height,holderHeight:wrap.height,
+       fit:getComputedStyle(img).objectFit,inside:
+       pic.left>=box.left-1&&pic.right<=box.right+1&&
+       pic.top>=box.top-1&&pic.bottom<=box.bottom+1};
+    });
+    assert(lavishPreview.src.includes('lavish-case-closed-800.webp')&&
+      lavishPreview.width===800&&lavishPreview.height===800&&lavishPreview.transparent&&
+      lavishPreview.frameHeight>=230&&lavishPreview.holderHeight>=lavishPreview.frameHeight-28&&
+      lavishPreview.fit==='contain'&&lavishPreview.inside,
+      'Lavish closed case must remain fully framed on iPhone: '+JSON.stringify(lavishPreview));
+    const lavishArt=await page.evaluate(async()=>{
+      const reg=window.LootHubCaseRegistry;
+      const entry=reg.get('lavish');
+      const outcomes=[];
+      for(const item of entry.items){
+       const shell=document.createElement('div');
+       shell.innerHTML=visualArt({...item,id:'smoke-lavish-'+item.tier,wearGrade:0},'inspect');
+       const img=shell.querySelector('img'),render=shell.querySelector('.approved-skin');
+       try{
+         await img.decode();
+         const cv=document.createElement('canvas');cv.width=2;cv.height=2;
+         const cx=cv.getContext('2d');cx.drawImage(img,0,0);
+         outcomes.push({weapon:item.weapon,src:img.getAttribute('src'),
+           ok:img.naturalWidth===1600&&img.naturalHeight===1600&&
+           cx.getImageData(0,0,1,1).data[3]===0&&
+           render?.dataset.finish==='Lavish'});
+       }catch(error){outcomes.push({weapon:item.weapon,ok:false,error:String(error)})}
+      }
+      const open=document.createElement('div');
+      open.innerHTML=visualArt({kind:'case',caseId:'lavish'},'open');
+      const img=open.querySelector('img');
+      await img.decode();
+      return {outcomes,open:img.getAttribute('src'),openSize:img.naturalWidth,
+       price:reg.priceFor('lavish'),shop:entry.items.length};
+    });
+    assert(lavishArt.price===75&&lavishArt.shop===5&&
+      lavishArt.open.includes('lavish-case-open-1254.webp')&&lavishArt.openSize===1254&&
+      lavishArt.outcomes.length===5&&lavishArt.outcomes.every(x=>x.ok),
+      'Lavish must use exact uploaded weapon art and open chest: '+JSON.stringify(lavishArt));
+    assert(await page.locator('#multi-qty-lavish').count()===1,
+      'Lavish shop needs the same five-case purchase controls as earlier releases');
+
     assert(caseShop.includes('Double-Barrel Shotgun'),
       '25th official gun must appear in the available Arsenal Case weapon gallery');
     const gunCard=page.locator('#main .item').filter({
@@ -223,7 +277,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
     const releasedNames=await page.evaluate(()=>window.LootHubSkinLines.lines.map(x=>x.name));
-    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel','Spec Ops',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
+    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel','Spec Ops','Lavish',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
     assert(await page.locator('.npc-listing').count()>=1,'Skin type and approved-finish search must find matching listings');
@@ -911,7 +965,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       return {out,masterCount:catalog.length,arsenal:dropCatalog.length,market:allMarketCatalog.length,
         casePrice:cartelCase.casePrice};
     });
-    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===45,
+    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===50,
       'Cartel must not change the 25-master Arsenal drop pool');
     assert(cartelArt.casePrice===75,'Cartel Case price must be 75 coins');
     assert(cartelArt.out.length===5&&cartelArt.out.every(x=>x.ok),
@@ -1069,8 +1123,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();go('Cases');
     });
     await page.getByRole('button',{name:'Open Collection Book'}).click();
-    assert(await page.locator('.collection-panel').count()===3,
-      'The iPhone Collection Book must show Arsenal, Cartel and Spec Ops progress');
+    assert(await page.locator('.collection-panel').count()===4,
+      'The iPhone Collection Book must show Arsenal, Cartel, Spec Ops and Lavish progress');
     assert((await page.locator('.collection-book').textContent()).includes('35 / 35'),
       'Owned original weapons and Arsenal skins must all count once');
     assert((await page.locator('.collection-book').textContent()).includes('5 / 5'),

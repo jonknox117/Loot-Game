@@ -4,7 +4,7 @@
   "caseName": "Arsenal Case",
   "catalogMode": "25-base-weapon-models-plus-ten-arsenal-and-five-cartel-skins",
   "assetStatus": "25-original-neutral-masters-and-fifteen-owner-approved-skins",
-  "notes": "25 neutral base weapons, ten original Arsenal skins, plus five exclusive Cartel Case skins. Cartel Case costs 75 coins and uses original tier odds. Existing Arsenal drops and prices are unchanged; all supplied Cartel images retain their designs as transparent WebP assets.",
+  "notes": "25 neutral base weapons, ten original Arsenal skins, plus five exclusive Cartel Case skins. Cartel Case costs 75 coins and uses original tier odds. Existing Arsenal drops and prices are unchanged; all supplied Cartel images retain their designs as transparent WebP assets. The Lavish Case adds five original owner-supplied gold-and-burgundy themed images and closed/open case artwork without modifying earlier case pools.",
   "caseOddsPercent": [
     70,
     20,
@@ -417,6 +417,96 @@
       "inventory": "assets/renders/lines/spec-ops/karambit--spec-ops-800.webp",
       "inspection": "assets/renders/lines/spec-ops/karambit--spec-ops-1600.webp",
       "note": "Exclusive owner-provided Spec Ops finish; the five original photographs preserve their insignias and markings."
+    },
+    {
+      "id": "m1911--lavish",
+      "kind": "skin",
+      "weapon": "M1911",
+      "skin": "Lavish",
+      "displayName": "M1911 | Lavish",
+      "tier": 0,
+      "rarity": "Common",
+      "baseValue": 40,
+      "approved": true,
+      "caseId": "lavish",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/lavish/m1911--lavish-400.webp",
+      "inventory": "assets/renders/lines/lavish/m1911--lavish-800.webp",
+      "inspection": "assets/renders/lines/lavish/m1911--lavish-1600.webp",
+      "note": "Original owner-provided Lavish artwork, with background-only transparency conversion; gold engravings, pearl inlays, and weapon silhouettes retained."
+    },
+    {
+      "id": "thompson-smg--lavish",
+      "kind": "skin",
+      "weapon": "Thompson SMG",
+      "skin": "Lavish",
+      "displayName": "Thompson SMG | Lavish",
+      "tier": 1,
+      "rarity": "Uncommon",
+      "baseValue": 110,
+      "approved": true,
+      "caseId": "lavish",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/lavish/thompson-smg--lavish-400.webp",
+      "inventory": "assets/renders/lines/lavish/thompson-smg--lavish-800.webp",
+      "inspection": "assets/renders/lines/lavish/thompson-smg--lavish-1600.webp",
+      "note": "Original owner-provided Lavish artwork, with background-only transparency conversion; gold engravings, pearl inlays, and weapon silhouettes retained."
+    },
+    {
+      "id": "double-barrel-shotgun--lavish",
+      "kind": "skin",
+      "weapon": "Double-Barrel Shotgun",
+      "skin": "Lavish",
+      "displayName": "Double-Barrel Shotgun | Lavish",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 350,
+      "approved": true,
+      "caseId": "lavish",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/lavish/double-barrel-shotgun--lavish-400.webp",
+      "inventory": "assets/renders/lines/lavish/double-barrel-shotgun--lavish-800.webp",
+      "inspection": "assets/renders/lines/lavish/double-barrel-shotgun--lavish-1600.webp",
+      "note": "Original owner-provided Lavish artwork, with background-only transparency conversion; gold engravings, pearl inlays, and weapon silhouettes retained."
+    },
+    {
+      "id": "kar98k--lavish",
+      "kind": "skin",
+      "weapon": "Mosin-Nagant",
+      "skin": "Lavish",
+      "displayName": "Mosin-Nagant | Lavish",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 1050,
+      "approved": true,
+      "caseId": "lavish",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/lavish/kar98k--lavish-400.webp",
+      "inventory": "assets/renders/lines/lavish/kar98k--lavish-800.webp",
+      "inspection": "assets/renders/lines/lavish/kar98k--lavish-1600.webp",
+      "note": "Original owner-provided Lavish artwork, with background-only transparency conversion; gold engravings, pearl inlays, and weapon silhouettes retained."
+    },
+    {
+      "id": "tactical-tomahawk--lavish",
+      "kind": "skin",
+      "weapon": "Tactical Tomahawk",
+      "skin": "Lavish",
+      "displayName": "Tactical Tomahawk | Lavish",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 4200,
+      "approved": true,
+      "caseId": "lavish",
+      "sourceType": "user-supplied-original-image",
+      "renderMode": "external-transparent-webp",
+      "thumbnail": "assets/renders/lines/lavish/tactical-tomahawk--lavish-400.webp",
+      "inventory": "assets/renders/lines/lavish/tactical-tomahawk--lavish-800.webp",
+      "inspection": "assets/renders/lines/lavish/tactical-tomahawk--lavish-1600.webp",
+      "note": "Original owner-provided Lavish artwork, with background-only transparency conversion; gold engravings, pearl inlays, and weapon silhouettes retained."
     }
   ],
   "items": [
@@ -980,7 +1070,7 @@
     "removedItems": false
   },
   "skinPipeline": {
-    "activeSkinCount": 20,
+    "activeSkinCount": 25,
     "allowedSkinIds": [
       "mac-10--red-devil",
       "rpg-7--glory",
@@ -996,7 +1086,12 @@
       "mp5--spec-ops",
       "spas-12--spec-ops",
       "awp--spec-ops",
-      "karambit--spec-ops"
+      "karambit--spec-ops",
+      "m1911--lavish",
+      "thompson-smg--lavish",
+      "double-barrel-shotgun--lavish",
+      "kar98k--lavish",
+      "tactical-tomahawk--lavish"
     ],
     "ownerApprovalRequired": true,
     "sourceImage": "D2CFA5D6-B927-46B6-9E12-99DAEC7897FC.jpeg",
@@ -1065,6 +1160,30 @@
         "AWP",
         "Karambit"
       ]
+    },
+    {
+      "id": "lavish",
+      "name": "Lavish Case",
+      "casePrice": 75,
+      "contents": "Exactly five original Lavish skins, one per rarity",
+      "oddsPercent": [
+        70,
+        20,
+        7.5,
+        2,
+        0.5
+      ],
+      "weapons": [
+        "M1911",
+        "Thompson SMG",
+        "Double-Barrel Shotgun",
+        "Mosin-Nagant",
+        "Tactical Tomahawk"
+      ],
+      "art": {
+        "closed": "assets/cases/lavish-case-closed-800.webp",
+        "open": "assets/cases/lavish-case-open-800.webp"
+      }
     }
   ]
 }

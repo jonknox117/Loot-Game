@@ -1,5 +1,13 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.2 — Official Lavish Case (Owner-Supplied Artwork)
+
+- Released the **Lavish Case** for **75 coins**, alongside Arsenal, Cartel and Spec Ops. The exact seven owner-uploaded illustrations are used: five weapons plus distinct **closed** and **open** red-and-gold Lavish chests. No replacement or AI-regenerated artwork is used. The six originally white-backed JPEG images were converted to transparent WebP backgrounds; the uploaded transparent shotgun artwork remains unchanged in appearance.
+- Original Lavish skins by rarity: **M1911** (Common, 40 coins), **Thompson SMG** (Uncommon, 110), **Double-Barrel Shotgun** (Rare, 350), **Mosin-Nagant** (Super Rare, 1,050), and **Tactical Tomahawk** (Legendary, 4,200). Rarity odds remain 70% / 20% / 7.5% / 2% / 0.5%.
+- The uploaded chest art displays centered and fully contained in shops, inventory and case-reveal views, with 400/800/1254-pixel WebP exports. Original weapon images are available at 400/800/1600 pixels.
+- Supports buying one to five sealed Lavish cases or opening up to five immediately, individual and mixed multi-open rolls, market listings, wear condition, inventory saves, and a **Lavish Collection Book** reward of 25 free sealed Lavish cases for discovering all five skins.
+- The original three case pools, saved items and historical collection rewards remain unchanged. Additional regression tests cover the full five-item Lavish pool, transparent browser artwork, mobile case framing, saved collection migration and batch openings.
+
 ## Patch 0.7.1 — Extensible Case and Weapon Art Pipeline
 
 - Added one declarative **assets/case-registry.js** for curated case IDs, names, prices, release flags, approved per-tier skins and transparent art paths. Existing Arsenal, Cartel and Spec Ops drops, prices, images and saved IDs remain unchanged.

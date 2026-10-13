@@ -14,6 +14,19 @@
 const modelSlugs=root.LootHubWeaponCatalog.modelSlugs;
 const knownModels=new Set(Object.keys(modelSlugs));
 const EXTRA_CASES=Object.freeze([
+  // Lavish uses the seven exact owner-supplied images, with white-background
+  // removal only for the uploaded JPEGs. Its own art files are never generated.
+  {id:'lavish',name:'Lavish',casePrice:75,released:true,
+   description:'Gilded engravings, rich burled wood, ivory and pearl inlays.',
+   artStatus:'owner-supplied-lavish-case',skinArt:'webp',
+   collectionId:'lavish-v1',collectionReward:25,
+   items:[
+    {kind:'skin',weapon:"M1911",skin:'Lavish',tier:0,base:40},
+    {kind:'skin',weapon:"Thompson SMG",skin:'Lavish',tier:1,base:110},
+    {kind:'skin',weapon:"Double-Barrel Shotgun",skin:'Lavish',tier:2,base:350},
+    {kind:'skin',weapon:"Mosin-Nagant",skin:'Lavish',tier:3,base:1050},
+    {kind:'skin',weapon:"Tactical Tomahawk",skin:'Lavish',tier:4,base:4200}
+   ]},
   // Keep drafts released:false until all approved images are in place.
   // Example:
   // {id:'lavish',name:'Lavish',casePrice:75,released:false,

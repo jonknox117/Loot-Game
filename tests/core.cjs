@@ -87,7 +87,7 @@ test('Procedural cases are retired and material maps remain wear-only',()=>{
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
   assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),0);
   assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
-  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+10);
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+15);
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
   const menu=g.run('universalCases()');
   assert(menu.includes('Arsenal Case'));
@@ -201,7 +201,7 @@ test('Arsenal Case matches dynamically registered base weapons and ten owner-app
   const cat=JSON.parse(g.run('JSON.stringify(catalog)'));
   assert.equal(cat.length,MASTER_COUNT);
   assert.equal(manifest.items.length,MASTER_COUNT);
-  assert.equal(manifest.approvedSkins.length,20);
+  assert.equal(manifest.approvedSkins.length,25);
   assert.equal(manifest.approvedSkins[0].displayName,'MAC-10 | Red Devil');
   assert(manifest.catalogMode.includes('base-weapon-models'),'Catalog mode must describe base models');
   const weaponNames=new Set();
@@ -477,7 +477,7 @@ test('Red Devil is rendered and saved as a skin, not a replacement MAC-10 master
 });
 test('All four newly approved cosmetics have real WebP art and survive save migration',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.skinPipeline.activeSkinCount,20);
+  assert.equal(manifest.skinPipeline.activeSkinCount,25);
   const added=manifest.approvedSkins.slice(1,5), images={};
   assert.equal(added.length,4);
   for(const entry of added){
@@ -520,8 +520,8 @@ test('All four newly approved cosmetics have real WebP art and survive save migr
 
 test('October five original skins load with valid transparent WebP in every view and are obtainable and tradeable',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
-  assert.equal(manifest.approvedSkins.length,20);
-  assert.equal(manifest.skinPipeline.activeSkinCount,20);
+  assert.equal(manifest.approvedSkins.length,25);
+  assert.equal(manifest.skinPipeline.activeSkinCount,25);
   assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
   assert.deepEqual(JSON.parse(boot().run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
   const added=manifest.approvedSkins.slice(5,10);
@@ -2317,7 +2317,7 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.equal(g.run('cartelCase.casePrice'),75);
  assert.equal(g.run('cartelCatalog.length'),5);
  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+10,'The Arsenal drop pool must not be expanded');
- assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+20,'Cartel and Spec Ops skins enter market listings');
+ assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+25,'Cartel, Spec Ops and Lavish skins enter market listings');
  assert(g.run('universalCases()').includes('Cartel Case'));
  assert(g.run('universalCases()').includes('multi-qty-cartel'),'Cartel has working quantity-based purchasing');
  assert(g.run('universalCases()').includes('View five skins'));
@@ -2641,12 +2641,15 @@ test('0.6.0 existing single-case workflow and controls remain available',()=>{
 test('0.6.3 frozen collection registry includes five Spec Ops designs',()=>{
  const g=boot();
  const definitions=JSON.parse(g.run('JSON.stringify(window.LootHubCollections.definitions)'));
- assert.equal(definitions.length,3);
- const [arsenal,cartel,specOps]=definitions;
+ assert.equal(definitions.length,4);
+ const [arsenal,cartel,specOps,lavish]=definitions;
  assert.deepEqual([arsenal.id,arsenal.items.length,arsenal.reward],['arsenal-v1',35,25]);
  assert.deepEqual([cartel.id,cartel.items.length,cartel.reward],['cartel-v1',5,25]);
  assert.deepEqual([specOps.id,specOps.items.length,specOps.reward],['spec-ops-v1',5,25]);
  assert(specOps.items.every(x=>x.kind==='skin'&&x.skin==='Spec Ops'));
+ assert.deepEqual([lavish.id,lavish.items.length,lavish.reward],['lavish-v1',5,25]);
+ assert(lavish.items.every(x=>x.kind==='skin'&&x.skin==='Lavish'));
+
  assert.equal(arsenal.items.filter(x=>x.kind==='weapon').length,25);
  assert.equal(arsenal.items.filter(x=>x.kind==='skin').length,10);
  assert(cartel.items.every(x=>x.kind==='skin'&&x.skin==='Cartel'));
@@ -2662,6 +2665,7 @@ test('0.6.3 frozen collection registry includes five Spec Ops designs',()=>{
  assert.equal(g.run('window.LootHubCollections.identity({kind:"skin",weapon:"RPG-7",skin:"Blackout"})'),null);
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"cartel",paid:0})'),75);
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"spec-ops",paid:0})'),75);
+ assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",caseId:"lavish",paid:0})'),75);
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"case",paid:0})'),25);
 });
 test('0.6.1 discovery survives duplicates, ownership transfer, grading and reload',()=>{
@@ -2909,6 +2913,65 @@ test('0.7 active negotiation offers can reject aggressive player counters and wa
  assert.equal(record.status,'walked','Buyer declines final offer above independent budget');
  assert(!record.agreedPrice);
  assert.equal(g.state().listings.length,1,'Item remains in escrow until cancelled');
+});
+
+
+test('0.7.2 Lavish release includes the owner-uploaded chest and five skins',()=>{
+ const g=boot();
+ const variants=JSON.parse(g.run('JSON.stringify(window.LootHubCaseRegistry.pool("lavish").map(x=>[x.weapon,x.tier,x.base]))'));
+ assert.deepEqual(variants,[
+  ['M1911',0,40],['Thompson SMG',1,110],['Double-Barrel Shotgun',2,350],
+  ['Mosin-Nagant',3,1050],['Tactical Tomahawk',4,4200]
+ ]);
+ assert.equal(g.run('window.LootHubCaseRegistry.priceFor("lavish")'),75);
+ const menu=g.run('universalCases()');
+ assert(menu.includes('Lavish Case'));
+ assert(menu.includes('multi-qty-lavish'));
+ assert(menu.includes('lavish-case-closed-800.webp'));
+ assert(g.run('visualArt({kind:"case",caseId:"lavish"},"open")').includes('lavish-case-open-1254.webp'));
+ for(const [weapon,tier,base] of variants){
+  const item={id:'lavish-'+tier,kind:'skin',weapon,skin:'Lavish',tier,base,wearGrade:2};
+  assert.equal(g.run('isApprovedSkin('+JSON.stringify(item)+')'),true);
+  assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('--lavish-1600.webp'));
+ }
+ for(const [r,tier] of [[.01,0],[.77,1],[.94,2],[.989,3],[.999,4]]){
+  const b=boot(new LocalStore(),()=>r);
+  const prize=JSON.parse(b.run('JSON.stringify(roll("lavish"))'));
+  assert.equal(prize.tier,tier);
+  assert.equal(prize.paid,75);
+  assert.equal(prize.skin,'Lavish');
+ }
+ for(const pose of ['closed','open'])for(const size of [400,800,1254]){
+  const src=fs.readFileSync(path.join(root,'assets/cases','lavish-case-'+pose+'-'+size+'.webp'));
+  assert.equal(src.toString('ascii',0,4),'RIFF');
+  assert.equal(src.toString('ascii',8,12),'WEBP');
+ }
+ for(const slug of ['m1911','thompson-smg','double-barrel-shotgun','kar98k','tactical-tomahawk'])
+  for(const size of [400,800,1600]){
+   const src=fs.readFileSync(path.join(root,'assets/renders/lines/lavish',slug+'--lavish-'+size+'.webp'));
+   assert.equal(src.toString('ascii',0,4),'RIFF');
+   assert.equal(src.toString('ascii',8,12),'WEBP');
+  }
+ g.run('s.coins=450;save()');
+ g.byId('multi-qty-lavish').value='5';
+ assert.equal(g.run('buyCases("lavish",false)'),true);
+ assert.equal(g.state().coins,75);
+ const sealed=g.state().items.filter(x=>x.kind==='case'&&x.caseId==='lavish');
+ assert.equal(sealed.length,5);
+ assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(sealed.map(x=>x.id))+')'),true);
+ assert.equal(g.state().openings,5);
+ assert.equal(g.state().items.filter(x=>x.kind==='skin'&&x.skin==='Lavish').length,5);
+ g.run('finishMultiOpening()');
+});
+test('0.7.2 Lavish collection migrates without losing older discovery',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items.push({id:"old-cartel",kind:"skin",weapon:"RPG-7",skin:"Cartel",tier:0,base:40,wearGrade:1});save()');
+ const old=g.state();delete old.collections.progress['lavish-v1'];
+ store.setItem(KEY,JSON.stringify(old));
+ const resumed=boot(store);
+ assert.equal(resumed.run('window.LootHubCollections.progress(s,"cartel-v1").found'),1);
+ assert.equal(resumed.run('window.LootHubCollections.progress(s,"lavish-v1").found'),0);
+ assert(resumed.state().collections.progress['lavish-v1']);
 });
 
 if(process.exitCode)process.exit(process.exitCode);

@@ -23,11 +23,16 @@ function boot(extra=''){
  return window;
 }
 const app=boot(),registry=app.LootHubCaseRegistry;
-assert.deepEqual(Array.from(registry.all(),x=>x.id),['arsenal','cartel','spec-ops']);
-assert.deepEqual(Array.from(registry.releasedThemed(),x=>x.id),['cartel','spec-ops']);
+assert.deepEqual(Array.from(registry.all(),x=>x.id),['arsenal','cartel','spec-ops','lavish']);
+assert.deepEqual(Array.from(registry.releasedThemed(),x=>x.id),['cartel','spec-ops','lavish']);
 assert.equal(registry.priceFor('arsenal'),25);
 assert.equal(registry.priceFor('cartel'),75);
 assert.equal(registry.priceFor('spec-ops'),75);
+assert.equal(registry.priceFor('lavish'),75);
+assert.deepEqual(Array.from(registry.pool('lavish'),x=>[x.weapon,x.tier,x.base]),[
+  ['M1911',0,40],['Thompson SMG',1,110],['Double-Barrel Shotgun',2,350],
+  ['Mosin-Nagant',3,1050],['Tactical Tomahawk',4,4200]
+]);
 assert.equal(registry.priceFor('unreleased-unknown'),null);
 assert.equal(registry.displayName('unknown'),null);
 assert.equal(registry.pool('cartel').length,5);
@@ -35,7 +40,9 @@ assert.equal(registry.pool('spec-ops').length,5);
 assert.equal(registry.skinImage({kind:'skin',weapon:'AK-47',skin:'Cartel'},800),null);
 assert(registry.skinImage({kind:'skin',weapon:'SPAS-12',skin:'Spec Ops'},800).endsWith('spas-12--spec-ops-800.webp'));
 assert.equal(registry.skinImage({kind:'skin',weapon:'SPAS-12',skin:'Not Approved'},800),null);
-assert.equal(app.LootHubCollectionCatalog.length,3);
+assert.equal(app.LootHubCollectionCatalog.length,4);
+assert.equal(app.LootHubCollectionCatalog[3].id,'lavish-v1');
+assert.equal(app.LootHubCollectionCatalog[3].items.length,5);
 assert.equal(app.LootHubCollectionCatalog[1].items.length,5);
 assert.equal(app.LootHubCollectionCatalog[2].items.length,5);
 
@@ -85,20 +92,20 @@ const fixture={
  ]
 };
 const future=boot(JSON.stringify(fixture)+',');
-assert.equal(future.LootHubCaseRegistry.releasedThemed().length,3);
+assert.equal(future.LootHubCaseRegistry.releasedThemed().length,4);
 assert.equal(future.LootHubCaseRegistry.priceFor('gallery-test'),92);
 assert.equal(future.LootHubCaseRegistry.pool('gallery-test').length,5);
 assert(future.LootHubCaseRegistry.chestImage('gallery-test','open',1254)
  .endsWith('gallery-test-case-open-1254.webp'));
 assert(future.LootHubCaseRegistry.skinImage({kind:'skin',weapon:'Mosin-Nagant',skin:'Gallery'},1600)
  .endsWith('kar98k--gallery-test-1600.webp'));
-assert.equal(future.LootHubCollectionCatalog.length,4);
-assert.equal(future.LootHubCollectionCatalog[3].id,'gallery-test-v1');
-assert.equal(future.LootHubCollectionCatalog[3].items.length,5);
+assert.equal(future.LootHubCollectionCatalog.length,5);
+assert.equal(future.LootHubCollectionCatalog[4].id,'gallery-test-v1');
+assert.equal(future.LootHubCollectionCatalog[4].items.length,5);
 const draft=boot(JSON.stringify({...fixture,id:'gallery-draft',released:false,collectionId:'gallery-draft-v1'})+',');
 assert.equal(draft.LootHubCaseRegistry.pool('gallery-draft'),null);
 assert.equal(draft.LootHubCaseRegistry.priceFor('gallery-draft'),null);
-assert.equal(draft.LootHubCollectionCatalog.length,3,'Unreleased cases stay out of the live collection book');
+assert.equal(draft.LootHubCollectionCatalog.length,4,'Unreleased cases stay out of the live collection book');
 const traversal={...fixture,art:{open:{800:'../credentials.webp'}}};
 assert.throws(()=>boot(JSON.stringify(traversal)+','),/Unsafe case image path/);
 assert.throws(()=>boot(JSON.stringify({...fixture,id:'cartel'})+','),/Invalid or duplicate curated case/);
