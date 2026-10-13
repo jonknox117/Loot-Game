@@ -23,6 +23,17 @@ jobs:
           python-version: '3.12'
       - name: Install Pillow
         run: python -m pip install 'Pillow>=10,<13'
+      - name: Audit published artwork transparency, geometry and resolutions
+        run: python scripts/audit_artwork_integrity.py
+      - name: Upload artwork quality audit and light/dark review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artwork-integrity-review
+          path: |
+            tests/artwork-review/artwork-audit.json
+            tests/artwork-review/artwork-review-sheet.png
+          if-no-files-found: ignore
       - name: Verify dynamic weapon catalog and onboarding
         run: |
           python scripts/sync_weapon_catalog.py --check
