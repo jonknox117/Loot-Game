@@ -1,5 +1,15 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.1 — Extensible Case and Weapon Art Pipeline
+
+- Added one declarative **assets/case-registry.js** for curated case IDs, names, prices, release flags, approved per-tier skins and transparent art paths. Existing Arsenal, Cartel and Spec Ops drops, prices, images and saved IDs remain unchanged.
+- The Cases shop, preview galleries, single and multi-open, item valuation, market search, collection onboarding and skin rendering now use that shared registry. New case sections are generated automatically, without adding case-specific shop or renderer branches.
+- Added **scripts/prepare_curated_case.py** to resize and center approved transparent closed/open case images and gun skins into the required WebP resolutions. Supports one-image-only replacements, dry runs and explicit overwrite protection.
+- Added **tests/case-registry.cjs** to fail on missing released artwork, malformed assets or unsafe paths, and to simulate an additional released case and an unreleased draft without changing the game. The regular Node CI run invokes the registry audit.
+- Refactored procedural art cleanup to preserve all owner-supplied case folders, including future uploads. Shared contain framing prevents newly added case images from cropping on mobile.
+- Future released case collections are generated from the registry, and the collection-save validator accepts missing newer collections in older saves while retaining historical completion records.
+- For the copy/paste case definition, command examples and image workflow, see [Adding Cases and Weapons](docs/ADDING_CASES_AND_WEAPONS.md). **Lavish artwork has not been added or released by this infrastructure patch.**
+
 ## Patch 0.7.0 — Auction House & Trading Desk
 
 - **Two independent selling options.** Inventory and Market now offer Auction (passive NPC bidding) and Trading Desk (active one-on-one negotiation). Both escrow the exact collectible; no duplicate sales.

@@ -19,7 +19,7 @@ function filterOwned(game,options={}){
   const result=game.items.map((item,index)=>({item,index}))
     .filter(({item})=>root.LootHubMarketCore.eligible(item)&&
       (kind==='all'||item.kind===kind)&&
-      (!search||includes(item.kind==='case'?'Sealed Arsenal Case':
+      (!search||includes(item.kind==='case'?'Sealed '+(root.LootHubCaseRegistry?.displayName(item.caseId||'arsenal')||'Arsenal')+' Case':
         item.weapon+' '+(item.skin||''),search)));
   const sort=String(options.sort||'newest');
   if(sort==='value-desc'||sort==='value-asc'){

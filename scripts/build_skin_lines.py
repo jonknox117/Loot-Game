@@ -9,7 +9,10 @@ MATERIALS=('metal','wood','other')
 MATERIAL_CHANNEL={'metal':'R','wood':'G','other':'B'}
 # These user-approved curated case renders are not procedural skin-line output.
 # Never delete or reject them while rebuilding retired/generated finish folders.
-CURATED_ASSET_FOLDERS=frozenset({'spec-ops'})
+# Only folders from previously retired procedural lines may be cleaned.
+# Unknown folders may be newly staged owner-approved curated case art; never
+# delete them simply because the procedural line registry does not name them.
+RETIRED_PROCEDURAL_FOLDERS=frozenset({'blackout','damascus'})
 Image.MAX_IMAGE_PIXELS=16000000
 def fit_canvas(image,width):
     # Source dimensions differ between older neutral masters. Center without
@@ -222,12 +225,15 @@ def build():
     (ROOT/'assets/skin-lines/line-data.js').write_text(
         '/* Generated from lines.json; do not edit. */\nwindow.LootHubSkinLineData = Object.freeze('+
         json.dumps(defs,separators=(',',':'))+');\n',encoding='utf-8')
-    # Remove stale generated line folders only; owner-made custom art is elsewhere.
+    # Custom owner-provided case assets can live alongside procedural exports.
+    # Remove only the explicitly retired old procedural folders.
     destination=ROOT/'assets/renders/lines'
-    allowed={v['id'] for v in defs['lines'] if v.get('released') or v.get('preview')} | CURATED_ASSET_FOLDERS
+    allowed={v['id'] for v in defs['lines'] if v.get('released') or v.get('preview')}
     if destination.exists():
         for stale in destination.iterdir():
-            if stale.is_dir() and stale.name not in allowed:shutil.rmtree(stale)
+            if (stale.is_dir() and stale.name in RETIRED_PROCEDURAL_FOLDERS
+                    and stale.name not in allowed):
+                shutil.rmtree(stale)
     count=0
     for item in items:
         slug=item.get('modelSlug') or item['id'].removesuffix('--base')
@@ -273,9 +279,11 @@ def build():
     return count
 def verify():
     items,defs,_=sources();count=0
-    valid_ids={line['id'] for line in defs['lines'] if line.get('released') or line.get('preview')} | CURATED_ASSET_FOLDERS
+    # Procedural verification owns procedural exports only. Curated-case
+    # originals are validated by tests/case-registry.cjs instead.
     for file in (ROOT/'assets/renders/lines').glob('**/*.webp'):
-        if file.parent.name not in valid_ids:raise AssertionError('Unregistered artwork: '+str(file))
+        if file.parent.name in RETIRED_PROCEDURAL_FOLDERS:
+            raise AssertionError('Retired procedural artwork must not ship: '+str(file))
     for item in items:
         slug=item.get('modelSlug') or item['id'].removesuffix('--base')
         if item['renderMode']=='transparent-webp-data-uri':

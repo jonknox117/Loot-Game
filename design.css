@@ -1146,3 +1146,37 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .negotiation-tactics{grid-template-columns:1fr 1fr}
  .negotiation-tactics button:last-child{grid-column:1/-1}
 }
+
+
+/* Case registry common frame */
+/* Every closed/open case uses the same contained image geometry on iPhone,
+   regardless of which theme was added to the registry. Never apply weapon
+   silhouette offsets or crop an approved chest render. */
+.curated-case-image{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  max-width:100%;
+  max-height:100%;
+  overflow:hidden;
+  background:transparent!important;
+}
+.curated-case-image > img{
+  display:block;
+  flex:none;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  object-position:center center;
+}
+.cartel-case-art .curated-case-image{width:100%;height:100%;min-height:0}
+.curated-case-section .cartel-odds .weapon-art{min-width:0}

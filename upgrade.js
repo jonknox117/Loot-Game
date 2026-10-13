@@ -1,7 +1,7 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 function isApprovedSkin(item){
-  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||cartelSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSpecOpsCase?.items.some(a=>a.weapon===item.weapon&&a.skin===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
+  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubCaseRegistry?.skinFor(item)||window.LootHubSkinLines?.isRegistered(item)));
 }
 // Retired procedural collections no longer appear in shops or generate art.
 // Former sealed cases become regular Arsenal Cases with the same identity/value.
@@ -944,50 +944,33 @@ function visualArt(item,context='inventory') {
       ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"'+
       ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
       ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
-  // Owner-supplied Arsenal Case: exact artwork, alpha-cut from the two uploaded
-  // photographs; no re-rendered SVG or generated replacement. The open pose is
-  // used only in opening/reveal UI, while shop, inventory and trade stay sealed.
-  if(item&&item.kind==='case'&&(!item.caseId||item.caseId==='arsenal')){
-    const pose=context==='open'||context==='open-small'?'open':'closed';
-    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
-    const src='./assets/cases/arsenal-case-'+pose+'-'+pixelSize+'.webp';
-    return '<div class="art weapon-art arsenal-case-image arsenal-case-'+pose+'" data-art-status="owner-supplied-case"'+
-      ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
-      '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Arsenal Case, original Loot Hub artwork"'+
-      ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
-  }
-  // Exact owner-supplied Cartel chest: closed for trading/shop/inventory and
-  // open ONLY on the final reward display. No spinning-reel chest overlay.
-  if(item&&item.kind==='case'&&item.caseId==='cartel'){
-    const pose=context==='open'||context==='open-small'?'open':'closed';
-    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
-    const src='./assets/cases/cartel-case-'+pose+'-'+pixelSize+'.webp';
-    return '<div class="art weapon-art cartel-crate cartel-case-image cartel-case-'+pose+'" data-art-status="owner-supplied-cartel-case"'+
-      ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
-      '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Cartel Case, original owner-supplied chest artwork"'+
-      ' decoding="async" loading="eager"></div>';
-  }
-  // Released owner-supplied Spec Ops case; sealed and open art use the same
-  // transparent source perspectives as the other curated cases.
-  if(item&&item.kind==='case'&&item.caseId==='spec-ops'){
-    const pose=context==='open'||context==='open-small'?'open':'closed';
-    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
-    const src='./assets/cases/spec-ops-case-'+pose+'-'+pixelSize+'.webp';
-    return '<div class="art weapon-art cartel-crate spec-ops-case-image spec-ops-case-'+pose+'" data-art-status="owner-supplied-spec-ops-case"'+
-      ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
-      '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Spec Ops Case, original owner-supplied artwork"'+
-      ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
-  }
-  // Each Spec Ops skin has its own original artwork rather than a procedural overlay.
-  if(item&&item.kind==='skin'&&item.skin==='Spec Ops'&&
-     window.LootHubSpecOpsCase?.items.some(x=>x.weapon===item.weapon)){
-    const slug=window.LootHubWeaponCatalog.modelSlugs[item.weapon];
-    if(slug){
-      const src='./assets/renders/lines/spec-ops/'+slug+'--spec-ops-'+size+'.webp';
-      return '<div class="art weapon-art master-raster approved-skin spec-ops-skin"'+
-        ' data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="Spec Ops" data-art-status="approved-skin" data-resolution="'+size+'"'+wearMeta+'>'+
-        '<img src="'+src+'" alt="'+safeAttr(item.weapon)+' | Spec Ops owner-approved skin" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+  // All owner-approved closed/open case assets and raster skins are resolved
+  // by the central registry. Inventory/shop show CLOSED; rewards show OPEN.
+  // Unknown old-save case ids still reach the neutral fallback renderer.
+  if(item&&item.kind==='case'){
+    const def=window.LootHubCaseRegistry?.get(item.caseId||'arsenal');
+    if(def&&def.released){
+      const pose=context==='open'||context==='open-small'?'open':'closed';
+      const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
+      const src=window.LootHubCaseRegistry.chestImage(def.id,pose,pixelSize);
+      const styleClass=def.id==='arsenal'?'arsenal-case-image':
+        def.id==='cartel'?'cartel-crate cartel-case-image':
+        def.id==='spec-ops'?'cartel-crate spec-ops-case-image':'curated-chest-image';
+      return '<div class="art weapon-art curated-case-image '+styleClass+' '+safeAttr(def.id)+'-case-'+pose+'"'+
+       ' data-art-status="'+safeAttr(def.artStatus||'owner-supplied-case')+'"'+
+       ' data-case-id="'+safeAttr(def.id)+'" data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
+       '<img src="./'+safeAttr(src)+'" alt="'+safeAttr((pose==='open'?'Opened':'Sealed')+' '+def.name+' Case, owner-approved artwork')+'"'+
+       ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
+  }
+  const curatedSkinPath=window.LootHubCaseRegistry?.skinImage(item,Number(size));
+  if(curatedSkinPath){
+    const def=window.LootHubCaseRegistry.skinFor(item);
+    return '<div class="art weapon-art master-raster approved-skin curated-skin '+safeAttr(def.caseId)+'-skin"'+
+     ' data-weapon-model="'+safeAttr(item.weapon)+'" data-finish="'+safeAttr(item.skin)+'"'+
+     ' data-art-status="approved-skin" data-resolution="'+size+'"'+wearMeta+'>'+
+     '<img src="./'+safeAttr(curatedSkinPath)+'" alt="'+safeAttr(item.weapon+' | '+item.skin)+' owner-approved skin"'+
+     ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
   }
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)||window.LootHubSkinLines?.isPreview(item)){

@@ -4,7 +4,7 @@ let multiSelection=[];
 function multiOpenEntry(){
  const total=s.items.filter(x=>x.kind==='case').length;
  return '<section class="panel multi-entry"><div><div class="section-eyebrow">NEW · MULTI-OPEN</div>'+
- '<h2>Open up to five cases</h2><p class="muted">Five simultaneous spins. Mix Arsenal, Cartel, and Spec Ops cases. Rewards are saved before animation.</p></div>'+
+ '<h2>Open up to five cases</h2><p class="muted">Five simultaneous spins. Mix any owned case types. Rewards are saved before animation.</p></div>'+
  '<button class="primary" onclick="showMultiPicker()" '+(total?'':'disabled')+
  '>Select owned cases ('+total+')</button></section>';
 }
@@ -78,8 +78,8 @@ function pickMultiFive(){
 function clearMultiSelection(){multiSelection=[];renderMultiPicker()}
 function startMultiOpen(){return startMultiOpenWithIds(multiSelection.slice())}
 function multiReelRow(reward,owned,index){
- const pool=owned.caseId==='cartel'?cartelCatalog:
-  owned.caseId&&lineCatalogs[owned.caseId]?lineCatalogs[owned.caseId]:dropCatalog;
+ const pool=window.LootHubCaseRegistry.pool(owned.caseId||'arsenal',dropCatalog)||
+  lineCatalogs[owned.caseId]||dropCatalog;
  const colors=['#9ba6b7','#5acc7c','#579bf1','#ad6def','#e7b64e'];
  const sequence=Array.from({length:14},()=>pool[rng(pool.length)]);
  sequence[10]=reward;
@@ -96,9 +96,8 @@ function multiReelRow(reward,owned,index){
   '<div class="track" id="multi-track-'+index+'">'+tiles+'</div></div></div>';
 }
 function caseShopPrice(caseId){
- if(caseId==='arsenal')return 25;
- if(caseId==='cartel')return cartelCase.casePrice;
- if(caseId==='spec-ops')return specOpsCase.casePrice;
+ const curated=window.LootHubCaseRegistry.priceFor(caseId);
+ if(curated!==null)return curated;
  const line=universalSkinLines.getLine(caseId);
  return line&&line.released===true?line.casePrice:null;
 }

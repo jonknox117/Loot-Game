@@ -25,13 +25,13 @@ function valid(data){
  if(typeof data!=='object'||Array.isArray(data)||data.schemaVersion!==1||
     !data.progress||typeof data.progress!=='object'||Array.isArray(data.progress))return false;
  const keys=Object.keys(data.progress);
- // Accept pre-Spec Ops two-collection saves; ensure() upgrades them in place.
- if(keys.some(k=>!byCollection.has(k))||
-    !(keys.length===definitions.length||
-      (keys.length===definitions.length-1&&!Object.hasOwn(data.progress,'spec-ops-v1'))))return false;
+ // Future case collections may be absent from older saves. Never erase known
+ // progress; ensure() initializes only genuinely missing collections.
+ if(keys.some(k=>!byCollection.has(k)))return false;
+ if(!data.progress['arsenal-v1']||!data.progress['cartel-v1'])return false;
  for(const c of definitions){
   const p=data.progress[c.id];
-  if(!p&&c.id==='spec-ops-v1')continue;
+  if(p===undefined)continue;
   if(!p||typeof p!=='object'||Array.isArray(p)||
      !Array.isArray(p.seen)||p.seen.length>c.items.length||
      !(p.claimedAt===null||(Number.isSafeInteger(p.claimedAt)&&p.claimedAt>0)))return false;
@@ -71,7 +71,7 @@ function reconcile(game){
 function progress(game,collectionId){
  const c=byCollection.get(collectionId),data=game&&game.collections;
  if(!c||!valid(data)||!data)return null;
- const p=data.progress[collectionId];
+ const p=data.progress[collectionId]||{seen:[],claimedAt:null};
  return {id:c.id,name:c.name,caseId:c.caseId,total:c.items.length,
   found:p.seen.length,missing:c.items.filter(x=>!p.seen.includes(x.id)),
   complete:p.seen.length===c.items.length,claimed:p.claimedAt!==null,

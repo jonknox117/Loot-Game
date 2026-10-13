@@ -23,6 +23,9 @@ assert(html.includes('<script src="./market/multi-open-ui.js"></script>'));
 
 const cartelData=fs.readFileSync(path.join(root,'assets/cartel-case.js'),'utf8');
 const specOpsData=fs.readFileSync(path.join(root,'assets/spec-ops-case.js'),'utf8');
+const caseRegistryData=fs.readFileSync(path.join(root,'assets/case-registry.js'),'utf8');
+assert(html.includes('<script src="./assets/case-registry.js"></script>'));
+require('./case-registry.cjs');
 assert(html.includes('<script src="./assets/spec-ops-case.js"></script>'));
 assert(html.includes('<script src="./assets/cartel-case.js"></script>'));
 for(const slug of ['ak-47','rpg-7','tactical-machete','12-gauge-pump-shotgun','desert-eagle'])assert(html.includes('<script src="./assets/skins/'+slug+'--cartel.js"></script>'));
@@ -43,7 +46,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+specOpsData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+specOpsData+'\n'+caseRegistryData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {

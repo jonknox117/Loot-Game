@@ -28,7 +28,7 @@ function validMarketState(m){
 }
 function baseEstimated(item){
   // A rewarded case is still worth its approved case-type price, not paid:0.
-  if(item.kind==='case')return item.caseId==='cartel'?75:item.caseId==='spec-ops'?75:25;
+  if(item.kind==='case')return root.LootHubCaseRegistry?.priceFor(item.caseId||'arsenal')||25;
   return Math.max(1,Math.round(Number(item.base)||1));
 }
 function estimated(item){
