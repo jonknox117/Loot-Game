@@ -5,7 +5,7 @@
 - Added `scripts/audit_artwork_integrity.py`, a **read-only** pixel audit for published Arsenal, Cartel, Spec Ops and Lavish art: all neutral masters, standalone case/skin WebPs, and the original embedded approved Arsenal/Cartel skins.
 - Checks that artwork **actually decodes**, alpha transparency reaches all four corners, transparent padding exists, the long-edge resolution is correct, expected 400/800/1600 or 400/800/1254 exports exist, and silhouettes remain consistent across their size variants.
 - Confirms distinct open/closed chest silhouettes for every released case and checks that curated case artwork uses contain-sized square canvases. Produces a JSON audit and a light/dark **visual comparison sheet** for manual review of fine engravings, lettering, weapon identity and transparency fringes.
-- Added the pixel audit to the weapon-art CI workflow; review artifacts are uploaded even when the audit fails. No approved artwork, case values, rarity odds, save data or weapon identifiers were changed.
+- Added the pixel audit to CI and published review artifacts. Rebuilt the **clipped 400px Karambit | Kryptonite thumbnail** from its approved 1600px original with transparent safety padding. No full-resolution original, other approved artwork, prices, rarity odds, save data or weapon identifiers were changed. The repair is one-time; subsequent CI runs only audit files.
 
 ## Patch 0.7.2 — Official Lavish Case (Owner-Supplied Artwork)
 
