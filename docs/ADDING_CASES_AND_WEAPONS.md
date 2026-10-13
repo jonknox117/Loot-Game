@@ -4,7 +4,7 @@ The single source of truth for themed cases is **assets/case-registry.js**.
 Do not add individual case branches to the renderer, shop, inventory, market,
 multi-open, roll engine or Collection Book.
 
-The registry already supports Arsenal, Cartel and Spec Ops. Add new cases to the
+The registry currently supports Arsenal, Cartel, Spec Ops and Lavish. Add new cases to the
 EXTRA_CASES array. Existing save IDs and historic collections remain unchanged.
 Cartel uses its original embedded approved skins; Spec Ops and new cases use
 transparent WebP images.
@@ -15,12 +15,12 @@ transparent WebP images.
    **open case**, and each **approved weapon skin**. The image preparer never
    redraws weapons or strips opaque white/black backgrounds; review and remove
    those backgrounds before continuing.
-2. From the project root run the image preparation tool. Example (placeholder
-   Lavish values, **not an approved price or drop balance**):
+2. From the project root run the image preparation tool. The fictional Heritage
+   example below is a template only (not a released case or approved economy balance):
 
     python -m pip install pillow
-    python scripts/prepare_curated_case.py --case-id lavish --name Lavish --price 75
-      --closed ./approved/lavish-closed.png --open ./approved/lavish-open.png
+    python scripts/prepare_curated_case.py --case-id heritage --name Heritage --price 75
+      --closed ./approved/heritage-closed.png --open ./approved/heritage-open.png
       --skin "Thompson SMG:0:40=./approved/thompson.png"
       --skin "M1911:1:110=./approved/m1911.png"
       --skin "Mosin-Nagant:2:350=./approved/rifle.png"
@@ -33,9 +33,20 @@ transparent WebP images.
 
 3. Keep its released flag **false** until art, names, rarities and values are
    approved. Flip it to true after validation. No further game code is needed.
-4. Run node tests/case-registry.cjs and node tests/core.cjs, followed by the
-   iPhone browser smoke flow (node tests/smoke.cjs). A missing released asset
-   fails the registry test, preventing a broken case launch.
+4. Run the pixel-level art audit (Pillow + Node required), the case registry/core
+   tests, and the iPhone browser smoke flow. Missing or malformed released assets
+   fail CI instead of shipping a broken case:
+
+    python scripts/audit_artwork_integrity.py
+    node tests/case-registry.cjs
+    node tests/core.cjs
+    node tests/smoke.cjs
+
+   Inspect tests/artwork-review/artwork-review-sheet.png on both light and dark
+   halves for alpha fringes, cropped silhouettes and small inscriptions. The
+   JSON report checks machine-verifiable integrity; an owner must still verify
+   that the pictures match the approved source designs. CI publishes both files
+   in its artwork-integrity-review artifact.
 
 ## Automatic image filenames
 

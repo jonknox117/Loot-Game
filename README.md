@@ -1,5 +1,12 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.3 — Artwork Integrity and Visual QA
+
+- Added `scripts/audit_artwork_integrity.py`, a **read-only** pixel audit for published Arsenal, Cartel, Spec Ops and Lavish art: all neutral masters, standalone case/skin WebPs, and the original embedded approved Arsenal/Cartel skins.
+- Checks that artwork **actually decodes**, alpha transparency reaches all four corners, transparent padding exists, the long-edge resolution is correct, expected 400/800/1600 or 400/800/1254 exports exist, and silhouettes remain consistent across their size variants.
+- Confirms distinct open/closed chest silhouettes for every released case and checks that curated case artwork uses contain-sized square canvases. Produces a JSON audit and a light/dark **visual comparison sheet** for manual review of fine engravings, lettering, weapon identity and transparency fringes.
+- Added the pixel audit to the weapon-art CI workflow; review artifacts are uploaded even when the audit fails. No approved artwork, case values, rarity odds, save data or weapon identifiers were changed.
+
 ## Patch 0.7.2 — Official Lavish Case (Owner-Supplied Artwork)
 
 - Released the **Lavish Case** for **75 coins**, alongside Arsenal, Cartel and Spec Ops. The exact seven owner-uploaded illustrations are used: five weapons plus distinct **closed** and **open** red-and-gold Lavish chests. No replacement or AI-regenerated artwork is used. The six originally white-backed JPEG images were converted to transparent WebP backgrounds; the uploaded transparent shotgun artwork remains unchanged in appearance.
@@ -16,7 +23,7 @@
 - Added **tests/case-registry.cjs** to fail on missing released artwork, malformed assets or unsafe paths, and to simulate an additional released case and an unreleased draft without changing the game. The regular Node CI run invokes the registry audit.
 - Refactored procedural art cleanup to preserve all owner-supplied case folders, including future uploads. Shared contain framing prevents newly added case images from cropping on mobile.
 - Future released case collections are generated from the registry, and the collection-save validator accepts missing newer collections in older saves while retaining historical completion records.
-- For the copy/paste case definition, command examples and image workflow, see [Adding Cases and Weapons](docs/ADDING_CASES_AND_WEAPONS.md). **Lavish artwork has not been added or released by this infrastructure patch.**
+- For the copy/paste case definition, command examples and image workflow, see [Adding Cases and Weapons](docs/ADDING_CASES_AND_WEAPONS.md). **Historical note:** Lavish was not included in 0.7.1; it was subsequently released in 0.7.2.
 
 ## Patch 0.7.0 — Auction House & Trading Desk
 
