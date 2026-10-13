@@ -2310,5 +2310,56 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.deepEqual(JSON.parse(restored.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
 });
 
+
+test('Original closed and opened Arsenal photos replace placeholder crate without changing Cartel',()=>{
+ const g=boot();
+ const base='assets/cases/arsenal-case-';
+ for(const pose of ['closed','open'])for(const pixels of [400,800,1254]){
+  const p=path.join(root,base+pose+'-'+pixels+'.webp');
+  const image=fs.readFileSync(p);
+  assert(image.length>40000,p+' should retain real supplied art');
+  assert.equal(image.toString('ascii',0,4),'RIFF',p);
+  assert.equal(image.toString('ascii',8,12),'WEBP',p);
+ }
+ for(const [item,mode,pose,size] of [
+  [{kind:'case'},'inventory','closed','800'],
+  [{kind:'case',id:'sealed-art-1'},'inspect','closed','1254'],
+  [{kind:'case'},'reel','closed','400'],
+  [{kind:'case'},'open','open','1254']]){
+  const art=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(mode)+')');
+  assert(art.includes('arsenal-case-'+pose+'-'+size+'.webp'),mode);
+  assert(art.includes('data-art-status="owner-supplied-case"'));
+  assert(art.includes('data-case-pose="'+pose+'"'));
+  assert(!art.includes('<svg'),'Arsenal must use supplied real case assets');
+ }
+ assert(g.run('home()').includes('arsenal-case-closed-800.webp'));
+ assert(g.run('cases()').includes('arsenal-case-closed-800.webp'));
+ const cartel=g.run('visualArt({kind:"case",caseId:"cartel"})');
+ assert(cartel.includes('cartel-crate'),'Cartel artwork must stay separate');
+ assert(!cartel.includes('arsenal-case-'));
+ g.run('s.items.push({id:"case-art-open",kind:"case",paid:25})');
+ g.run('openCase("case-art-open")');
+ const spin=g.byId('overlay').innerHTML;
+ assert(spin.includes('arsenal-opening-prop'));
+ assert(spin.includes('arsenal-case-open-1254.webp'));
+ assert(spin.includes('id="track"'));
+ const prizeId=g.state().items.find(x=>x.kind==='weapon'||x.kind==='skin')?.id;
+ g.run('finishOpening()');
+ const show=g.byId('overlay').innerHTML;
+ assert(show.includes('arsenal-reward-display'));
+ assert(show.includes('arsenal-reward-weapon'));
+ assert(show.includes('arsenal-reward-crate'));
+ assert(show.includes('arsenal-case-open-1254.webp'));
+ assert.equal(g.state().items.find(x=>x.id===prizeId)?.id,prizeId,'Visual swap cannot reroll a prize');
+ assert.equal(g.state().openings,1);
+ const cart=boot();
+ cart.run('s.items.push({id:"cartel-case-art-open",kind:"case",caseId:"cartel",paid:75})');
+ cart.run('openCase("cartel-case-art-open")');
+ assert(!cart.byId('overlay').innerHTML.includes('arsenal-opening-prop'));
+ cart.run('finishOpening()');
+ assert(!cart.byId('overlay').innerHTML.includes('arsenal-reward-crate'));
+ assert(cart.state().items.some(x=>x.kind==='skin'&&x.skin==='Cartel'));
+});
+
 if(process.exitCode)process.exit(process.exitCode);
 console.log('All LootHub core regression tests passed.');

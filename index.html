@@ -266,7 +266,8 @@ function openCase(k){
    visualArt(sample,'reel')+'<span class="tile-name">'+escapeHTML(entry.weapon)+'</span></div>';
  }).join('');
  dialog('<div class="reel-header"><span class="spin-eyebrow">'+(caseId==='cartel'?'CARTEL':'ARSENAL')+' • REWARD DROP</span><span class="spin-pulse">OPENING</span></div>'+
-  '<h2 class="spin-title">Opening '+escapeHTML(itemName(owned))+'</h2>'+
+  '<h2 class="spin-title">Opening '+escapeHTML(itemName(owned))+'</h2>'+ 
+  (caseId==='arsenal'?'<div class="arsenal-opening-prop" aria-label="Opened Arsenal Case">'+visualArt({kind:'case'},'open')+'</div>':'')+
   '<div class="reel-stage"><div class="reel" aria-label="Case opening reel"><div class="pointer"></div>'+
   '<div class="track" id="track">'+tiles+'</div></div></div>'+
   '<p class="muted tiny spin-note">Your reward is already saved. Skipping cannot change the result.</p>'+
@@ -278,13 +279,13 @@ function openCase(k){
  track.style.transition=reduced?'none':'transform 6.5s cubic-bezier(.09,.75,.12,1)';
  requestAnimationFrame(()=>requestAnimationFrame(()=>{track.style.transform='translateX('+target+'px)'}));
  if(!reduced)window.LootHubFX.startReel(track,track.parentElement);
- pending={reward,timer:setTimeout(finishOpening,duration+200)};
+ pending={reward,caseId,timer:setTimeout(finishOpening,duration+200)};
 }
 function finishOpening(){
  if(!pending)return;
  clearTimeout(pending.timer);
  window.LootHubFX.stopReel();
- const reward=pending.reward;
+ const reward=pending.reward,caseId=pending.caseId||'arsenal';
  pending=null;busy=false;s.pendingReveal=null;save();render();
  window.LootHubFX.play('reveal',{tier:reward.tier});
  const grade=tiers[reward.tier],tierClass=cls(grade);
@@ -292,7 +293,10 @@ function finishOpening(){
   '<div class="reward-sheen" aria-hidden="true"></div>'+
   '<div class="reward-kicker">NEW ITEM ACQUIRED</div>'+
   '<div class="tag '+tierClass+'">'+grade+'</div>'+
-  '<div class="big reveal-art reward-art">'+visualArt(reward,'inspect')+'</div>'+
+  (caseId==='arsenal'?'<div class="big reveal-art reward-art arsenal-reward-display">'+
+   '<div class="arsenal-reward-weapon">'+visualArt(reward,'inspect')+'</div>'+
+   '<div class="arsenal-reward-crate">'+visualArt({kind:'case'},'open')+'</div></div>':
+   '<div class="big reveal-art reward-art">'+visualArt(reward,'inspect')+'</div>')+
   '<h2 class="reward-name">'+escapeHTML(itemName(reward))+'</h2>'+
   '<p class="muted">'+(reward.kind==='skin'?'Approved skin · '+reward.skin:'Base weapon · unskinned')+'</p>'+
   '<p>'+conditionTag(reward)+'</p>'+conditionPriceRows(reward)+

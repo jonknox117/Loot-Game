@@ -745,3 +745,59 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .cartel-collection .item:last-child{grid-column:auto}
  .cartel-collection .weapon-art{height:150px!important}
 }
+
+/* Owner-supplied original Arsenal Case — transparent closed/open artwork. */
+.arsenal-case-image{display:grid;place-items:center;background:none!important;overflow:visible}
+.arsenal-case-image img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:block}
+.hero .case-art:has(.arsenal-case-image){padding:4px;overflow:hidden}
+.hero .case-art .arsenal-case-image{width:100%;height:215px;min-height:0}
+.hero .case-art .arsenal-case-image img{width:100%;height:100%;filter:drop-shadow(0 10px 13px rgba(0,0,0,.25))}
+.item .arsenal-case-image img{object-fit:contain}
+.dialog .reveal-art .arsenal-case-image{background:none!important}
+.arsenal-opening-prop{
+ height:128px;display:flex;justify-content:center;align-items:center;
+ margin:-10px auto 5px;position:relative;pointer-events:none;
+}
+.arsenal-opening-prop::before{
+ content:"";position:absolute;left:18%;right:18%;bottom:4px;height:48px;
+ background:radial-gradient(ellipse at center,rgba(237,177,92,.24),transparent 70%);
+}
+.arsenal-opening-prop .arsenal-case-image{
+ width:170px;height:127px;z-index:1;filter:drop-shadow(0 3px 10px rgba(0,0,0,.35));
+}
+.arsenal-reward-display{
+ position:relative;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;overflow:hidden;min-height:286px;
+}
+.arsenal-reward-display .arsenal-reward-weapon{
+ width:95%;height:148px;position:relative;z-index:2;
+ margin:0 auto -54px;
+ animation:arsenal-prize-rise .65s cubic-bezier(.17,.77,.29,1) both;
+ filter:drop-shadow(0 7px 10px rgba(0,0,0,.5));
+}
+.arsenal-reward-display .arsenal-reward-weapon .weapon-art{
+ height:148px!important; width:100%; background:none!important;
+}
+.arsenal-reward-display .arsenal-reward-crate{
+ position:relative;z-index:1;width:min(300px,80%);height:193px;
+ filter:drop-shadow(0 12px 9px rgba(0,0,0,.35));
+}
+.arsenal-reward-display .arsenal-reward-crate .arsenal-case-image{
+ width:100%;height:100%!important;
+}
+@keyframes arsenal-prize-rise{
+ from{opacity:.1;transform:translateY(35px) scale(.92)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+@media(max-width:700px){
+ .hero .case-art .arsenal-case-image{height:150px}
+ .arsenal-opening-prop{height:100px;margin:-7px auto 2px}
+ .arsenal-opening-prop .arsenal-case-image{width:143px;height:104px}
+ .arsenal-reward-display{min-height:224px}
+ .arsenal-reward-display .arsenal-reward-weapon{height:107px;margin-bottom:-40px}
+ .arsenal-reward-display .arsenal-reward-weapon .weapon-art{height:107px!important}
+ .arsenal-reward-display .arsenal-reward-crate{height:165px;width:min(240px,85%)}
+}
+@media(prefers-reduced-motion:reduce){
+ .arsenal-reward-display .arsenal-reward-weapon{animation:none}
+}
