@@ -79,8 +79,9 @@ def verify_pixels(material,alpha):
 def source_files():
     items=json.loads((ROOT/'assets/manifest.json').read_text())['items']
     p=json.loads((ROOT/'assets/skin-lines/paint-profiles.json').read_text())
-    if len(items)!=24 or len(p['weapons'])!=24:
-        raise ValueError('Every one of the 24 weapon masters needs a profile')
+    slugs=[item.get('modelSlug') or item['id'].removesuffix('--base') for item in items]
+    if not slugs or len(set(slugs))!=len(slugs) or set(slugs)!=set(p['weapons']):
+        raise ValueError('Exactly one material profile is required per unique weapon')
     return items,p['weapons']
 
 def build(check=False):
@@ -109,7 +110,7 @@ def build(check=False):
         else:
             alpha.save(sil_path,optimize=True)
             material.save(mat_path,optimize=True)
-    if len(summary)!=24:raise AssertionError('Incomplete material-map set')
+    if len(summary)!=len(items):raise AssertionError('Incomplete material-map set')
     print(('Validated' if check else 'Generated'),len(summary),
       'full silhouettes and metal/wood/other classification maps')
     for slug,classes in summary.items():print(slug,classes)
