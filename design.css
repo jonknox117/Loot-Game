@@ -711,3 +711,37 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .spin-pulse,.reward-sheen,.reward-art,#main > .panel,#main > section{animation:none!important}
  .reel .track{transition:none!important}
 }
+
+/* Curated Cartel Case — separate from Arsenal and procedural collections. */
+.cartel-section{border-color:rgba(197,63,63,.44);
+ background:radial-gradient(ellipse at 13% 12%,rgba(139,27,30,.24),transparent 50%),linear-gradient(150deg,#201e26,#111722 75%)}
+.cartel-showcase{display:grid;grid-template-columns:minmax(190px,42%) 1fr;align-items:center;gap:20px;padding:2px 0 18px}
+.cartel-case-art{min-width:0;position:relative;background:radial-gradient(ellipse at 50% 50%,rgba(221,69,69,.17),transparent 72%);border-radius:13px}
+.cartel-case-art .weapon-art{height:200px;background:transparent}
+.cartel-case-art svg{display:block;width:100%;height:100%}
+.cartel-section h2{font-size:clamp(25px,3vw,36px);margin:9px 0}
+.cartel-section .price{color:#ffbbad}
+.cartel-section .row{display:flex;flex-wrap:wrap;gap:9px}
+.cartel-section .primary{background:linear-gradient(145deg,#f3bc82,#e38b63)}
+.cartel-odds{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.cartel-reward{min-width:0;border:1px solid rgba(181,84,77,.24);border-radius:11px;padding:9px;background:rgba(8,15,24,.45)}
+.cartel-reward .tag{max-width:100%;white-space:normal}
+.cartel-reward .weapon-art{height:77px;margin:8px 0;background:radial-gradient(ellipse at center,rgba(104,37,39,.14),transparent)}
+.cartel-reward .weapon-art img{object-fit:contain}
+.cartel-reward strong{font-size:11px;line-height:1.3;display:block;overflow-wrap:anywhere}
+.cartel-collection{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:58dvh;overflow-y:auto}
+.cartel-collection .item{min-width:0}
+.cartel-collection .weapon-art{height:130px!important;max-width:100%}
+.cartel-collection .item:last-child{grid-column:1/-1}
+.cartel-crate{background:transparent!important}
+@media(max-width:700px){
+ .cartel-showcase{grid-template-columns:1fr;gap:5px}
+ .cartel-case-art .weapon-art{height:145px}
+ .cartel-section h2{font-size:27px}
+ .cartel-odds{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cartel-odds .cartel-reward:last-child{grid-column:1/-1}
+ .cartel-reward .weapon-art{height:90px}
+ .cartel-collection{grid-template-columns:1fr}
+ .cartel-collection .item:last-child{grid-column:auto}
+ .cartel-collection .weapon-art{height:150px!important}
+}

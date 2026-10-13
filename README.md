@@ -1,5 +1,30 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Cartel Case — five exclusive original skins
+
+The live **Cartel Case** is separate from the existing 25-weapon Arsenal Case.
+It costs **75 coins** and contains exactly five owner-supplied skin designs,
+each at one of the game's original rarity tiers:
+
+| Rarity | Cartel-only reward | Odds |
+| --- | --- | ---: |
+| Common | RPG-7 \| Cartel | 70% |
+| Uncommon | 12 Gauge Pump Shotgun \| Cartel | 20% |
+| Rare | AK-47 \| Cartel | 7.5% |
+| Super Rare | Desert Eagle \| Cartel | 2% |
+| Legendary | Tactical Machete \| Cartel | 0.5% |
+
+The game uses the **exact five supplied paintings**, with only background
+transparency and resolution exports applied. Each skin has independent 400px
+(reel), 800px (inventory), and 1600px (inspection) WebP exports under
+`assets/skins/*--cartel.js`; their original textures and designs are unchanged.
+The original 25 neutral masters and ten previously released skins remain intact.
+The Arsenal drop pool still contains its original 35 items, not these five.
+Cartel items enter inventory, wear, saved games, market listings and NPC trades
+without replacing unskinned weapons. Case-opening rewards are saved before the
+reel runs and retain their condition grade after reload.
+
+
 ## Interface Feedback Patch 0.5.8 — sounds, reels and mobile navigation
 
 - Adds lightweight synthesized interface audio (no external MP3s, no download delay). Web Audio is only initialized on a user interaction and degrades silently on unsupported devices.

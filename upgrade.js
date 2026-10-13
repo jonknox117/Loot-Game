@@ -1,7 +1,7 @@
 /* LootHub local save & marketplace upgrade. No external services required. */
 const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 function isApprovedSkin(item){
-  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
+  return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||cartelSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
 }
 // Retired procedural collections no longer appear in shops or generate art.
 // Former sealed cases become regular Arsenal Cases with the same identity/value.
@@ -906,6 +906,26 @@ function visualArt(item,context='inventory') {
       ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"'+
       ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
       ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
+  // Unique Cartel crate illustration: separate from the original Arsenal Case.
+  if(item&&item.kind==='case'&&item.caseId==='cartel'){
+    return '<div class="art weapon-art cartel-crate"><svg viewBox="0 0 360 190" role="img" aria-label="Sealed Cartel Case">'+
+     '<defs><linearGradient id="ccMetal" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#39404a"/><stop offset=".35" stop-color="#171b22"/><stop offset="1" stop-color="#07090d"/></linearGradient>'+
+     '<linearGradient id="ccRed"><stop stop-color="#5a1017"/><stop offset=".5" stop-color="#e23932"/><stop offset="1" stop-color="#671019"/></linearGradient></defs>'+
+     '<ellipse cx="183" cy="169" rx="145" ry="11" fill="#8c2528" opacity=".24"/>'+
+     '<path d="M107 55V34q0-11 11-11h127q11 0 11 11v21" fill="none" stroke="#7c8188" stroke-width="10"/>'+
+     '<path d="M108 55V34q0-11 11-11h127q11 0 11 11v21" fill="none" stroke="#171c22" stroke-width="5"/>'+
+     '<rect x="35" y="55" width="293" height="111" rx="12" fill="url(#ccMetal)" stroke="#b84843" stroke-width="4"/>'+
+     '<rect x="46" y="65" width="271" height="91" rx="7" fill="#18171c" stroke="#525761" stroke-width="2"/>'+
+     '<path d="M46 84l270 50M46 104l270 50M114 65l-68 79M253 65l-96 89" stroke="url(#ccRed)" stroke-width="12" opacity=".83"/>'+
+     '<rect x="60" y="66" width="19" height="88" rx="3" fill="#1b252d" stroke="#59616a" stroke-width="2"/>'+
+     '<rect x="285" y="66" width="19" height="88" rx="3" fill="#1b252d" stroke="#59616a" stroke-width="2"/>'+
+     '<rect x="126" y="71" width="109" height="74" rx="7" fill="#15171b" stroke="#c14a45" stroke-width="2"/>'+
+     '<text x="180" y="110" fill="#f5e9d9" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" font-weight="900" letter-spacing="2">CARTEL</text>'+
+     '<path d="M140 120h80" stroke="#ad2d31" stroke-width="3"/>'+
+     '<text x="180" y="137" fill="#b7aa9c" font-family="Arial, sans-serif" font-size="8" text-anchor="middle" letter-spacing="1.6">SKULL COLLECTION</text>'+
+     '<g fill="#8e9397"><circle cx="61" cy="81" r="3"/><circle cx="300" cy="81" r="3"/><circle cx="61" cy="141" r="3"/><circle cx="300" cy="141" r="3"/></g>'+
+     '</svg></div>';
+  }
   // Universal finishes are generated from the exact approved neutral silhouette.
   if(window.LootHubSkinLines?.isRegistered(item)||window.LootHubSkinLines?.isPreview(item)){
     const file=window.LootHubSkinLines.imagePath(item,Number(size));
