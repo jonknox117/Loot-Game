@@ -205,11 +205,12 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await page.locator('#wallet').textContent()).includes('25'), 'Earning must credit 25 coins');
 
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
-    await page.getByRole('button', { name: 'Purchase case' }).click();
-    await page.getByRole('heading', { name: 'Sealed Arsenal Case', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('#multi-qty-arsenal').selectOption('1');
+    await page.locator('.hero .multi-shop-actions button').first().click();
+    await page.getByRole('heading', { name: '1 Arsenal Case bought' }).waitFor({ state: 'visible', timeout: 10000 });
     assert((await page.locator('#wallet').textContent()).includes('0'), 'Case purchase must debit wallet');
 
-    await page.getByRole('button', { name: 'Keep item' }).click();
+    await page.getByRole('button', { name: 'Keep sealed' }).click();
     await page.getByRole('button', { name: 'Inventory', exact: true }).click();
     await waitForVisible('.item');
     assert(await page.locator('.item').count() === 1, 'Purchase must create one owned sealed case');
@@ -335,7 +336,11 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       await page.getByRole('button', { name: /Earn 1 coin/ }).click();
     }
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
-    await page.getByRole('button', { name: 'Purchase case' }).click();
+    await page.locator('#multi-qty-arsenal').selectOption('1');
+    await page.locator('.hero .multi-shop-actions button').first().click();
+    await page.getByRole('button', { name: 'Keep sealed' }).click();
+    await page.getByRole('button', { name: 'Inventory', exact: true }).click();
+    await page.getByRole('button', { name: 'Inspect / trade' }).click();
     await page.getByRole('button', { name: 'List for sale' }).click();
     await page.locator('#listPrice').fill('22');
     assert((await page.locator('#listingNet').textContent()).includes('20'), 'Live listing proceeds should account for fees');
