@@ -70,12 +70,35 @@ function multiReelRow(reward,owned,index){
   '<div class="reel" aria-label="Case '+(index+1)+' spinning reel"><div class="pointer"></div>'+
   '<div class="track" id="multi-track-'+index+'">'+tiles+'</div></div></div>';
 }
+function multiPurchaseControl(caseId){
+ const price=caseId==='cartel'?cartelCase.casePrice:25;
+ return '<div class="multi-shop-buy"><label>Quantity <select class="field" id="multi-qty-'+caseId+
+  '" aria-label="Number of '+caseId+' cases to buy and open">'+
+  [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===5?' selected':'')+'>'+n+'</option>').join('')+
+  '</select></label><button onclick="buyAndMultiOpen(\''+caseId+'\')">Buy &amp; open · '+
+  price+' coins each</button></div>';
+}
+function buyAndMultiOpen(caseId){
+ if(busy||!canMutate()||!['arsenal','cartel'].includes(caseId))return false;
+ const el=document.getElementById('multi-qty-'+caseId),count=Number(el&&el.value);
+ const price=caseId==='cartel'?cartelCase.casePrice:25;
+ if(!Number.isSafeInteger(count)||count<1||count>5)return false;
+ if(s.coins<count*price){window.LootHubFX.play('error');
+  alert('Not enough coins for '+count+' cases ('+(count*price)+' needed).');return false}
+ const result=window.LootHubMultiOpen.purchaseAndCommit(s,caseId,count,price,caseItem,roll);
+ if(!result){window.LootHubFX.play('error');return false}
+ busy=true;
+ return beginMultiSpin(result);
+}
 function startMultiOpenWithIds(ids){
  if(busy||!canMutate())return false;
  if(!window.LootHubMultiOpen.eligible(s,ids))return false;
  busy=true;
  const result=window.LootHubMultiOpen.commit(s,ids,roll);
  if(!result){busy=false;window.LootHubFX.play('error');return false}
+ return beginMultiSpin(result);
+}
+function beginMultiSpin(result){
  multiSelection=[];
  log('Multi-open: '+result.rewards.length+' cases → '+
    result.rewards.map(x=>itemName(x)).join(', '));
