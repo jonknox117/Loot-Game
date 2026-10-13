@@ -22,21 +22,46 @@ function renderMultiPicker(){
  if(busy)return;
  const owned=s.items.filter(x=>x.kind==='case');
  const count=multiSelection.length;
+ const groups=new Map();
+ for(const item of owned){
+  const caseId=item.caseId||'arsenal';
+  if(!groups.has(caseId))groups.set(caseId,[]);
+  groups.get(caseId).push(item);
+ }
+ const choices=Array.from(groups,([caseId,items])=>{
+  const selected=items.filter(x=>multiSelection.includes(x.id)).length;
+  const key=encodeURIComponent(caseId);
+  return '<div class="multi-case-group"><span class="multi-case-mini">'+
+   visualArt(items[0],'reel')+'</span><div class="multi-case-details"><strong>'+
+   escapeHTML(itemName(items[0]).replace(/^Sealed /,''))+'</strong>'+
+   '<span class="muted tiny">'+items.length+' owned · '+selected+' selected</span></div>'+
+   '<div class="multi-case-counter">'+
+   '<button type="button" aria-label="Remove '+escapeHTML(caseId)+' case" onclick="adjustMultiCase(decodeURIComponent(\''+key+'\'),-1)" '+(selected?'':'disabled')+'>−</button>'+
+   '<span aria-label="Selected case count">'+selected+'</span>'+
+   '<button type="button" aria-label="Add '+escapeHTML(caseId)+' case" onclick="adjustMultiCase(decodeURIComponent(\''+key+'\'),1)" '+
+   (selected===items.length||count===5?'disabled':'')+'>+</button></div></div>';
+ }).join('');
  dialog('<div class="multi-picker"><div class="section-eyebrow">MULTI-OPEN · 1–5</div>'+
-  '<h2>Choose your cases</h2><p class="muted">Each case has an independent roll and will be consumed.</p>'+
+  '<h2>Choose your cases</h2><p class="muted">Select quantities by case type. All five rewards roll independently.</p>'+
   '<div class="multi-picker-head"><strong>'+count+' / 5 selected</strong><div class="row">'+
   '<button onclick="pickMultiFive()">Select 5</button><button onclick="clearMultiSelection()">Clear</button></div></div>'+
-  '<div class="multi-case-choices">'+(owned.length?owned.map(x=>
-   '<label class="multi-case-choice'+(multiSelection.includes(x.id)?' selected':'')+'">'+
-   '<input type="checkbox" '+(multiSelection.includes(x.id)?'checked':'')+
-   ' '+(count===5&&!multiSelection.includes(x.id)?'disabled':'')+
-   ' onchange="toggleMultiCase(\''+x.id+'\')">'+
-   '<span class="multi-case-mini">'+visualArt(x,'reel')+'</span>'+
-   '<span>'+escapeHTML(itemName(x))+'</span></label>').join(''):
-   '<p class="muted">No sealed cases in inventory. Purchase cases first.</p>')+'</div>'+
-  '<div class="multi-picker-actions"><button class="primary" onclick="startMultiOpen()" '+
-   (count?'':'disabled')+'>Open '+count+' case'+(count===1?'':'s')+'</button>'+
+  '<div class="multi-case-choices">'+(choices||'<p class="muted">No sealed cases in inventory. Purchase cases first.</p>')+
+  '</div><div class="multi-picker-actions"><button class="primary" onclick="startMultiOpen()" '+
+  (count?'':'disabled')+'>Open '+count+' case'+(count===1?'':'s')+'</button>'+
   '<button onclick="closeDialog()">Cancel</button></div></div>');
+}
+function adjustMultiCase(caseId,delta){
+ if(busy||![-1,1].includes(delta))return;
+ const owned=s.items.filter(x=>x.kind==='case'&&(x.caseId||'arsenal')===caseId);
+ if(delta<0){
+  const item=[...owned].reverse().find(x=>multiSelection.includes(x.id));
+  if(item)multiSelection=multiSelection.filter(id=>id!==item.id);
+ }else{
+  if(multiSelection.length>=5)return;
+  const item=owned.find(x=>!multiSelection.includes(x.id));
+  if(item)multiSelection.push(item.id);
+ }
+ renderMultiPicker();
 }
 function toggleMultiCase(id){
  if(busy)return;
@@ -70,25 +95,61 @@ function multiReelRow(reward,owned,index){
   '<div class="reel" aria-label="Case '+(index+1)+' spinning reel"><div class="pointer"></div>'+
   '<div class="track" id="multi-track-'+index+'">'+tiles+'</div></div></div>';
 }
-function multiPurchaseControl(caseId){
- const price=caseId==='cartel'?cartelCase.casePrice:25;
- return '<div class="multi-shop-buy"><label>Quantity <select class="field" id="multi-qty-'+caseId+
-  '" aria-label="Number of '+caseId+' cases to buy and open">'+
-  [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===5?' selected':'')+'>'+n+'</option>').join('')+
-  '</select></label><button onclick="buyAndMultiOpen(\''+caseId+'\')">Buy &amp; open · '+
-  price+' coins each</button></div>';
+function caseShopPrice(caseId){
+ if(caseId==='arsenal')return 25;
+ if(caseId==='cartel')return cartelCase.casePrice;
+ const line=universalSkinLines.getLine(caseId);
+ return line&&line.released===true?line.casePrice:null;
 }
-function buyAndMultiOpen(caseId){
- if(busy||!canMutate()||!['arsenal','cartel'].includes(caseId))return false;
- const el=document.getElementById('multi-qty-'+caseId),count=Number(el&&el.value);
- const price=caseId==='cartel'?cartelCase.casePrice:25;
- if(!Number.isSafeInteger(count)||count<1||count>5)return false;
- if(s.coins<count*price){window.LootHubFX.play('error');
-  alert('Not enough coins for '+count+' cases ('+(count*price)+' needed).');return false}
- const result=window.LootHubMultiOpen.purchaseAndCommit(s,caseId,count,price,caseItem,roll);
+function multiPurchaseControl(caseId){
+ const price=caseShopPrice(caseId);
+ if(!Number.isSafeInteger(price)||price<1)return '';
+ const safeId=encodeURIComponent(caseId);
+ return '<div class="multi-shop-buy"><label>Quantity <select class="field" id="multi-qty-'+escapeHTML(caseId)+
+  '" aria-label="Number of '+escapeHTML(caseId)+' cases to buy">'+
+  [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===5?' selected':'')+'>'+n+'</option>').join('')+
+  '</select></label><div class="multi-shop-actions"><button onclick="buyCases(decodeURIComponent(\''+safeId+'\'),false)">Buy sealed</button>'+
+  '<button class="primary" onclick="buyCases(decodeURIComponent(\''+safeId+'\'),true)">Buy &amp; open</button></div>'+
+  '<small class="muted">1–5 cases · '+price+' coins each</small></div>';
+}
+function buyAndMultiOpen(caseId){return buyCases(caseId,true)}
+function buyCases(caseId,openNow){
+ if(busy||!canMutate())return false;
+ const price=caseShopPrice(caseId);
+ const el=document.getElementById('multi-qty-'+caseId);
+ const count=Number(el&&el.value);
+ if(!Number.isSafeInteger(price)||price<1||!Number.isSafeInteger(count)||count<1||count>5)return false;
+ const cost=count*price;
+ if(!Number.isSafeInteger(cost))return false;
+ if(s.coins<cost){window.LootHubFX.play('error');
+  alert('Not enough coins for '+count+' cases ('+cost+' needed).');return false}
+ if(openNow){
+  const result=window.LootHubMultiOpen.purchaseAndCommit(s,caseId,count,price,caseItem,roll);
+  if(!result){window.LootHubFX.play('error');return false}
+  busy=true;
+  return beginMultiSpin(result);
+ }
+ const snapshot=JSON.stringify(s);
+ const result=window.LootHubMultiOpen.purchaseSealed(s,caseId,count,price,caseItem);
  if(!result){window.LootHubFX.play('error');return false}
- busy=true;
- return beginMultiSpin(result);
+ const name=escapeHTML(itemName(result.cases[0]).replace(/^Sealed /,''));
+ recordActivity(s,'Purchased '+count+' sealed '+itemName(result.cases[0]).replace(/^Sealed /,'')+
+  (count===1?'':'s')+' for '+cost+' coins');
+ if(!save()){
+  s=JSON.parse(snapshot);
+  window.LootHubFX.play('error');
+  alert('Could not save the purchase. No cases were bought.');
+  return false;
+ }
+ window.LootHubFX.play('purchase');
+ render();
+ const ids=JSON.stringify(result.cases.map(x=>x.id));
+ dialog('<div class="multi-buy-receipt"><div class="section-eyebrow">PURCHASE COMPLETE</div>'+
+  '<h2>'+count+' '+name+(count===1?'':'s')+' bought</h2>'+
+  '<p class="muted">'+cost+' coins spent. Your sealed cases are in Inventory.</p>'+
+  '<div class="row"><button class="primary" onclick="closeDialog();startMultiOpenWithIds('+ids.replace(/"/g,'&quot;')+')">Open '+count+' now</button>'+
+  '<button onclick="closeDialog()">Keep sealed</button></div></div>');
+ return true;
 }
 function startMultiOpenWithIds(ids){
  if(busy||!canMutate())return false;
