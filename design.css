@@ -1031,7 +1031,8 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 .modal .dialog,.dialog:has(.multi-spin-screen),.dialog:has(.multi-winnings){
  max-height:none;overflow:visible;margin:auto 0;min-width:0;
 }
-.dialog .cartel-collection,.dialog .multi-case-choices,.dialog .offer-history{
+.dialog .cartel-collection,.dialog .multi-case-choices,.dialog .offer-history,
+.dialog .trade-journal,.dialog .journal{
  max-height:none;overflow:visible;
 }
 .multi-case-choices{display:grid;gap:7px}
