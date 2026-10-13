@@ -64,14 +64,25 @@ def gather():
 
 
 def bytes_of_embedded(path):
+    """Decode both old split-string expressions and newer compact JSON skin art."""
     source = path.read_text(encoding="utf-8")
-    match = re.search(r'window\.LootHubSkinArt\[[^\]]+\]\s*=\s*(\{.*\})\s*;\s*$', source, re.S)
-    if match is None:
-        raise ValueError("Cannot read embedded approved skin JSON")
-    obj = json.loads(match.group(1))
-    if set(obj) != {"400", "800", "1600"}:
-        raise ValueError("Embedded skin must have 400/800/1600 originals")
-    return {int(k): base64.b64decode(v, validate=True) for k, v in obj.items()}
+    if "window.LootHubSkinArt[" not in source:
+        raise ValueError("Cannot find approved skin art registry")
+    fields = re.findall(
+        r'"(400|800|1600)"\s*:\s*(.*?)\s*(?=,\s*"(?:400|800|1600)"\s*:|\}\s*;)',
+        source, re.S
+    )
+    if len(fields) != 3 or {k for k, _ in fields} != {"400", "800", "1600"}:
+        raise ValueError("Embedded skin must define 400/800/1600 WebP images")
+    result = {}
+    for key, expression in fields:
+        fragments = re.findall(r'"([A-Za-z0-9+/=]+)"', expression)
+        # Only literal base64 chunks, concatenation and grouping parentheses are allowed.
+        residue = re.sub(r'"[A-Za-z0-9+/=]+"', "", expression)
+        if not fragments or re.search(r'[^\s()+]', residue):
+            raise ValueError(f"Unexpected expression in {key}px approved WebP")
+        result[int(key)] = base64.b64decode("".join(fragments), validate=True)
+    return result
 
 
 def open_webp(value, name):
@@ -171,9 +182,12 @@ def audit(output_dir):
             bbox, transparent, margins = bounds_and_alpha(image)
             if max(image.size) != size:
                 raise ValueError(f"Size {image.size} does not match {size}px long edge")
-            if name.startswith("assets/cases/") or "/lines/" in name:
+            if name.startswith("assets/cases/") or "/lines/lavish/" in name:
                 if image.size != (size, size):
-                    raise ValueError("Curated art must have a square, contain-sized canvas")
+                    raise ValueError("Case chests and Lavish exports use square contain-sized canvases")
+            # Existing rectangular Spec Ops skins must retain their original
+            # proportions: browser CSS uses object-fit:contain.
+            if name.startswith("assets/cases/") or "/lines/" in name:
                 if min(margins) < .008:
                     warnings.append(f"{name}: silhouette within 0.8% of canvas edge")
             groups[stem][size] = image
