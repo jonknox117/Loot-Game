@@ -44,7 +44,8 @@ function reloadLatestProgress(){location.reload();}
 function isValidSave(data) {
   return !!(data && typeof data==='object' && !Array.isArray(data) &&
     Number.isSafeInteger(data.coins) && data.coins>=0 &&
-    Array.isArray(data.items) && Array.isArray(data.history));
+    Array.isArray(data.items) && Array.isArray(data.history) &&
+    window.LootHubCollections.valid(data.collections));
 }
 // Convert every retired skin to its unskinned base weapon without losing the
 // original unique item, asking price, or pre-migration market estimate.
@@ -109,6 +110,8 @@ function loadGame(key) {
   ensureMarketData(migrated);
   // Run after retired-finish migration so preserved base values never change.
   window.LootHubWear.ensureGame(migrated);
+  window.LootHubCollections.ensure(migrated);
+  window.LootHubCollections.reconcile(migrated);
   return migrated;
 }
 function updateSaveIndicator(){
@@ -133,6 +136,8 @@ function persistGame(data,activeTab){
     }else if(lastPersistedSnapshot!==null){
       saveConflict=true;throw Error('This save was removed outside the active tab')
     }
+    if(!window.LootHubCollections.valid(data.collections))throw Error('Invalid collection progress');
+    window.LootHubCollections.reconcile(data);
     data.tab=activeTab;
     data.savedAt=Date.now();
     data.version=4;
@@ -161,7 +166,8 @@ function recordActivity(data,text) {
 function safeUpload(data) {
   // Missing grades are valid for old backups. Present grades must be 0–4;
   // unopened cases must never carry a weapon condition.
-  if(!window.LootHubWear.validGame(data,true))return false;
+  if(!window.LootHubWear.validGame(data,true)||
+     !window.LootHubCollections.valid(data&&data.collections))return false;
   if(!isValidSave(data) || data.items.length>50000 ||
      !Array.isArray(data.listings||[]) || (data.listings||[]).length>50000 ||
      !Number.isFinite(data.earned) || data.earned<0 ||
