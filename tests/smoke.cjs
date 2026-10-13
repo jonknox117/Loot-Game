@@ -114,6 +114,48 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Closed case must be contained within a sufficiently tall iPhone shop frame: '+JSON.stringify(fit));
     assert(fit.insetTop>=-1&&fit.insetBottom>=-1&&fit.insetLeft>=-1&&fit.insetRight>=-1,
       'No part of the closed case image may overflow the cropped shop frame: '+JSON.stringify(fit));
+
+    // Spec Ops 0.6.3: the closed chest must occupy the entire framed shop
+    // artwork area on iPhone, not show a 145px sliver of its 800px image.
+    const specOpsShopArt=page.locator('.spec-ops-section .spec-ops-case-closed img');
+    await specOpsShopArt.waitFor({state:'visible',timeout:15000});
+    await specOpsShopArt.scrollIntoViewIfNeeded();
+    const specOpsFit=await specOpsShopArt.evaluate(async img=>{
+      await img.decode();
+      const frame=img.closest('.cartel-case-art');
+      const art=img.closest('.spec-ops-case-image');
+      const box=frame.getBoundingClientRect();
+      const inner=art.getBoundingClientRect();
+      const image=img.getBoundingClientRect();
+      const css=getComputedStyle(img);
+      const holder=getComputedStyle(art);
+      const cv=document.createElement('canvas');
+      cv.width=img.naturalWidth;cv.height=img.naturalHeight;
+      const cx=cv.getContext('2d');cx.drawImage(img,0,0);
+      return {
+        width:img.naturalWidth,height:img.naturalHeight,
+        alphaCorner:cx.getImageData(0,0,1,1).data[3],
+        alphaCenter:cx.getImageData(400,400,1,1).data[3],
+        source:img.getAttribute('src'),fit:css.objectFit,
+        frameHeight:box.height,frameWidth:box.width,
+        holderHeight:inner.height,holderWidth:inner.width,
+        imageHeight:image.height,imageWidth:image.width,
+        top:image.top-box.top,bottom:box.bottom-image.bottom,
+        left:image.left-box.left,right:box.right-image.right,
+        frameOverflow:getComputedStyle(frame).overflow,
+        holderOverflow:holder.overflow
+      };
+    });
+    assert(specOpsFit.width===800&&specOpsFit.height===800&&
+      specOpsFit.alphaCorner===0&&specOpsFit.alphaCenter>0&&
+      specOpsFit.source.includes('spec-ops-case-closed-800.webp'),
+      'Spec Ops shop must load the actual transparent owner-provided case: '+JSON.stringify(specOpsFit));
+    assert(specOpsFit.fit==='contain'&&specOpsFit.frameHeight>=230&&
+      specOpsFit.holderHeight>=specOpsFit.frameHeight-28&&
+      specOpsFit.imageHeight>=specOpsFit.frameHeight-28&&
+      Math.min(specOpsFit.top,specOpsFit.bottom,specOpsFit.left,specOpsFit.right)>=-1,
+      'Spec Ops artwork must be fully centered and contained inside its mobile frame: '+JSON.stringify(specOpsFit));
+
     assert(caseShop.includes('Double-Barrel Shotgun'),
       '25th official gun must appear in the available Arsenal Case weapon gallery');
     const gunCard=page.locator('#main .item').filter({

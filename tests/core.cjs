@@ -2724,6 +2724,18 @@ test('0.6.1 failed local storage write rolls back entire reward and claim receip
 });
 
 
+test('Spec Ops case has a dedicated contained, centered image frame on iPhone',()=>{
+ const g=boot();
+ const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
+ assert(css.includes('.spec-ops-case-image > img{'));
+ assert(css.includes('object-fit:contain'));
+ assert(css.includes('.cartel-case-art .spec-ops-case-image{'));
+ assert(css.includes('height:100%'));
+ const shop=g.run('universalCases()');
+ assert(shop.includes('cartel-section spec-ops-section'));
+ assert(shop.includes('spec-ops-case-image spec-ops-case-closed'));
+});
+
 test('Spec Ops release has original assets, five fixed rarities, trading values and multi-opening',()=>{
  const g=boot();
  const variants=JSON.parse(g.run('JSON.stringify(specOpsCatalog.map(x=>[x.weapon,x.tier,x.base]))'));
