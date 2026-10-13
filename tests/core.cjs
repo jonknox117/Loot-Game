@@ -2276,7 +2276,8 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.equal(g.run('cartelCatalog.length'),5);
  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+10,'The Arsenal drop pool must not be expanded');
  assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+20,'Cartel and Spec Ops skins enter market listings');
- assert(g.run('universalCases()').includes('Buy Cartel Case'));
+ assert(g.run('universalCases()').includes('Cartel Case'));
+ assert(g.run('universalCases()').includes('multi-qty-cartel'),'Cartel has working quantity-based purchasing');
  assert(g.run('universalCases()').includes('View five skins'));
  assert(g.run('visualArt({kind:"case",caseId:"cartel"})').includes('cartel-crate'));
  for(const [i,entry] of entries.entries()){
