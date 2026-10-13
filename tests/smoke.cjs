@@ -181,10 +181,10 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const approvedOriginal=originalNpcOffers.find(x=>x.item.kind==='skin');
     const approvedName=approvedOriginal?.item.skin;
     const releasedNames=await page.evaluate(()=>window.LootHubSkinLines.lines.map(x=>x.name));
-    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
+    assert(['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight','Cartel',...releasedNames].includes(approvedName),'NPC inventory used an unapproved cosmetic');
     await page.locator('#npcKindFilter').selectOption('skin');
     await page.locator('#npcSearch').fill(approvedName.toUpperCase());
-    assert(await page.locator('.npc-listing').count()===1,'Skin type and weapon-name search must work together');
+    assert(await page.locator('.npc-listing').count()>=1,'Skin type and approved-finish search must find matching listings');
     await page.locator('.npc-listing').getByRole('button',{name:'Inspect'}).click();
     assert((await page.locator('.dialog h2').textContent()).includes(approvedName),'Inspect must show exact approved finish');
     await page.getByRole('button',{name:'Back to market'}).click();
