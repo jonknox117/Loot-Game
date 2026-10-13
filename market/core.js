@@ -26,10 +26,12 @@ function validMarketState(m){
     !Array.isArray(m.priceHistory)&&Number.isFinite(m.lastSimulatedAt));
 }
 function baseEstimated(item){
-  return item.kind==='case'?25:Math.max(1,Math.round(Number(item.base)||1));
+  // A rewarded case is still worth its approved case-type price, not paid:0.
+  if(item.kind==='case')return item.caseId==='cartel'?75:25;
+  return Math.max(1,Math.round(Number(item.base)||1));
 }
 function estimated(item){
-  return item.kind==='case'?25:root.LootHubWear.conditionValue(item,baseEstimated(item));
+  return item.kind==='case'?baseEstimated(item):root.LootHubWear.conditionValue(item,baseEstimated(item));
 }
 function validAsk(ask){return Number.isSafeInteger(ask)&&ask>=1&&ask<=100000000}
 function eligible(item){return !!(item&&typeof item.id==='string'&&item.id.length>0&&
