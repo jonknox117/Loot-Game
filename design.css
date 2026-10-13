@@ -746,24 +746,53 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .cartel-collection .weapon-art{height:150px!important}
 }
 
-/* Owner-supplied original Arsenal Case — transparent closed/open artwork. */
-.arsenal-case-image{display:grid;place-items:center;background:none!important;overflow:visible}
-.arsenal-case-image img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:block}
-.hero .case-art:has(.arsenal-case-image){padding:4px;overflow:hidden}
-.hero .case-art .arsenal-case-image{width:100%;height:215px;min-height:0}
-.hero .case-art .arsenal-case-image img{width:100%;height:100%;filter:drop-shadow(0 10px 13px rgba(0,0,0,.25))}
+/* Case display: contain the COMPLETE transparent square asset on every viewport.
+   The previous 150px inner image inside a shorter overflow-hidden hero cropped
+   the lower half of the case on iPhones. Neither the shop nor reel uses glow. */
+.arsenal-case-image{
+ display:flex;align-items:center;justify-content:center;
+ min-width:0;min-height:0;max-width:100%;max-height:100%;
+ background:transparent!important;overflow:visible;
+}
+.arsenal-case-image img{
+ display:block;min-width:0;min-height:0;width:100%;height:100%;
+ max-width:100%;max-height:100%;object-fit:contain;object-position:center;
+}
+.hero:has(.arsenal-case-image){
+ background:linear-gradient(155deg,#1d2b3c,#131c2a 70%);
+}
+.hero .case-art:has(.arsenal-case-image){
+ display:flex;align-items:center;justify-content:center;
+ padding:12px;overflow:hidden;
+ height:clamp(245px,27vw,320px);min-height:0;
+ border-color:rgba(148,162,178,.18);
+ background:linear-gradient(155deg,#1c293b,#141e2b);
+}
+.hero .case-art .arsenal-case-image{
+ width:100%;height:100%;min-width:0;min-height:0;
+ max-width:100%;max-height:100%;flex:1 1 auto;
+}
+.hero .case-art .arsenal-case-image img{filter:none}
 .item .arsenal-case-image img{object-fit:contain}
-.dialog .reveal-art .arsenal-case-image{background:none!important}
-.arsenal-opening-prop{
- height:128px;display:flex;justify-content:center;align-items:center;
- margin:-10px auto 5px;position:relative;pointer-events:none;
+.dialog .reveal-art .arsenal-case-image{background:transparent!important}
+/* A focused, unadorned reel: rarity shine and the opened crate are reserved
+   for the final reward screen, not the scrolling selection animation. */
+.reel-stage{
+ border-color:rgba(120,145,173,.28);
+ background:linear-gradient(145deg,#182537,#101a29);
+ box-shadow:inset 0 1px rgba(255,255,255,.035);
 }
-.arsenal-opening-prop::before{
- content:"";position:absolute;left:18%;right:18%;bottom:4px;height:48px;
- background:radial-gradient(ellipse at center,rgba(237,177,92,.24),transparent 70%);
+.reel{box-shadow:none}
+.reel .tile{
+ background:linear-gradient(180deg,#1b2b3d,#121c2b 90%);
+ box-shadow:none;
 }
-.arsenal-opening-prop .arsenal-case-image{
- width:170px;height:127px;z-index:1;filter:drop-shadow(0 3px 10px rgba(0,0,0,.35));
+.spin-pulse{animation:none;box-shadow:none}
+.reel .pointer{
+ filter:none;box-shadow:none;border-left-color:#f2ca83;
+}
+.reel .pointer::before,.reel .pointer::after{
+ box-shadow:none;background:#f2ca83;
 }
 .arsenal-reward-display{
  position:relative;display:flex;flex-direction:column;align-items:center;
@@ -790,9 +819,12 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  to{opacity:1;transform:translateY(0) scale(1)}
 }
 @media(max-width:700px){
- .hero .case-art .arsenal-case-image{height:150px}
- .arsenal-opening-prop{height:100px;margin:-7px auto 2px}
- .arsenal-opening-prop .arsenal-case-image{width:143px;height:104px}
+ .hero .case-art:has(.arsenal-case-image){
+  height:clamp(235px,72vw,315px);min-height:0;padding:10px;
+ }
+ .hero .case-art .arsenal-case-image{
+  width:100%;height:100%;min-width:0;min-height:0;
+ }
  .arsenal-reward-display{min-height:224px}
  .arsenal-reward-display .arsenal-reward-weapon{height:107px;margin-bottom:-40px}
  .arsenal-reward-display .arsenal-reward-weapon .weapon-art{height:107px!important}
