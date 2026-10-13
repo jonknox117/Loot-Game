@@ -10,6 +10,11 @@ const MASTER_COUNT=CURRENT_MANIFEST.items.length;
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
 const feedback=fs.readFileSync(path.join(root,'market/feedback.js'),'utf8');
+const multiCore=fs.readFileSync(path.join(root,'market/multi-open.js'),'utf8');
+const multiUI=fs.readFileSync(path.join(root,'market/multi-open-ui.js'),'utf8');
+assert(html.includes('<script src="./market/multi-open.js"></script>'));
+assert(html.includes('<script src="./market/multi-open-ui.js"></script>'));
+
 const cartelData=fs.readFileSync(path.join(root,'assets/cartel-case.js'),'utf8');
 assert(html.includes('<script src="./assets/cartel-case.js"></script>'));
 for(const slug of ['ak-47','rpg-7','tactical-machete','12-gauge-pump-shotgun','desert-eagle'])assert(html.includes('<script src="./assets/skins/'+slug+'--cartel.js"></script>'));
@@ -30,7 +35,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -2413,6 +2418,111 @@ test('Cartel Case uses exact closed/open chest assets with reveal-only open pose
  const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
  assert(css.includes('.cartel-case-art')&&css.includes('height:clamp(235px,72vw,315px)'),
   'Mobile shop needs an unclipped chest frame');
+});
+
+
+test('0.6.0 multi-open requires unique owned cases and enforces exact 1–5 limit',()=>{
+ const g=boot();
+ g.run('s.items=Array.from({length:6},(_,i)=>({id:"batch-"+i,kind:"case",...(i%2?{caseId:"cartel"}:{})}));save()');
+ const orig=g.state().items.map(x=>x.id);
+ for(const ids of [[],['batch-0','batch-0'],[...orig],['batch-0','absent'],['bad']]){
+  assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(ids)+')'),false);
+  assert.deepEqual(g.state().items.map(x=>x.id),orig);
+  assert.equal(g.state().openings,0);
+ }
+ g.run('showMultiPicker()');
+ assert(g.byId('overlay').innerHTML.includes('5 / 5 selected'));
+ assert.equal((g.byId('overlay').innerHTML.match(/type="checkbox"/g)||[]).length,6);
+ g.run('toggleMultiCase("batch-1")');
+ assert.equal(g.run('multiSelection.length'),4);
+ g.run('toggleMultiCase("batch-5")');
+ assert.equal(g.run('multiSelection.length'),5);
+ assert.equal(g.state().items.length,6,'Selecting cases must not consume them');
+});
+
+test('0.6.0 five mixed sealed cases commit all rewards before five independent reels',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.items=['+
+  '[0,1,2,3,4].map(n=>({id:"sealed-"+n,kind:"case",paid:n%2?75:25,'+
+  '...(n%2?{caseId:"cartel"}:{})})).join("")+'];save()');
+ const ids=['sealed-0','sealed-1','sealed-2','sealed-3','sealed-4'];
+ assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(ids)+')'),true);
+ const state=g.state(),disk=g.persisted();
+ assert.equal(state.openings,5);
+ assert.equal(state.items.length,5);
+ assert.equal(state.items.filter(x=>x.kind==='skin'&&x.skin==='Cartel').length,2);
+ assert.equal(state.items.filter(x=>x.kind==='weapon'||x.kind==='skin').length,5);
+ assert.deepEqual(state.items.map(x=>x.id),disk.items.map(x=>x.id),'All five drops must be durable before animating');
+ assert(state.items.every(x=>Number.isInteger(x.wearGrade)&&x.wearGrade>=0&&x.wearGrade<=4));
+ assert.equal(new Set(state.items.map(x=>x.id)).size,5);
+ assert(g.run('busy'));
+ const reel=g.byId('overlay').innerHTML;
+ assert.equal((reel.match(/class="multi-lane"/g)||[]).length,5);
+ assert.equal((reel.match(/data-reel-index="10"/g)||[]).length,5);
+ assert.equal((reel.match(/data-reel-index="/g)||[]).length,70);
+ assert(!reel.includes('arsenal-case-open-'),'Open case art must not obstruct the five reels');
+ assert(!reel.includes('cartel-case-open-'));
+ assert.equal(g.run('startMultiOpenWithIds(["sealed-0"])'),false,'Prevent double-open while spinning');
+ g.run('finishMultiOpening()');
+ assert.equal(g.state().openings,5,'Showing winners must not reroll prizes');
+ assert(!g.run('busy'));
+ assert(g.byId('overlay').innerHTML.includes('5 new items acquired'));
+ assert.equal((g.byId('overlay').innerHTML.match(/class="multi-prize rarity-/g)||[]).length,5);
+ assert(g.byId('overlay').innerHTML.includes('arsenal-case-open-400.webp'));
+ assert(g.byId('overlay').innerHTML.includes('cartel-case-open-400.webp'));
+ const reload=boot(store);
+ assert.deepEqual(reload.state().items.map(x=>x.id),state.items.map(x=>x.id));
+ assert.equal(reload.state().openings,5);
+ assert.equal(reload.state().pendingReveal,null);
+ assert.equal(reload.run('window.LootHubMultiOpen.eligible(s,["sealed-0"])'),null);
+});
+
+test('0.6.0 1–5 direct buy-and-open is wallet-atomic for each case',()=>{
+ const g=boot();
+ g.run('s.coins=400;s.spent=0;save();document.getElementById("multi-qty-cartel").value="5"');
+ assert.equal(g.run('buyAndMultiOpen("cartel")'),true);
+ assert.equal(g.state().coins,25);
+ assert.equal(g.state().spent,375);
+ assert.equal(g.state().items.length,5);
+ assert(g.state().items.every(x=>x.kind==='skin'&&x.skin==='Cartel'&&x.paid===75));
+ assert.equal(g.state().openings,5);
+ assert.equal(g.persisted().coins,25);
+ g.run('finishMultiOpening()');
+ const before=JSON.stringify(g.state());
+ g.run('document.getElementById("multi-qty-cartel").value="5"');
+ assert.equal(g.run('buyAndMultiOpen("cartel")'),false);
+ assert.equal(JSON.stringify(g.state()),before,'An unaffordable bundle may not debit or produce anything');
+ assert(g.alerts.some(x=>x.includes('Not enough coins')));
+ const another=boot();
+ another.run('s.coins=125;s.spent=0;save();document.getElementById("multi-qty-arsenal").value="5"');
+ assert.equal(another.run('buyAndMultiOpen("arsenal")'),true);
+ assert.equal(another.state().coins,0);
+ assert.equal(another.state().spent,125);
+ assert.equal(another.state().items.length,5);
+ assert(another.state().items.every(x=>x.kind==='weapon'||x.kind==='skin'));
+ assert(!another.state().items.some(x=>x.skin==='Cartel'));
+ another.run('finishMultiOpening()');
+ assert.equal(another.state().openings,5);
+ assert.deepEqual(JSON.parse(another.run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
+});
+
+test('0.6.0 existing single-case workflow and controls remain available',()=>{
+ const g=boot();
+ assert(g.run('universalCases()').includes('Select owned cases'));
+ assert(g.run('cases()').includes('multi-qty-arsenal'));
+ assert(g.run('cartelSection()').includes('multi-qty-cartel'));
+ assert(g.run('inventory()').includes('Open up to 5 cases'));
+ g.run('s.items.push({id:"old-single",kind:"case",paid:25})');
+ assert(g.run('inventory()').includes('Multi-open'));
+ g.run('openCase("old-single");finishOpening()');
+ assert.equal(g.state().openings,1);
+ assert.equal(g.state().items.length,1);
+ assert(!g.state().items.some(x=>x.kind==='case'));
+ assert(g.byId('overlay').innerHTML.includes('arsenal-reward-display'));
+ const ui=fs.readFileSync(path.join(root,'design.css'),'utf8');
+ assert(ui.includes('.multi-lane .reel{height:65px}'));
+ assert(ui.includes('.multi-prize-grid'));
+ assert(ui.includes('@media(prefers-reduced-motion:reduce)'));
 });
 
 if(process.exitCode)process.exit(process.exitCode);
