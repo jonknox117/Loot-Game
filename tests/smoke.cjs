@@ -938,6 +938,74 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await page.evaluate((id)=>s.items.some(x=>x.kind==='skin'&&x.skin==='Cartel'&&x.id===id),cartelSaved.id))===true,
       'Cartel reward must persist through a full page reload');
 
+    // Patch 0.6.0: buy & open five Arsenal cases with all five reels visible
+    // at once in the iPhone viewport; prizes must exist before animation.
+    await page.evaluate(()=>{s.coins=2000;save();go('Cases')});
+    assert(await page.locator('#multi-qty-arsenal').count()===1,
+      'Arsenal shop needs a 1–5 bundle selector');
+    assert(await page.locator('#multi-qty-cartel').count()===1,
+      'Cartel shop needs a 1–5 bundle selector');
+    await page.locator('#multi-qty-arsenal').selectOption('5');
+    const beforeMulti=await page.evaluate(()=>({
+      n:s.items.length,c:s.coins,opened:s.openings,spent:s.spent
+    }));
+    await page.locator('.hero .multi-shop-buy button').click();
+    assert(await page.locator('.multi-lane').count()===5,'Five independent reels should spin together');
+    assert(await page.locator('.multi-lane .tile').count()===70,
+      'Multi-open should render fourteen lightweight preview tiles per reel');
+    const dims=await page.evaluate(()=>[...document.querySelectorAll('.multi-lane .reel')].map(x=>{
+      const r=x.getBoundingClientRect();
+      return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};
+    }));
+    assert(dims.length===5&&dims.every(d=>d.top>=0&&d.bottom<=window.innerHeight&&
+      d.left>=0&&d.right<=window.innerWidth),
+      'All five compact reels must fit on the iPhone viewport: '+JSON.stringify(dims));
+    const savedMulti=await page.evaluate(()=>({
+      n:s.items.length,c:s.coins,opened:s.openings,spent:s.spent,items:s.items.slice(-5)
+    }));
+    assert(savedMulti.n===beforeMulti.n+5&&savedMulti.c===beforeMulti.c-125&&
+      savedMulti.opened===beforeMulti.opened+5&&savedMulti.spent===beforeMulti.spent+125,
+      'Five bundled Arsenal cases must be charged and opened exactly once');
+    assert(savedMulti.items.every(x=>x.kind==='weapon'||(x.kind==='skin'&&x.skin!=='Cartel')),
+      'Arsenal bundle must use Arsenal case drop table, never Cartel skins');
+    assert(savedMulti.items.every(x=>Number.isInteger(x.wearGrade)),
+      'Every multi-open reward needs its own saved condition roll');
+    const persistedMulti=await page.evaluate(()=>{
+      const saved=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return {n:saved.items.length,opened:saved.openings,ids:saved.items.slice(-5).map(x=>x.id)};
+    });
+    assert(persistedMulti.n===savedMulti.n&&persistedMulti.opened===savedMulti.opened&&
+      JSON.stringify(persistedMulti.ids)===JSON.stringify(savedMulti.items.map(x=>x.id)),
+      'All multi-reel winners must be saved before the player sees the spin');
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.multi-prize').count()===5,
+      'Final multi-open reveal must show five individual reward cards');
+    assert(await page.locator('.multi-prize-chest .arsenal-case-open img').count()===5,
+      'Opened case thumbnails belong only on the completed result screen');
+    await page.getByRole('button',{name:'Keep all'}).click();
+    await page.reload({waitUntil:'load'});
+    const reloadedIds=await page.evaluate(()=>s.items.slice(-5).map(x=>x.id));
+    assert(JSON.stringify(reloadedIds)===JSON.stringify(persistedMulti.ids),
+      'Multi-open prize identities must survive a full browser restart');
+    // Mixed owned cases can be selected, and the mobile picker can unselect
+    // specific cases without purchasing anything.
+    await page.evaluate(()=>{
+      s.items.push({id:'mobile-bulk-arsenal',kind:'case',paid:25},
+        {id:'mobile-bulk-cartel',kind:'case',caseId:'cartel',paid:75});
+      save();go('Inventory');
+    });
+    await page.getByRole('button',{name:'Open up to 5 cases'}).click();
+    assert(await page.locator('.multi-case-choice').count()===2);
+    assert(await page.locator('.multi-case-choice input:checked').count()===2);
+    await page.getByRole('button',{name:'Open 2 cases'}).click();
+    assert(await page.locator('.multi-lane').count()===2);
+    assert((await page.locator('.multi-lane-header').allTextContents()).some(x=>x.includes('Cartel')));
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.multi-prize').count()===2);
+    assert(await page.locator('.multi-prize-chest .cartel-case-open img').count()===1,
+      'Mixed multi-open must use the corresponding opened Cartel case art');
+    await page.getByRole('button',{name:'Keep all'}).click();
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
