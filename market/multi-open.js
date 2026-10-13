@@ -35,5 +35,25 @@ function commit(game,ids,roll){
  game.pendingReveal=results[0].id;
  return {cases:selected,rewards:results};
 }
-root.LootHubMultiOpen=Object.freeze({MAX_CASES,eligible,commit});
+function purchaseAndCommit(game,caseId,count,price,makeCase,roll){
+ if(!game||!Number.isInteger(count)||count<1||count>MAX_CASES||
+    !Number.isSafeInteger(price)||price<1||
+    !Number.isSafeInteger(game.coins)||!Number.isSafeInteger(game.spent)||
+    game.coins<count*price||game.spent>Number.MAX_SAFE_INTEGER-count*price||
+    typeof makeCase!=='function')return null;
+ const serial=game.serial;
+ try{
+  const purchased=Array.from({length:count},()=>makeCase(caseId,price));
+  if(purchased.some(x=>!x||x.kind!=='case'||!x.id))throw Error('Invalid case purchase');
+  const temporary={...game,items:game.items.concat(purchased)};
+  const opened=commit(temporary,purchased.map(x=>x.id),roll);
+  if(!opened)throw Error('Could not open purchased cases');
+  game.items=temporary.items;
+  game.openings=temporary.openings;
+  game.pendingReveal=temporary.pendingReveal;
+  game.coins-=price*count;game.spent+=price*count;
+  return {...opened,cost:price*count};
+ }catch(_){game.serial=serial;return null}
+}
+root.LootHubMultiOpen=Object.freeze({MAX_CASES,eligible,commit,purchaseAndCommit});
 })(window);
