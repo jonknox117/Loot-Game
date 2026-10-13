@@ -1954,7 +1954,7 @@ test('0.5.4 wear metadata follows every context while catalog templates, cases a
     const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
     assert(html.includes('data-wear-grade="4"'));
     assert(html.includes('data-wear-seed="worn-glock"'));
-    assert(html.includes('glock-18-neutral-1600.webp'));
+    assert(html.includes('glock-18-neutral-'+(context==='inspect'?1600:context==='reel'?400:800)+'.webp'));
     assert(!html.includes('data-finish='));
   }
   const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inventory")');
