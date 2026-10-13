@@ -67,6 +67,31 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
 
+    // Blackout is a five-weapon visual sandbox, never a paid/rewarded catalog release.
+    await page.getByRole('button',{name:'Cases',exact:true}).click();
+    await page.getByRole('button',{name:'Open free test case'}).click();
+    await page.getByRole('button',{name:'Skip animation'}).click();
+    await page.waitForFunction(()=>{
+      const image=document.querySelector('.dialog .universal-skin img');
+      return image&&image.complete&&image.naturalWidth===1600;
+    },null,{timeout:15000});
+    const previewResult=await page.locator('.dialog h2').textContent();
+    assert(previewResult.includes('| Blackout'),'Preview case must reveal a Blackout finish');
+    const neutralFinancials=await page.evaluate(()=>{
+      const state=JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1'));
+      return {coins:state.coins,items:state.items.length,
+        open:state.openings,market:state.market.npcListings.filter(x=>x.item.skinLine==='blackout').length};
+    });
+    assert(neutralFinancials.coins===0&&neutralFinancials.items===0&&
+      neutralFinancials.open===0&&neutralFinancials.market===0,
+      'Blackout test openings must not mint coins, save prizes or enter the market');
+    await page.getByRole('button',{name:'Inspect all five'}).click();
+    assert(await page.locator('.dialog .item').count()===5,
+      'Preview collection must contain precisely the five selected test weapons');
+    await page.waitForFunction(()=>[...document.querySelectorAll('.dialog .universal-skin img')].length===5&&
+      [...document.querySelectorAll('.dialog .universal-skin img')].every(i=>i.complete&&i.naturalWidth>=800),
+      null,{timeout:15000});
+    await page.getByRole('button',{name:'Close',exact:true}).last().click();
     // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
     await page.getByRole('button', { name: 'Market', exact: true }).click();
     await page.locator('.npc-listing').first().waitFor({state:'visible',timeout:10000});

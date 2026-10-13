@@ -186,14 +186,23 @@ def sources():
             raise ValueError('Invalid skin-line id')
         if line['id'] in ids:raise ValueError('Duplicate skin line id')
         ids.add(line['id'])
-        if line.get('released'):
+        if line.get('released') or line.get('preview'):
             palette=line.get('palette')
             if not line.get('name') or (line.get('materials') is None and
                 (not isinstance(palette,list) or len(palette)!=2)):
                 raise ValueError('Released lines need a name and either material patterns or a two-color palette')
+    known_weapons={item['weapon'] for item in manifest['items']}
+    for line in definitions['lines']:
+        allowed=line.get('weapons')
+        if allowed is not None and (
+            not isinstance(allowed,list) or not allowed or
+            len(allowed)!=len(set(allowed)) or not set(allowed).issubset(known_weapons)):
+            raise ValueError('Line weapons must be unique approved weapon names')
+        if line.get('preview') and line.get('released'):
+            raise ValueError('Preview must not also be released')
     for line in definitions['lines']:
         materials=material_pattern_definition(line)
-        if line.get('released'):
+        if line.get('released') or line.get('preview'):
             if materials:
                 for kind in MATERIALS:
                     validate_pattern_spec(materials[kind],check_file=True)
@@ -210,7 +219,7 @@ def build():
         json.dumps(defs,separators=(',',':'))+');\n',encoding='utf-8')
     # Remove stale generated line folders only; owner-made custom art is elsewhere.
     destination=ROOT/'assets/renders/lines'
-    allowed={v['id'] for v in defs['lines'] if v['released']}
+    allowed={v['id'] for v in defs['lines'] if v.get('released') or v.get('preview')}
     if destination.exists():
         for stale in destination.iterdir():
             if stale.is_dir() and stale.name not in allowed:shutil.rmtree(stale)
@@ -235,7 +244,8 @@ def build():
             path.parent.mkdir(parents=True,exist_ok=True)
             mask.save(path,optimize=True)
         for line in defs['lines']:
-            if not line['released']:continue
+            if not (line.get('released') or line.get('preview')):continue
+            if line.get('weapons') is not None and item['weapon'] not in line['weapons']:continue
             if line.get('materials') is not None:
                 material_path=ROOT/'assets/skin-lines/materials'/f'{slug}--material-1600.png'
                 if not material_path.is_file():
@@ -258,7 +268,7 @@ def build():
     return count
 def verify():
     items,defs,_=sources();count=0
-    valid_ids={line['id'] for line in defs['lines'] if line.get('released')}
+    valid_ids={line['id'] for line in defs['lines'] if line.get('released') or line.get('preview')}
     for file in (ROOT/'assets/renders/lines').glob('**/*.webp'):
         if file.parent.name not in valid_ids:raise AssertionError('Unregistered artwork: '+str(file))
     for item in items:
@@ -269,7 +279,8 @@ def verify():
                 if image.size!=neutral(item,size).size or ImageChops.difference(image.getchannel('A'),neutral(item,size).getchannel('A')).getbbox():
                     raise AssertionError('Standalone master failed silhouette verification: '+slug)
         for line in defs['lines']:
-            if not line['released']:continue
+            if not (line.get('released') or line.get('preview')):continue
+            if line.get('weapons') is not None and item['weapon'] not in line['weapons']:continue
             for size in SIZES:
                 base=neutral(item,size);path=target(line['id'],slug,size)
                 if not path.is_file():raise FileNotFoundError(str(path))

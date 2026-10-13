@@ -1,4 +1,44 @@
 {
   "schemaVersion": 1,
-  "lines": []
+  "lines": [
+    {
+      "id": "blackout",
+      "name": "Blackout",
+      "description": "Five-weapon material-map prototype: charcoal camouflage metal, dark wood, matte-black other.",
+      "released": false,
+      "preview": true,
+      "casePrice": 25,
+      "multiplier": 2,
+      "weapons": [
+        "FN FAL",
+        "RPG-7",
+        "Desert Eagle",
+        "SPAS-12",
+        "AWP"
+      ],
+      "materials": {
+        "metal": {
+          "texture": "assets/skin-lines/textures/blackout-metal.webp",
+          "tileWidth": 430,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 0.96
+        },
+        "wood": {
+          "texture": "assets/skin-lines/textures/blackout-wood.webp",
+          "tileWidth": 620,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 1
+        },
+        "other": {
+          "texture": "assets/skin-lines/textures/blackout-other.webp",
+          "tileWidth": 360,
+          "offsetX": 0,
+          "offsetY": 0,
+          "opacity": 1
+        }
+      }
+    }
+  ]
 }
