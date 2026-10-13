@@ -1020,3 +1020,74 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .collection-tile-art{height:87px}
  .collection-tile-art .weapon-art{height:80px!important}
 }
+
+/* 0.6.2 — give multi-buy clear priority, preserve single-case alternatives. */
+.multi-shop-buy{
+ display:grid;grid-template-columns:1fr;gap:10px;margin:16px 0 14px;
+ padding:13px;border:1px solid rgba(230,183,105,.48);border-radius:12px;
+ background:linear-gradient(125deg,rgba(72,62,45,.37),rgba(19,32,51,.85));
+}
+.multi-buy-title{font-size:11px;font-weight:850;letter-spacing:.13em;color:#f0c990}
+.multi-buy-details,.multi-bundle-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.multi-buy-details label{display:grid;gap:4px;font-size:12px}
+.multi-bundle-cost{font-weight:850;font-size:15px;color:#eccc90;padding-bottom:9px}
+.multi-bundle-actions button{flex:1;min-width:142px}
+.multi-bundle-actions .primary{background:linear-gradient(145deg,#efcc84,#d79a50);color:#172132}
+.multi-bundle-confirm{text-align:center}
+.multi-bundle-art{height:180px;max-width:265px;margin:10px auto}
+.multi-bundle-art .weapon-art{height:100%;width:100%;background:none!important}
+.multi-bundle-confirm .row{justify-content:center}
+/* NPC barter is a simulated exchange of exact saved items, not multiplayer. */
+.barter-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;
+ background:linear-gradient(130deg,#253446,#151c28);border-color:rgba(116,159,186,.35)}
+.barter-entry h2{margin:4px 0 7px}
+.barter-entry p{max-width:570px;margin:0}
+.barter-entry>button{flex:none}
+.dialog:has(.barter-dialog){width:min(810px,100%);max-height:calc(100dvh - 16px);overflow:auto}
+.barter-dialog h2{margin:5px 0 9px}
+.barter-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:10px 0}
+.barter-side{min-width:0;display:flex;flex-direction:column;gap:7px}
+.barter-side h3{font-size:14px;margin:0}
+.barter-field{font-size:12px;display:grid;gap:4px}
+.barter-field .field{max-width:100%;min-height:40px}
+.barter-choice-list{height:230px;overflow:auto;display:flex;flex-direction:column;gap:6px;
+ border:1px solid #374a61;background:#101928;padding:7px;border-radius:10px}
+.barter-choice{display:flex;align-items:center;gap:7px;min-width:0;
+ padding:5px;border:1px solid #374a61;border-radius:9px;background:#1b293b;cursor:pointer}
+.barter-choice.selected{border-color:#e0b86d;background:#283950}
+.barter-choice input{flex:none;width:16px;height:16px;accent-color:#e0b86d}
+.barter-item-art{width:67px;height:44px;flex:none}
+.barter-item-art .weapon-art{width:100%;height:100%!important}
+.barter-item-art img{object-fit:contain}
+.barter-item-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.barter-item-copy strong{font-size:10px;overflow-wrap:anywhere;line-height:1.25}
+.barter-item-copy small{font-size:9px}
+.barter-total{border:1px solid #43516a;border-radius:11px;padding:10px;background:#1b2839}
+.barter-total .barter-field{margin:0 0 8px}
+.barter-total .stat{margin:0;padding:5px 2px}
+.trade-accepted{color:#8de8ad}
+.trade-insufficient{color:#f4c07a}
+.barter-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.barter-actions>button{flex:1;min-width:120px}
+.barter-complete{text-align:center}
+.barter-win-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px;
+ margin:15px 0}
+.barter-win-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;
+ border:1px solid #3c526b;background:#1d293c;border-radius:11px}
+.barter-win-item .weapon-art{height:85px!important;width:100%}
+.barter-win-item strong{font-size:11px;line-height:1.25}
+@media(max-width:700px){
+ .barter-entry{flex-direction:column;align-items:stretch}
+ .barter-entry>button{width:100%}
+ .dialog:has(.barter-dialog){padding:11px}
+ .barter-sides{gap:6px}
+ .barter-choice-list{height:216px;padding:4px}
+ .barter-choice{gap:4px;padding:4px}
+ .barter-item-art{width:42px;height:37px}
+ .barter-item-copy strong{font-size:9px}
+ .barter-item-copy small{font-size:8px}
+ .barter-side h3{font-size:12px}
+ .multi-shop-buy{padding:10px}
+ .multi-bundle-actions{display:grid;grid-template-columns:1fr}
+ .multi-bundle-actions>button{width:100%}
+}
