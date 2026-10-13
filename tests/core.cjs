@@ -2438,7 +2438,9 @@ test('0.6.0 multi-open requires unique owned cases and enforces exact 1–5 limi
  }
  g.run('showMultiPicker()');
  assert(g.byId('overlay').innerHTML.includes('5 / 5 selected'));
- assert.equal((g.byId('overlay').innerHTML.match(/type="checkbox"/g)||[]).length,6);
+ assert.equal((g.byId('overlay').innerHTML.match(/class="multi-case-group"/g)||[]).length,2,
+  'Picker groups identical cases instead of forcing a tall checkbox scroller');
+ assert(!g.byId('overlay').innerHTML.includes('type="checkbox"'));
  g.run('toggleMultiCase("batch-1")');
  assert.equal(g.run('multiSelection.length'),4);
  g.run('toggleMultiCase("batch-5")');
@@ -2482,6 +2484,63 @@ test('0.6.0 five mixed sealed cases commit all rewards before five independent r
  assert.equal(reload.run('window.LootHubMultiOpen.eligible(s,["sealed-0"])'),null);
 });
 
+test('0.6.2 batch sealed purchase debits once, creates unique cases and opens on demand',()=>{
+ const g=boot();
+ g.run('s.coins=425;s.spent=0;save();document.getElementById("multi-qty-cartel").value="5"');
+ assert(g.run('cartelSection()').includes('Buy sealed'));
+ assert(g.run('cases()').includes('Buy &amp; open'));
+ assert.equal(g.run('buyCases("cartel",false)'),true);
+ const sealed=g.state(),disk=g.persisted();
+ assert.equal(sealed.coins,50);
+ assert.equal(sealed.spent,375);
+ assert.equal(sealed.openings,0);
+ assert.equal(sealed.items.length,5);
+ assert(sealed.items.every(x=>x.kind==='case'&&x.caseId==='cartel'&&x.paid===75));
+ assert.equal(new Set(sealed.items.map(x=>x.id)).size,5);
+ assert.deepEqual(sealed.items.map(x=>x.id),disk.items.map(x=>x.id),
+  'Sealed batch must persist before opening any');
+ assert(g.byId('overlay').innerHTML.includes('Open 5 now'));
+ const ids=sealed.items.map(x=>x.id);
+ g.run('closeDialog()');
+ assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(ids)+')'),true);
+ assert.equal(g.state().coins,50,'Opening already-paid cases never charges again');
+ assert.equal(g.state().openings,5);
+ assert.equal(g.state().items.length,5);
+ assert(g.state().items.every(x=>x.kind==='skin'&&x.skin==='Cartel'));
+ g.run('finishMultiOpening()');
+ assert(g.byId('overlay').innerHTML.includes('5 new items acquired'));
+ const before=JSON.stringify(g.state());
+ g.run('document.getElementById("multi-qty-cartel").value="5"');
+ assert.equal(g.run('buyCases("cartel",false)'),false);
+ assert.equal(JSON.stringify(g.state()),before,'Unaffordable buy must not mutate wallet or items');
+ const another=boot();
+ another.run('s.coins=125;s.spent=0;save();document.getElementById("multi-qty-arsenal").value="5"');
+ assert.equal(another.run('buyCases("arsenal",false)'),true);
+ assert.equal(another.state().coins,0);
+ assert.equal(another.state().openings,0);
+ assert(another.state().items.every(x=>x.kind==='case'&&!x.caseId));
+ another.run('showMultiPicker()');
+ assert.equal((another.byId('overlay').innerHTML.match(/class="multi-case-group"/g)||[]).length,1);
+ another.run('adjustMultiCase("arsenal",-1)');
+ assert.equal(another.run('multiSelection.length'),4);
+ another.run('adjustMultiCase("arsenal",1)');
+ assert.equal(another.run('multiSelection.length'),5);
+});
+test('0.6.2 sealed purchase rejects invalid quantities, insufficient balance and ID collisions atomically',()=>{
+ const g=boot();
+ g.run('s.coins=200;s.spent=0;save()');
+ const original=JSON.stringify(g.state());
+ assert.equal(g.run('window.LootHubMultiOpen.purchaseSealed(s,"arsenal",0,25,caseItem)'),null);
+ assert.equal(g.run('window.LootHubMultiOpen.purchaseSealed(s,"arsenal",6,25,caseItem)'),null);
+ assert.equal(g.run('window.LootHubMultiOpen.purchaseSealed(s,"arsenal",5,50,caseItem)'),null);
+ assert.equal(g.run('window.LootHubMultiOpen.purchaseSealed(s,"arsenal",2,25,()=>({id:"same",kind:"case",paid:25}))'),null);
+ assert.equal(JSON.stringify(g.state()),original);
+ const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
+ assert(css.includes('.modal .dialog')&&css.includes('max-height:none;overflow:visible'),
+  'Dialogs must not create an inner scroll region');
+ assert(css.includes('.dialog .multi-case-choices')&&css.includes('.dialog .cartel-collection'),
+  'Case selection and Cartel preview must not be separate nested scrollers');
+});
 test('0.6.0 1–5 direct buy-and-open is wallet-atomic for each case',()=>{
  const g=boot();
  g.run('s.coins=400;s.spent=0;save();document.getElementById("multi-qty-cartel").value="5"');
