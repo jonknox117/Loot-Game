@@ -2442,9 +2442,8 @@ test('0.6.0 multi-open requires unique owned cases and enforces exact 1–5 limi
 
 test('0.6.0 five mixed sealed cases commit all rewards before five independent reels',()=>{
  const store=new LocalStore(),g=boot(store);
- g.run('s.items=['+
-  '[0,1,2,3,4].map(n=>({id:"sealed-"+n,kind:"case",paid:n%2?75:25,'+
-  '...(n%2?{caseId:"cartel"}:{})})).join("")+'];save()');
+ g.run('s.items=Array.from({length:5},(_,n)=>({id:"sealed-"+n,kind:"case",paid:n%2?75:25,'+
+  '...(n%2?{caseId:"cartel"}:{})}));save()');
  const ids=['sealed-0','sealed-1','sealed-2','sealed-3','sealed-4'];
  assert.equal(g.run('startMultiOpenWithIds('+JSON.stringify(ids)+')'),true);
  const state=g.state(),disk=g.persisted();
