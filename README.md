@@ -1,5 +1,31 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.6.2 — NPC skin trades and case bundles
+
+**Trade items directly**, instead of only selling items for coins and buying new
+ones. In Market → Trade items, choose up to five exact NPC-listed items from
+one simulated seller and offer up to five distinct owned items plus an optional
+number of coins. The trader's existing personality and focus influence the
+value credited for each offered item. The acceptance preview is deterministic.
+The player can trade skins for skins, cases for skins, or items plus coins for
+skins. NPC listed items keep their original unique IDs and wear grades.
+Completed offers update exact ownership, coin balances, NPC stock, the trade
+history, and permanent Collection Book discoveries together.
+
+**Buy or buy-and-open 1–5 cases together** on Home or either case shop.
+The case selector displays an explicit total (for example, five Cartel cases
+cost 375 coins). The primary **Buy & open selected cases** button purchases and
+opens all selected cases immediately with simultaneous reels, while
+**Buy sealed cases** purchases all selected cases into Inventory in one step
+for opening or trading later. Both modes use the existing independent published
+case odds. Neither action needs five single-case purchases first.
+
+Both item barters and multi-open transactions check save success before
+confirming a completed transaction; if writing the local save fails, affected
+items and coins are restored. NPC barter is fictional single-player trading,
+not online user-to-user exchange, and uses no real-money cash-out.
+
+
 ## Patch 0.6.1 — Permanent Collection Book
 
 The Cases screen and Inventory now link to a **Collection Book** with the
