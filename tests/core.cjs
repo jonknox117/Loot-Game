@@ -62,12 +62,12 @@ function test(name,fn){
 
 test('Blackout is a 25-coin purchasable five-weapon case with persistent rewards',()=>{
   const g=boot();
-  assert.equal(g.run('window.LootHubSkinLines.lines.length'),1);
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),2);
   assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),0);
   assert.equal(g.run('window.LootHubSkinLines.getLine("blackout").casePrice'),25);
-  assert.equal(g.run('Object.keys(lineCatalogs).length'),1);
+  assert.equal(g.run('Object.keys(lineCatalogs).length'),2);
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
-  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+5);
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+10);
   const variants=JSON.parse(g.run('JSON.stringify(lineCatalogs.blackout)'));
   assert.deepEqual(variants.map(x=>x.weapon),['Desert Eagle','SPAS-12','AWP','RPG-7','FN FAL']);
   assert(variants.every(x=>x.kind==='skin'&&x.skin==='Blackout'&&x.skinLine==='blackout'));
@@ -122,6 +122,56 @@ test('Blackout is a 25-coin purchasable five-weapon case with persistent rewards
   assert.equal(reloaded.state().coins,0);
   assert.equal(reloaded.state().openings,1);
 });
+test('Damascus Case is a separate purchasable five-weapon line with persistent skins',()=>{
+  const g=boot();
+  const expected=['Glock-18','Colt .45 Revolver','AK-47','M1 Garand','Karambit'];
+  const blackout=new Set(['FN FAL','RPG-7','Desert Eagle','SPAS-12','AWP']);
+  assert.equal(g.run('window.LootHubSkinLines.getLine("damascus").casePrice'),25);
+  assert.equal(g.run('window.LootHubSkinLines.getLine("damascus").released'),true);
+  const pool=JSON.parse(g.run('JSON.stringify(lineCatalogs.damascus)'));
+  assert.equal(pool.length,5);
+  assert.deepEqual(pool.map(x=>x.weapon).sort(),expected.slice().sort());
+  assert(pool.every(x=>x.skin==='Damascus'&&x.skinLine==='damascus'&&!blackout.has(x.weapon)));
+  for(const item of pool){
+    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
+    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),false);
+    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('/damascus/'));
+  }
+  const menu=g.run('universalCases()');
+  assert(menu.includes('Buy Blackout Case'));
+  assert(menu.includes('Buy Damascus Case'));
+  assert(menu.includes('25 coins'));
+  g.run("buySkinLineCase('damascus')");
+  assert.equal(g.state().items.length,0,'Insufficient coins must not mint a case');
+  assert.equal(g.state().coins,0,'Insufficient coins must not change wallet');
+  g.run("for(let i=0;i<25;i++)clickEarn();buySkinLineCase('damascus')");
+  const bought=g.state();
+  assert.equal(bought.coins,0);
+  assert.equal(bought.items.length,1);
+  assert.equal(bought.items[0].kind,'case');
+  assert.equal(bought.items[0].caseId,'damascus');
+  assert.equal(bought.items[0].paid,25);
+  assert.equal(bought.spent,25);
+  assert(g.byId('overlay').innerHTML.includes('Sealed Damascus Case'));
+  g.run('openCase(s.items[0].id)');
+  const opened=g.state();
+  assert.equal(opened.openings,1);
+  assert.equal(opened.items.length,1);
+  assert.equal(opened.items[0].kind,'skin');
+  assert.equal(opened.items[0].skin,'Damascus');
+  assert.equal(opened.items[0].skinLine,'damascus');
+  assert(expected.includes(opened.items[0].weapon));
+  assert.equal(g.run('window.LootHubSkinLines.isRegistered(s.items[0])'),true);
+  assert(Number.isInteger(opened.items[0].wearGrade)&&opened.items[0].wearGrade>=0&&opened.items[0].wearGrade<=4);
+  g.run('finishOpening()');
+  const reload=boot(g.store);
+  assert.equal(reload.state().items[0].id,opened.items[0].id);
+  assert.equal(reload.state().items[0].skin,'Damascus');
+  assert.equal(reload.state().coins,0);
+  assert.equal(reload.state().openings,1);
+  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'),
+    'Separate themed case must not alter Arsenal drops');
+});
 test('Themed cases normalize original tier odds over the current case pool',()=>{
   // Blackout currently includes tiers 1, 2, 3 only. It must never throw on
   // empty Common and Legendary tiers, and must preserve the Arsenal roll.
@@ -132,6 +182,12 @@ test('Themed cases normalize original tier odds over the current case pool',()=>
       assert.equal(got.tier,tier,'Incorrect normalized tier when random='+random);
       assert.equal(got.skin,'Blackout');
     }
+  }
+  for(const [random,tier] of [[.001,0],[.75,1],[.94,2],[.999,4]]){
+    const g=boot(new LocalStore(),()=>random);
+    const got=JSON.parse(g.run('JSON.stringify(roll("damascus"))'));
+    assert.equal(got.tier,tier,'Damascus normalized tier incorrect for '+random);
+    assert.equal(got.skin,'Damascus');
   }
   const g=boot();
   assert.equal(g.run('roll("arsenal").tier'),0,'Arsenal original tier odds changed');

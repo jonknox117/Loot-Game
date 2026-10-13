@@ -1,6 +1,6 @@
 # Reusable skin-line production pipeline
 
-This infrastructure contains **no released skin lines**. The owner creates and approves each collection. Never ship an invented skin, texture, or case automatically.
+The owner creates and approves each skin line. Blackout and Damascus are the two approved, released five-weapon lines. Never ship an invented skin, texture or case automatically.
 
 ## Existing weapons
 
@@ -30,6 +30,35 @@ To expand Blackout, add more supported weapon names to its `weapons` filter,
 or remove the filter entirely once the owner approves a full-catalog release.
 No additional manually generated weapon art is needed; rerun the procedural
 build/verification pipeline to create the new images.
+
+## Damascus Case (released, five different weapons)
+
+Damascus is a second, separate **25-coin case**, initially limited to
+`["Glock-18","Colt .45 Revolver","AK-47","M1 Garand","Karambit"]`.
+None of these five weapons appears in the initial Blackout Case.
+
+The owner-provided finish uses three independent procedural textures:
+- **Metal:** dark-and-silver layered Damascus waves, `damascus-metal.webp`
+- **Wood:** rich walnut grain, `damascus-wood.webp`
+- **Other:** brushed-silver finish, `damascus-other.webp`
+
+The sources are repeatable 768×768 WebP textures under
+`assets/skin-lines/textures/`. The generator reads the same metal, wood
+and other segmentation maps as Blackout. The first release produces
+15 transparent weapon WebPs: five weapons at 400, 800 and 1600 widths.
+
+Both themed cases are available on the **Cases** tab. Each has its own 25-coin
+purchase button, a sealed inventory collectible, a real reel opening and a
+permanently saved and tradeable skin reward. The Arsenal Case catalog stays unchanged.
+
+The line has Common, Uncommon, Rare and Legendary weapons but no Super Rare.
+The corresponding base rarity weights (70%, 20%, 7.5%, 0.5%) are normalized
+over those four available tiers. Published base Arsenal odds remain unchanged.
+
+To expand either themed case, add more existing approved weapon names to that
+line's `weapons` list. The procedural builder produces skins for added weapons
+using their approved neutral masters and material maps, without individually
+illustrating each cosmetic.
 
 ## Adding an owner-created line
 
