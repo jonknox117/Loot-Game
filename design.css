@@ -872,3 +872,82 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .cartel-case-art{height:clamp(235px,72vw,315px);padding:10px}
  .cartel-case-art .cartel-case-image{height:100%;min-height:0}
 }
+
+/* Patch 0.6.0: simultaneous five-reel opening, scaled for iPhone screens. */
+.multi-entry{display:flex;gap:18px;align-items:center;justify-content:space-between;
+ background:linear-gradient(125deg,#213248,#172335);border-color:rgba(223,175,94,.33)}
+.multi-entry h2{margin:4px 0 8px}
+.multi-entry p{max-width:470px;margin:0 0 6px}
+.multi-entry button{flex:none}
+.multi-inventory-action{margin:15px 0}
+.multi-picker-head{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:10px}
+.multi-picker-head .row{gap:5px}
+.multi-picker-head button{font-size:11px;min-height:34px;padding:6px 8px}
+.multi-case-choices{max-height:45dvh;overflow:auto;display:grid;gap:6px}
+.multi-case-choice{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;
+ background:#192638;border:1px solid #374961;cursor:pointer;font-size:12px}
+.multi-case-choice.selected{background:#273a50;border-color:#e2b66b}
+.multi-case-choice input{width:18px;height:18px;accent-color:#e7bc73;flex:none}
+.multi-case-mini{height:48px;width:70px;display:flex;flex:none}
+.multi-case-mini .weapon-art{height:100%;width:100%}
+.multi-case-mini img{object-fit:contain}
+.multi-picker-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.multi-spin-screen .spin-title{font-size:19px;margin:4px 0 12px}
+.dialog:has(.multi-spin-screen){width:min(740px,100%);padding:16px;
+ max-height:calc(100dvh - 14px);overflow-y:auto}
+.multi-lanes{display:grid;gap:7px}
+.multi-lane{min-width:0}
+.multi-lane-header{display:flex;align-items:center;justify-content:space-between;gap:6px;
+ font-size:11px;margin:0 2px 4px}
+.multi-lane-header b{max-width:77%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.multi-lane .reel{height:80px;border-radius:9px}
+.multi-lane .track{gap:6px}
+.multi-lane .tile{width:100px;height:70px;padding:4px 3px 2px;
+ border-radius:5px;background:#1a2738;box-shadow:none}
+.multi-lane .tile .weapon-art{height:42px!important;width:100%}
+.multi-lane .tile-name{font-size:9px;line-height:1.15;padding:0}
+.multi-lane .reel .pointer{z-index:6}
+.multi-spin-screen .spin-note{margin:9px 0}
+.multi-spin-screen .spin-skip{margin:0}
+.dialog:has(.multi-winnings){width:min(740px,100%);max-height:calc(100dvh - 14px);overflow-y:auto}
+.multi-prize-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin:14px 0}
+.multi-prize{min-width:0;border:1px solid rgba(160,171,194,.35);
+ background:linear-gradient(150deg,#25334a,#101a29);border-radius:12px;padding:12px;
+ display:flex;flex-direction:column;gap:7px}
+.multi-prize.rarity-Uncommon{border-color:#5ec68488}
+.multi-prize.rarity-Rare{border-color:#679cef88}
+.multi-prize.rarity-SuperRare{border-color:#b57ff388}
+.multi-prize.rarity-Legendary{border-color:#e7b35caa}
+.multi-prize strong{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+.multi-prize .muted{font-size:11px;min-height:30px}
+.multi-prize button{margin-top:auto}
+.multi-prize-art{height:138px;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;background:radial-gradient(ellipse at 50% 55%,#36445b,#111a29 75%);
+ border-radius:8px;overflow:hidden}
+.multi-prize-weapon{width:95%;height:76px;z-index:2;margin-bottom:-23px;
+ filter:drop-shadow(0 5px 6px rgba(0,0,0,.35));animation:arsenal-prize-rise .55s both}
+.multi-prize-weapon .weapon-art{width:100%;height:76px!important;background:transparent!important}
+.multi-prize-chest{width:100px;height:87px;z-index:1}
+.multi-prize-chest .weapon-art{width:100%;height:100%;background:transparent!important}
+.multi-prize-chest img{object-fit:contain}
+@media(max-width:700px){
+ .multi-entry{flex-direction:column;align-items:stretch;gap:8px}
+ .multi-entry button{width:100%}
+ .dialog:has(.multi-spin-screen){padding:12px;margin:0}
+ .multi-spin-screen .spin-title{font-size:16px;margin:4px 0 7px}
+ .multi-lanes{gap:4px}
+ .multi-lane-header{margin-bottom:2px;font-size:10px}
+ .multi-lane .reel{height:65px}
+ .multi-lane .tile{height:58px}
+ .multi-lane .tile .weapon-art{height:34px!important}
+ .multi-lane .tile-name{font-size:8px}
+ .multi-prize-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .multi-prize{padding:8px}
+ .multi-prize-art{height:120px}
+ .multi-prize-weapon,.multi-prize-weapon .weapon-art{height:62px!important}
+ .multi-prize-chest{height:77px;width:86px}
+}
+@media(prefers-reduced-motion:reduce){
+ .multi-prize-weapon{animation:none}
+ .multi-lane .track{transition:none!important}
+}
