@@ -2512,7 +2512,10 @@ test('0.6.0 existing single-case workflow and controls remain available',()=>{
  assert(g.run('cartelSection()').includes('multi-qty-cartel'));
  assert(g.run('inventory()').includes('Open up to 5 cases'));
  g.run('s.items.push({id:"old-single",kind:"case",paid:25})');
- assert(g.run('inventory()').includes('Multi-open'));
+ assert(g.run('inventory()').includes('Open up to 5 cases'));
+ g.run('inspect("old-single")');
+ assert(g.byId('overlay').innerHTML.includes('Multi-open'),
+  'Single case inspector should offer the multi-open picker');
  g.run('openCase("old-single");finishOpening()');
  assert.equal(g.state().openings,1);
  assert.equal(g.state().items.length,1);
