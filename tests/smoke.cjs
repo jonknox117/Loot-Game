@@ -85,6 +85,19 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     // solely for wear, not procedural collectible finishes or themed cases.
     await page.getByRole('button',{name:'Cases',exact:true}).click();
     const caseShop=await page.locator('#main').textContent();
+    // Uploaded closed crate appears in the shop with native transparency, not SVG.
+    const closedCase=page.locator('#main .hero .arsenal-case-closed img').first();
+    await closedCase.waitFor({state:'visible',timeout:15000});
+    const closedArt=await closedCase.evaluate(async img=>{
+      await img.decode();
+      const canvas=document.createElement('canvas');canvas.width=2;canvas.height=2;
+      const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,2,2);
+      return {width:img.naturalWidth,height:img.naturalHeight,
+        alpha:ctx.getImageData(0,0,1,1).data[3],src:img.getAttribute('src')};
+    });
+    assert(closedArt.width===800&&closedArt.height===800&&closedArt.alpha===0&&
+      closedArt.src.includes('arsenal-case-closed-800.webp'),
+      'Shop must show exact owner-supplied Arsenal Case art with real transparent background');
     assert(caseShop.includes('Double-Barrel Shotgun'),
       '25th official gun must appear in the available Arsenal Case weapon gallery');
     const gunCard=page.locator('#main .item').filter({
@@ -191,7 +204,16 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.locator('.item').count() === 1, 'Case ownership must survive page reload');
 
     await page.getByRole('button', { name: 'Inspect / trade' }).click();
+    const sealedArt=page.locator('.dialog .arsenal-case-closed img');
+    await sealedArt.waitFor({state:'visible',timeout:15000});
+    assert((await sealedArt.getAttribute('src')).includes('arsenal-case-closed-1254.webp'),
+      'Inspect and inventory must use the original closed crate in its full native resolution');
     await page.getByRole('button', { name: 'Open case' }).click();
+    const openingCase=page.locator('.arsenal-opening-prop .arsenal-case-open img');
+    await openingCase.waitFor({state:'visible',timeout:15000});
+    const openingImage=await openingCase.evaluate(async img=>{await img.decode();return {width:img.naturalWidth,height:img.naturalHeight}});
+    assert(openingImage.width===1254&&openingImage.height===1254,
+      'Arsenal spin must show the matching original open-crate photograph');
     // Presentation is upgraded, but the stored result and 48-slot reel are unchanged.
     assert(await page.locator('.reel-stage .reel #track').isVisible(),
       'Case opening must show the new spotlighted reel stage');
@@ -226,6 +248,12 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(revealed.weapon===winner.weapon,'Revealed reward model differs from the reel');
     assert(revealed.finish===winner.finish,'The revealed finish differs from the reel or an unapproved skin appeared');
     assert(revealed.loaded,'Base-weapon inspect image failed to load');
+    const prizeCase=page.locator('.arsenal-reward-display .arsenal-reward-crate .arsenal-case-open img');
+    await prizeCase.waitFor({state:'visible',timeout:15000});
+    assert(await page.locator('.arsenal-reward-display .arsenal-reward-weapon .master-raster').count()===1,
+      'Reward must float above the uploaded open Arsenal crate');
+    assert((await prizeCase.getAttribute('src')).includes('arsenal-case-open-1254.webp'),
+      'Reward must use the original open-case image rather than a synthetic stand-in');
     assert(await page.locator('.reward-reveal').isVisible(),
       'Opening a case must animate into a visible rarity-themed result');
     assert((await page.locator('.reward-reveal').getAttribute('class')).includes('rarity-'),
