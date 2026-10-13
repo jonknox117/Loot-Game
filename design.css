@@ -590,3 +590,124 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
   border:0;
   background:transparent;
 }
+
+
+/* 0.5.8 — tactile navigation, case-opening theater and rarity reveal. */
+.top{flex-wrap:wrap}
+.sound-toggle{
+  order:1;min-height:34px;padding:7px 12px;white-space:nowrap;
+  margin-left:auto;border-radius:999px;font-size:11px;
+  color:#d8e5f7;background:linear-gradient(155deg,#24344a,#152235);
+  border:1px solid rgba(159,184,217,.3);box-shadow:inset 0 1px #ffffff09;
+}
+.sound-toggle[aria-pressed="false"]{color:#8c9bb0;background:#111b29;border-color:#334458}
+.sound-toggle:focus-visible{outline:2px solid #f4c77d;outline-offset:3px}
+.wallet{order:2}
+.nav button{position:relative;overflow:hidden}
+.nav button.active::after{
+  content:"";position:absolute;left:17%;right:17%;bottom:1px;height:2px;
+  background:linear-gradient(90deg,transparent,#fbd08d,transparent);
+  box-shadow:0 0 14px rgba(252,188,86,.5);
+}
+#main > .panel, #main > section{animation:loothub-enter .24s cubic-bezier(.2,.7,.2,1) both}
+@keyframes loothub-enter{
+  from{opacity:.72;transform:translateY(7px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.spin-title{margin:6px 0 16px}
+.reel-header{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.spin-eyebrow,.reward-kicker{
+  font-size:10px;font-weight:850;letter-spacing:.16em;color:#f2c57b;
+}
+.spin-pulse{
+  font-size:9px;letter-spacing:.12em;color:#f5dbaa;font-weight:850;
+  border:1px solid rgba(236,180,87,.35);background:rgba(222,154,60,.12);
+  border-radius:999px;padding:5px 9px;animation:spin-status 1.3s ease-in-out infinite alternate;
+}
+@keyframes spin-status{to{filter:brightness(1.6);box-shadow:0 0 13px rgba(248,197,118,.17)}}
+.reel-stage{
+  padding:13px 0;border-radius:15px;
+  background:linear-gradient(145deg,#202e43,#101b2b);
+  border:1px solid rgba(205,166,107,.22);
+  box-shadow:inset 0 1px rgba(255,255,255,.05),0 14px 35px rgba(0,0,0,.24);
+  position:relative;
+}
+.reel{
+  isolation:isolate;position:relative;height:146px;border-radius:7px;
+  background:linear-gradient(180deg,#0d1522,#1c2e41 50%,#0b1421);
+  border-color:#52677b;box-shadow:inset 0 3px 18px rgba(0,0,0,.35);
+}
+.reel::before,.reel::after{
+  content:"";position:absolute;top:0;bottom:0;width:24%;pointer-events:none;z-index:3;
+}
+.reel::before{left:0;background:linear-gradient(90deg,#0b1421 0%,rgba(11,20,33,.6) 43%,transparent)}
+.reel::after{right:0;background:linear-gradient(270deg,#0b1421 0%,rgba(11,20,33,.6) 43%,transparent)}
+.reel .track{will-change:transform;backface-visibility:hidden}
+.reel .tile{
+  height:122px;position:relative;padding:7px 5px 5px;border-radius:8px;
+  background:radial-gradient(ellipse at 50% 12%,color-mix(in srgb,var(--tile-accent) 17%,#25384c),#111b29 86%);
+  box-shadow:inset 0 1px rgba(255,255,255,.08);
+  display:flex;flex-direction:column;justify-content:center;
+}
+.tile .weapon-art{height:72px;flex:none}
+.tile-name{display:block;font-size:10px;line-height:1.16;font-weight:750;padding:2px 1px 0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e8eff9}
+.reel .pointer{
+  left:50%;z-index:5;border-left:2px solid #ffdb8d;
+  box-shadow:0 0 10px rgba(255,191,91,.3);
+}
+.reel .pointer::before,.reel .pointer::after{
+  content:"";position:absolute;left:-7px;width:12px;height:12px;
+  border-radius:2px;background:#ffcf78;transform:rotate(45deg);
+  box-shadow:0 0 16px rgba(252,194,100,.8);
+}
+.reel .pointer::before{top:-5px}
+.reel .pointer::after{bottom:-5px}
+.spin-note{margin:14px 0 10px}
+.spin-skip{width:100%;background:#23374c;border-color:#526b83}
+.reward-reveal{
+  --reward-color:#a7afba;position:relative;overflow:hidden;
+  margin:-8px;border-radius:14px;padding:19px 12px 12px;text-align:center;
+  border:1px solid color-mix(in srgb,var(--reward-color) 45%,transparent);
+  background:radial-gradient(ellipse at 50% 33%,color-mix(in srgb,var(--reward-color) 17%,transparent),transparent 65%),#131d2b;
+}
+.reward-reveal.rarity-Uncommon{--reward-color:#67d88e}
+.reward-reveal.rarity-Rare{--reward-color:#77adff}
+.reward-reveal.rarity-SuperRare{--reward-color:#c08aff}
+.reward-reveal.rarity-Legendary{--reward-color:#f8ca70}
+.reward-reveal .tag{margin:10px auto;display:flex;justify-content:center}
+.reward-sheen{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.08) 50%,transparent 70%);
+  transform:translateX(-130%);animation:reward-shimmer .9s .05s ease-out both;
+}
+@keyframes reward-shimmer{to{transform:translateX(130%)}}
+.reward-art{
+  position:relative;min-height:185px;border-radius:11px;
+  background:radial-gradient(ellipse at center,color-mix(in srgb,var(--reward-color) 19%,#152236),#0d1725 72%);
+  box-shadow:inset 0 0 34px rgba(0,0,0,.25),0 0 23px color-mix(in srgb,var(--reward-color) 18%,transparent);
+  animation:reward-arrive .44s cubic-bezier(.18,.85,.25,1.1) both;
+}
+.reward-art .weapon-art{height:190px!important}
+.reward-name{font-size:clamp(20px,4vw,29px);margin:15px 0 8px}
+.reward-reveal .price{font-size:24px}
+.reward-reveal .row{justify-content:center}
+@keyframes reward-arrive{
+  from{opacity:.1;transform:scale(.94) translateY(11px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+@media(max-width:700px){
+ .top .brand{order:0;flex:1 1 auto}
+ .top .wallet{order:1;flex:0 0 auto}
+ .top .sound-toggle{order:2;margin:0;width:100%;min-height:31px;padding:5px 8px}
+ .reel-stage{padding:9px 0}
+ .reel{height:133px}
+ .reel .tile{height:113px}
+ .tile .weapon-art{height:66px}
+ .reward-art{min-height:155px}
+ .reward-art .weapon-art{height:155px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .spin-pulse,.reward-sheen,.reward-art,#main > .panel,#main > section{animation:none!important}
+ .reel .track{transition:none!important}
+}

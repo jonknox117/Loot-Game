@@ -9,6 +9,8 @@ const CURRENT_MANIFEST=JSON.parse(fs.readFileSync(path.join(root,'assets/manifes
 const MASTER_COUNT=CURRENT_MANIFEST.items.length;
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
+const feedback=fs.readFileSync(path.join(root,'market/feedback.js'),'utf8');
+assert(html.includes('<script src="./market/feedback.js"></script>'),'Missing interaction feedback module');
 const marketModules=['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'].map(name=>fs.readFileSync(path.join(root,'market',name+'.js'),'utf8')).join('\n');
 for(const name of ['wear-materials','wear','wear-renderer','core','transactions','simulation','npc','traders','haggling','economy','offline','tools'])assert(html.includes('<script src="./market/'+name+'.js"></script>'),'Missing market module '+name);
 const masters=fs.readFileSync(path.join(root,'assets/weapon-masters.js'),'utf8');
@@ -24,7 +26,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -2189,6 +2191,57 @@ test('All registered weapons have anchored semantic profiles, preserving legacy 
    p.weapons.awp.protectedRects);
  assert.equal(g.run('window.LootHubWearMaterials.materialAt("AWP",.4,.25,1)'),'protected');
  assert.equal(g.run('window.LootHubMarketCore.estimated({kind:"weapon",base:100,wearGrade:4})'),55);
+});
+
+
+test('0.5.8 synthesized feedback is gesture-only, muteable, save-safe and deterministic',()=>{
+  const store=new LocalStore();
+  const g=boot(store);
+  assert.equal(g.run('window.LootHubFX.isMuted()'),false);
+  assert(html.includes('id="soundToggle"'),'Accessible sound setting is missing');
+  assert(html.includes('aria-label="Toggle interface sounds"'));
+  assert.equal(g.run('window.LootHubFX.reelIndex(-120,240,120)'),2);
+  assert.equal(g.run('window.LootHubFX.reelIndex(0,240,120)'),1);
+  assert.equal(g.run('window.LootHubFX.play("tap")'),false,
+    'A browser without Web Audio should degrade without throwing');
+  g.run('toggleSound()');
+  assert.equal(g.run('window.LootHubFX.isMuted()'),true);
+  assert.equal(g.persisted().preferences.fxMuted,true);
+  const reload=boot(store);
+  assert.equal(reload.run('window.LootHubFX.isMuted()'),true,
+    'Reload must restore a muted preference without auto-playing audio');
+  reload.run('window.AudioContext=class {constructor(){this.currentTime=1;this.state="running";this.destination={}}'+
+    'createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){}}}'+
+    'createOscillator(){return {frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},'+
+    'connect(){},start(){window.__testSounds=(window.__testSounds||0)+1},stop(){}}}}');
+  assert.equal(reload.run('window.LootHubFX.play("navigate")'),false,'Muted audio must never start');
+  assert.equal(reload.run('window.__testSounds||0'),0);
+  reload.run('toggleSound()');
+  assert.equal(reload.run('window.LootHubFX.isMuted()'),false);
+  assert(reload.run('window.__testSounds||0')>0,'Unmuting after user gesture should play one cue');
+  const before=reload.run('window.__testSounds');
+  reload.run('go("Cases")');
+  assert(reload.run('window.__testSounds')>before,'Navigation must produce its own cue');
+  reload.run('window.LootHubFX.play("reveal",{tier:4})');
+  assert(reload.run('window.__testSounds')>before+1,'Legendary reveal should have a richer audio cue');
+  assert.equal(reload.persisted().preferences.fxMuted,false);
+  assert.deepEqual(JSON.parse(reload.run('JSON.stringify(odds)')),[70,20,7.5,2,.5],
+    'Feedback must never touch published rarity odds');
+});
+test('0.5.8 spin and reward UI never alter existing saved drops or item identities',()=>{
+  const g=boot();
+  g.run("s.items.push({id:'fx-sealed',kind:'case',paid:25})");
+  g.run("openCase('fx-sealed')");
+  assert(g.byId('overlay').innerHTML.includes('class="reel-stage"'));
+  assert(g.byId('overlay').innerHTML.includes('Skip animation'));
+  const winner=g.state().items.find(x=>x.kind==='weapon'||x.kind==='skin');
+  assert(winner&&winner.id,'Spin must immediately save the awarded item');
+  const before=g.state().openings;
+  g.run('finishOpening()');
+  assert(g.byId('overlay').innerHTML.includes('class="reward-reveal rarity-'));
+  assert(g.byId('overlay').innerHTML.includes('NEW ITEM ACQUIRED'));
+  assert.equal(g.state().items.find(x=>x.id===winner.id).id,winner.id);
+  assert.equal(g.state().openings,before,'Reveal must never issue an extra roll');
 });
 
 if(process.exitCode)process.exit(process.exitCode);

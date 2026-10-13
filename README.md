@@ -1,5 +1,15 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Interface Feedback Patch 0.5.8 — sounds, reels and mobile navigation
+
+- Adds lightweight synthesized interface audio (no external MP3s, no download delay). Web Audio is only initialized on a user interaction and degrades silently on unsupported devices.
+- Tap and navigation cues, purchases, coins and reward reveal sounds; the **reel click** follows the tile passing the center marker and slows with the animation.
+- A visible **Sound: On / Sound: Off** toggle in the header persists through the existing save preferences; on/off is honored by all cues. No forced music, voiceover or autoplay.
+- Case opening now has an emphasized center pointer, vignette, spinning status, and smooth transition into a rarity-colored reward presentation. Reduced-motion preference disables the reel movement and decorative animation.
+- The same 48 reels, winning slot 42, original drop odds, existing case costs, per-item wear rolls, user-approved art and 25 base weapons remain unchanged. Rewards are saved **before** animation; skipping never rolls again.
+- Tests: `node tests/core.cjs` and `node tests/smoke.cjs` (Playwright browser runner).
+
+
 ## 25th official weapon: Double-Barrel Shotgun
 
 The **Double-Barrel Shotgun** is a new individually obtainable **Rare** base

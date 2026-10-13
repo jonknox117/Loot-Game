@@ -66,6 +66,20 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Owner-approved cosmetics must all load as 1600px transparent, separate inspection art: '+JSON.stringify(skinsRendered));
 
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
+    // 0.5.8: Sound is a real persistent, accessible player control.
+    const sound=page.locator('#soundToggle');
+    assert(await sound.isVisible(),'Mobile sound toggle must be visible');
+    assert(await sound.getAttribute('aria-pressed')==='true','Sound should start enabled');
+    await sound.click();
+    assert(await sound.getAttribute('aria-pressed')==='false','Mute must respond immediately');
+    assert((await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).preferences.fxMuted))===true,
+      'Mute preference must be persisted with the existing save');
+    await page.reload({waitUntil:'load'});
+    assert(await page.locator('#soundToggle').getAttribute('aria-pressed')==='false',
+      'Player mute setting must survive a full reload');
+    await page.locator('#soundToggle').click();
+    assert(await page.locator('#soundToggle').getAttribute('aria-pressed')==='true',
+      'Sound should be re-enableable from mobile');
 
     // Only the Arsenal Case is live. The metal/wood/other maps are used
     // solely for wear, not procedural collectible finishes or themed cases.
@@ -178,6 +192,11 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     await page.getByRole('button', { name: 'Inspect / trade' }).click();
     await page.getByRole('button', { name: 'Open case' }).click();
+    // Presentation is upgraded, but the stored result and 48-slot reel are unchanged.
+    assert(await page.locator('.reel-stage .reel #track').isVisible(),
+      'Case opening must show the new spotlighted reel stage');
+    assert(await page.locator('.spin-pulse').isVisible(),
+      'The player should see a clear spin-in-progress indicator');
     // The entire reel must use approved neutral base-weapon masters.
     const expectedReward=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).items.find(x=>x.kind==='weapon'||x.kind==='skin'));
     assert(expectedReward&&(expectedReward.kind==='weapon'||['Red Devil','Glory','High Stakes','The Hydra','The Luck O The Irish','Predator','Blossom','Kryptonite','Blood Thirsty','Crimson Delight'].includes(expectedReward.skin)),'Case awarded an unapproved skin');
@@ -207,6 +226,10 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(revealed.weapon===winner.weapon,'Revealed reward model differs from the reel');
     assert(revealed.finish===winner.finish,'The revealed finish differs from the reel or an unapproved skin appeared');
     assert(revealed.loaded,'Base-weapon inspect image failed to load');
+    assert(await page.locator('.reward-reveal').isVisible(),
+      'Opening a case must animate into a visible rarity-themed result');
+    assert((await page.locator('.reward-reveal').getAttribute('class')).includes('rarity-'),
+      'Reward reveal must be styled using the actual prize rarity');
     const wearName=['Pristine','Lightly Worn','Field-Tested','Heavily Worn','Battle-Scarred'][expectedReward.wearGrade];
     const wearFactor=[1,.95,.85,.7,.55][expectedReward.wearGrade];
     assert((await page.locator('.dialog').textContent()).includes('Condition: '+wearName),
