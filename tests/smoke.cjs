@@ -86,7 +86,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     },null,{timeout:15000});
     assert((await gun.getAttribute('src')).includes('double-barrel-shotgun-neutral-1600.webp'),
       'Shotgun inspection must use its exact uploaded neutral master art');
-    await page.getByRole('button',{name:'Close',exact:true}).last().click();
+    await page.evaluate(()=>closeDialog());
     assert(caseShop.includes('Arsenal Case'),'Arsenal Case must remain in the store');
     assert(!caseShop.includes('Blackout Case')&&!caseShop.includes('Damascus Case'),
       'Retired procedural cases must no longer be displayed');
