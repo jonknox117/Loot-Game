@@ -951,3 +951,12 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .multi-prize-weapon{animation:none}
  .multi-lane .track{transition:none!important}
 }
+
+.multi-shop-buy{display:flex;align-items:end;flex-wrap:wrap;gap:9px;margin:13px 0 0}
+.multi-shop-buy label{font-size:11px;color:#acbfd2;display:grid;gap:4px}
+.multi-shop-buy select{min-width:76px;width:78px;font-size:13px;min-height:40px}
+.multi-shop-buy button{min-height:42px;border-color:#7b9bad}
+@media(max-width:700px){
+ .multi-shop-buy{justify-content:center}
+ .multi-shop-buy button{flex:1;min-width:0}
+}
