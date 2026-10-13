@@ -12,6 +12,10 @@ const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
 const feedback=fs.readFileSync(path.join(root,'market/feedback.js'),'utf8');
 const multiCore=fs.readFileSync(path.join(root,'market/multi-open.js'),'utf8');
 const multiUI=fs.readFileSync(path.join(root,'market/multi-open-ui.js'),'utf8');
+const barterCore=fs.readFileSync(path.join(root,'market/barter.js'),'utf8');
+const barterUI=fs.readFileSync(path.join(root,'market/barter-ui.js'),'utf8');
+for(const name of ['barter.js','barter-ui.js'])
+ assert(html.includes('<script src="./market/'+name+'"></script>'),'Missing item barter module '+name);
 const collectionCatalog=fs.readFileSync(path.join(root,'assets/collections.js'),'utf8');
 const collectionCore=fs.readFileSync(path.join(root,'market/collections.js'),'utf8');
 const collectionUI=fs.readFileSync(path.join(root,'market/collections-ui.js'),'utf8');
@@ -41,7 +45,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+barterCore+'\n'+barterUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
