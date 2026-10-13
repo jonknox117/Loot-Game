@@ -2253,7 +2253,8 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  const g=boot();
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
  const entries=manifest.approvedSkins.filter(x=>x.skin==='Cartel');
- assert.equal(manifest.items.length,25,'The 25 neutral weapons must remain live');
+ assert.equal(manifest.items.length,MASTER_COUNT,'All neutral weapons must remain live');
+ assert(MASTER_COUNT>=25,'The initial 25 neutral masters must be retained');
  assert.equal(entries.length,5);
  assert.deepEqual(entries.map(x=>[x.weapon,x.tier,x.baseValue]),[
   ['RPG-7',0,40],['12 Gauge Pump Shotgun',1,110],['AK-47',2,350],
