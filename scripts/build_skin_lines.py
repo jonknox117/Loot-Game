@@ -180,6 +180,8 @@ def sources():
     definitions=json.loads((ROOT/'assets/skin-lines/lines.json').read_text())
     profiles=json.loads((ROOT/'assets/skin-lines/paint-profiles.json').read_text())['weapons']
     if definitions.get('schemaVersion')!=1:raise ValueError('Unexpected skin line schema')
+    if definitions.get('lines'):
+        raise ValueError('Procedural skin lines are disabled; material maps are for wear only')
     ids=set()
     for line in definitions['lines']:
         if not isinstance(line.get('id'),str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',line['id']):

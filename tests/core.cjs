@@ -60,137 +60,88 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
-test('Blackout is a 25-coin purchasable five-weapon case with persistent rewards',()=>{
+test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
-  assert.equal(g.run('window.LootHubSkinLines.lines.length'),2);
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
   assert.equal(g.run('window.LootHubSkinLines.previewLines.length'),0);
-  assert.equal(g.run('window.LootHubSkinLines.getLine("blackout").casePrice'),25);
-  assert.equal(g.run('Object.keys(lineCatalogs).length'),2);
+  assert.equal(g.run('Object.keys(lineCatalogs).length'),0);
+  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length'));
   assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'));
-  assert.equal(g.run('allMarketCatalog.length'),g.run('dropCatalog.length')+10);
-  const variants=JSON.parse(g.run('JSON.stringify(lineCatalogs.blackout)'));
-  assert.deepEqual(variants.map(x=>x.weapon),['Desert Eagle','SPAS-12','AWP','RPG-7','FN FAL']);
-  assert(variants.every(x=>x.kind==='skin'&&x.skin==='Blackout'&&x.skinLine==='blackout'));
-  for(const item of variants){
-    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
-    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),false);
-    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('assets/renders/lines/blackout/'));
-    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('data-art-status="universal-skin"'));
-  }
-  const neutral=JSON.parse(g.run('JSON.stringify(catalog)'));
-  const win={LootHubWeaponCatalog:JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog)')),
-    LootHubSkinLineData:{schemaVersion:1,lines:[{id:'test-line',name:'Test Line',
-    released:true,multiplier:2,palette:['#000000','#ffffff'],casePrice:25}]}};
-  vm.runInNewContext(universalRegistry,{window:win,Object,Map,Number,Math});
-  const allVariants=win.LootHubSkinLines.variants(neutral,'test-line');
-  assert.equal(allVariants.length,MASTER_COUNT);
-  assert(allVariants.every(x=>win.LootHubSkinLines.isRegistered(x)));
-  assert(win.LootHubSkinLines.imagePath(allVariants[0],800).endsWith('.webp'));
   const menu=g.run('universalCases()');
-  assert(menu.includes('Arsenal Case'),'Original case was hidden');
-  assert(menu.includes('Blackout Case'),'Paid case missing from Cases shop');
-  assert(menu.includes('Buy Blackout Case'));
-  assert(!menu.includes('Open free test case'),'Unreleased visual test must not be offered');
-  const before=g.state();
-  g.run("buySkinLineCase('blackout')");
-  assert.equal(g.state().coins,before.coins,'Insufficient funds should leave balance intact');
-  assert.equal(g.state().items.length,before.items.length,'Insufficient funds should not grant a free case');
-  g.run("for(let i=0;i<25;i++)clickEarn();buySkinLineCase('blackout')");
-  const sealed=g.state();
-  assert.equal(sealed.coins,0,'Paid case must deduct 25 coins');
-  assert.equal(sealed.items.length,1);
-  assert.equal(sealed.items[0].kind,'case');
-  assert.equal(sealed.items[0].caseId,'blackout');
-  assert.equal(sealed.items[0].paid,25);
-  assert.equal(sealed.spent,25,'Case purchase must count toward lifetime spend');
-  assert(g.byId('overlay').innerHTML.includes('Sealed Blackout Case'));
-  g.run('openCase(s.items[0].id)');
-  const opened=g.state();
-  assert.equal(opened.items.length,1,'A sealed case must become exactly one collectible skin');
-  assert.equal(opened.openings,1);
-  assert.equal(opened.items[0].kind,'skin');
-  assert.equal(opened.items[0].skin,'Blackout');
-  assert.equal(opened.items[0].skinLine,'blackout');
-  assert(variants.some(v=>v.weapon===opened.items[0].weapon),'Only the five approved guns can drop');
-  assert.equal(g.run('window.LootHubSkinLines.isRegistered(s.items[0])'),true);
-  assert(Number.isInteger(opened.items[0].wearGrade)&&opened.items[0].wearGrade>=0&&
-    opened.items[0].wearGrade<=4,'Case reward must receive a persistent wear grade');
-  g.run('finishOpening()');
-  const reloaded=boot(g.store);
-  assert.equal(reloaded.state().items[0].id,opened.items[0].id,'Reward must survive reload');
-  assert.equal(reloaded.state().items[0].skin,'Blackout','Released skin must survive save migration');
-  assert.equal(reloaded.state().coins,0);
-  assert.equal(reloaded.state().openings,1);
+  assert(menu.includes('Arsenal Case'));
+  assert(!menu.includes('Blackout Case'));
+  assert(!menu.includes('Damascus Case'));
+  assert(!menu.includes('Buy Blackout'));
+  assert(!menu.includes('Buy Damascus'));
+  assert.equal(g.run('window.LootHubSkinLines.getLine("blackout")'),null);
+  assert.equal(g.run('window.LootHubSkinLines.getLine("damascus")'),null);
+  assert.equal(g.run('window.LootHubSkinLines.isRegistered({kind:"skin",weapon:"AK-47",skin:"Damascus",skinLine:"damascus"})'),false);
+  assert(g.run('window.LootHubWearMaterials.materialPath("AK-47")').includes('material-1600.png'),
+    'Material maps must remain available for the separate wear renderer');
+  assert(g.run('window.LootHubWearMaterials.maskPath("AK-47")').includes('paint-main-1600.png'),
+    'Paint-main masks must remain available for wear');
 });
-test('Damascus Case is a separate purchasable five-weapon line with persistent skins',()=>{
-  const g=boot();
-  const expected=['Glock-18','Colt .45 Revolver','AK-47','M1 Garand','Karambit'];
-  const blackout=new Set(['FN FAL','RPG-7','Desert Eagle','SPAS-12','AWP']);
-  assert.equal(g.run('window.LootHubSkinLines.getLine("damascus").casePrice'),25);
-  assert.equal(g.run('window.LootHubSkinLines.getLine("damascus").released'),true);
-  const pool=JSON.parse(g.run('JSON.stringify(lineCatalogs.damascus)'));
-  assert.equal(pool.length,5);
-  assert.deepEqual(pool.map(x=>x.weapon).sort(),expected.slice().sort());
-  assert(pool.every(x=>x.skin==='Damascus'&&x.skinLine==='damascus'&&!blackout.has(x.weapon)));
-  for(const item of pool){
-    assert.equal(g.run('window.LootHubSkinLines.isRegistered('+JSON.stringify(item)+')'),true);
-    assert.equal(g.run('window.LootHubSkinLines.isPreview('+JSON.stringify(item)+')'),false);
-    assert(g.run('visualArt('+JSON.stringify(item)+',"inspect")').includes('/damascus/'));
+test('Retired cases become Arsenal Cases and retired skins become neutral weapons without loss',()=>{
+  const now=Date.now();
+  const store=new LocalStore();
+  const items=[
+    {id:'sealed-blackout',kind:'case',caseId:'blackout',paid:25},
+    {id:'sealed-damascus',kind:'case',caseId:'damascus',paid:25},
+    {id:'open-blackout',kind:'skin',skinLine:'blackout',skin:'Blackout',weapon:'FN FAL',
+      tier:2,base:216,paid:25,wearGrade:3},
+    {id:'open-damascus',kind:'skin',skinLine:'damascus',skin:'Damascus',weapon:'AK-47',
+      tier:2,base:170,paid:25,wearGrade:1},
+    {id:'approved-skin',kind:'skin',skin:'Red Devil',weapon:'MAC-10',tier:4,base:1800,wearGrade:0}
+  ];
+  const old={coins:75,items,history:['Prior market history'],earned:125,spent:50,
+    sales:0,rep:0,openings:2,serial:5,offers:{},tab:'Inventory',
+    listings:[
+      {id:'listing-retired-case',item:{id:'escrow-case',kind:'case',caseId:'blackout',paid:25},
+        ask:36,createdAt:now,checkedAt:now},
+      {id:'listing-retired-skin',item:{id:'escrow-skin',kind:'skin',skinLine:'damascus',skin:'Damascus',
+        weapon:'Karambit',tier:4,base:3800,wearGrade:2},ask:3900,createdAt:now,checkedAt:now}
+    ]};
+  store.setItem(KEY,JSON.stringify(old));
+  const g=boot(store),retired=g.state();
+  assert.equal(retired.coins,75);
+  assert.equal(retired.items.length,5);
+  assert.equal(retired.openings,2);
+  assert.equal(retired.spent,50);
+  assert.equal(retired.history[0],'Prior market history');
+  assert.deepEqual(retired.items.slice(0,2).map(x=>x.id),['sealed-blackout','sealed-damascus']);
+  for(const x of retired.items.slice(0,2)){
+    assert.equal(x.kind,'case');
+    assert.equal(x.paid,25);
+    assert(!Object.hasOwn(x,'caseId'),'Former themed case must now open as an Arsenal Case');
   }
-  const menu=g.run('universalCases()');
-  assert(menu.includes('Buy Blackout Case'));
-  assert(menu.includes('Buy Damascus Case'));
-  assert(menu.includes('25 coins'));
-  g.run("buySkinLineCase('damascus')");
-  assert.equal(g.state().items.length,0,'Insufficient coins must not mint a case');
-  assert.equal(g.state().coins,0,'Insufficient coins must not change wallet');
-  g.run("for(let i=0;i<25;i++)clickEarn();buySkinLineCase('damascus')");
-  const bought=g.state();
-  assert.equal(bought.coins,0);
-  assert.equal(bought.items.length,1);
-  assert.equal(bought.items[0].kind,'case');
-  assert.equal(bought.items[0].caseId,'damascus');
-  assert.equal(bought.items[0].paid,25);
-  assert.equal(bought.spent,25);
-  assert(g.byId('overlay').innerHTML.includes('Sealed Damascus Case'));
-  g.run('openCase(s.items[0].id)');
-  const opened=g.state();
-  assert.equal(opened.openings,1);
-  assert.equal(opened.items.length,1);
-  assert.equal(opened.items[0].kind,'skin');
-  assert.equal(opened.items[0].skin,'Damascus');
-  assert.equal(opened.items[0].skinLine,'damascus');
-  assert(expected.includes(opened.items[0].weapon));
-  assert.equal(g.run('window.LootHubSkinLines.isRegistered(s.items[0])'),true);
-  assert(Number.isInteger(opened.items[0].wearGrade)&&opened.items[0].wearGrade>=0&&opened.items[0].wearGrade<=4);
-  g.run('finishOpening()');
-  const reload=boot(g.store);
-  assert.equal(reload.state().items[0].id,opened.items[0].id);
-  assert.equal(reload.state().items[0].skin,'Damascus');
-  assert.equal(reload.state().coins,0);
-  assert.equal(reload.state().openings,1);
-  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+g.run('approvedSkins.length'),
-    'Separate themed case must not alter Arsenal drops');
-});
-test('Themed cases normalize original tier odds over the current case pool',()=>{
-  // Blackout currently includes tiers 1, 2, 3 only. It must never throw on
-  // empty Common and Legendary tiers, and must preserve the Arsenal roll.
-  for(const [random,tier] of [[.001,1],[.7,2],[.99,3]]){
-    const g=boot(new LocalStore(),()=>random);
-    for(let i=0;i<25;i++){
-      const got=JSON.parse(g.run('JSON.stringify(roll("blackout"))'));
-      assert.equal(got.tier,tier,'Incorrect normalized tier when random='+random);
-      assert.equal(got.skin,'Blackout');
-    }
+  for(const x of retired.items.slice(2,4)){
+    assert.equal(x.kind,'weapon');
+    assert(!Object.hasOwn(x,'skinLine'));
+    assert(!Object.hasOwn(x,'skin'));
+    assert([1,3].includes(x.wearGrade));
   }
-  for(const [random,tier] of [[.001,0],[.75,1],[.94,2],[.999,4]]){
-    const g=boot(new LocalStore(),()=>random);
-    const got=JSON.parse(g.run('JSON.stringify(roll("damascus"))'));
-    assert.equal(got.tier,tier,'Damascus normalized tier incorrect for '+random);
-    assert.equal(got.skin,'Damascus');
-  }
-  const g=boot();
-  assert.equal(g.run('roll("arsenal").tier'),0,'Arsenal original tier odds changed');
+  assert.equal(retired.items[2].base,216);
+  assert.equal(retired.items[3].base,170);
+  assert.equal(retired.items[4].kind,'skin');
+  assert.equal(retired.items[4].skin,'Red Devil');
+  assert.equal(retired.listings.length,2);
+  assert.equal(retired.listings[0].ask,36);
+  assert.equal(retired.listings[0].item.id,'escrow-case');
+  assert(!Object.hasOwn(retired.listings[0].item,'caseId'));
+  assert.equal(retired.listings[1].ask,3900);
+  assert.equal(retired.listings[1].item.kind,'weapon');
+  assert.equal(retired.listings[1].item.id,'escrow-skin');
+  assert(g.run('safeUpload('+JSON.stringify(old)+')'),
+    'An older exported backup with retired cosmetic items must remain importable');
+  g.run('save()');
+  const reload=boot(store);
+  assert.deepEqual(reload.state().items.slice(0,4),retired.items.slice(0,4),
+    'Migration must be idempotent and preserve IDs, values, wear and balances');
+  reload.run('openCase(s.items[0].id);finishOpening()');
+  assert.equal(reload.state().openings,3);
+  assert.equal(reload.state().items.length,5);
+  assert(reload.state().items.some(x=>x.kind==='weapon'&&x.weapon==='Glock-18'),
+    'Converted Arsenal Case must open through the normal reward pool');
 });
 test('Arsenal Case matches dynamically registered base weapons and ten owner-approved skins',()=>{
   const g=boot();
