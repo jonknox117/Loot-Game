@@ -1092,6 +1092,74 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.evaluate(()=>claimCollection('cartel-v1'))===false,
       'Claiming again must never grant another 25 cases');
 
+
+    // Patch 0.6.2: no one-by-one purchases required. Buy five sealed
+    // Cartel cases in a single transaction, then open those exact five.
+    await page.evaluate(()=>{s.coins=500;save();go('Cases')});
+    await page.locator('#multi-qty-cartel').selectOption('5');
+    assert((await page.locator('#multi-total-cartel').textContent()).includes('375'),
+      'Five Cartel cases must show an explicit 375-coin total');
+    await page.locator('.cartel-section .multi-bundle-actions button').nth(1).click();
+    assert((await page.locator('.dialog').textContent()).includes('5 sealed cases purchased'));
+    const purchasedFive=await page.evaluate(()=>({
+      coins:s.coins,cases:s.items.filter(x=>x.kind==='case'&&x.caseId==='cartel'&&x.paid===75).length
+    }));
+    assert(purchasedFive.coins===125&&purchasedFive.cases===5,
+      'Single bulk purchase must buy five new cases and deduct 375 coins once');
+    await page.getByRole('button',{name:'Open these cases'}).click();
+    assert(await page.locator('.multi-case-choice input:checked').count()===5,
+      'Purchased cases must be preselected to multi-open');
+    await page.getByRole('button',{name:'Open 5 cases'}).click();
+    assert(await page.locator('.multi-lane').count()===5,
+      'Five newly purchased cases must spin simultaneously');
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.multi-prize').count()===5);
+    await page.getByRole('button',{name:'Keep all'}).click();
+    assert(await page.evaluate(()=>s.items.filter(x=>x.kind==='case'&&
+      x.caseId==='cartel'&&x.paid===75).length)===0);
+    // Direct buy & open three Arsenal cases with the same quantity selector.
+    await page.evaluate(()=>{s.coins=100;save();go('Cases')});
+    await page.locator('#multi-qty-arsenal').selectOption('3');
+    assert((await page.locator('#multi-total-arsenal').textContent()).includes('75'));
+    const openingsBefore=await page.evaluate(()=>s.openings);
+    await page.locator('.hero .multi-bundle-actions button').first().click();
+    assert(await page.locator('.multi-lane').count()===3);
+    assert(await page.evaluate(()=>s.coins)===25);
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.multi-prize').count()===3);
+    await page.getByRole('button',{name:'Keep all'}).click();
+    assert(await page.evaluate(()=>s.openings)===openingsBefore+3);
+    // NPC barter: a real owned approved skin for another exact listed skin.
+    await page.evaluate(()=>{
+      s.coins=400;
+      s.items.push({id:'trade-e2e-owned',kind:'skin',weapon:'MAC-10',
+        skin:'Red Devil',tier:4,base:1800,wearGrade:0});
+      s.market.npcListings.push({id:'trade-e2e-list',seller:'CaseRunner',ask:300,
+        expiresAt:Date.now()+9999999,item:{id:'trade-e2e-reward',kind:'skin',
+          weapon:'AK-47',skin:'Cartel',tier:2,base:350,wearGrade:3}});
+      save();go('Market');openBarter('trade-e2e-list');
+    });
+    assert(await page.locator('.barter-sides .barter-side').count()===2,
+      'Mobile marketplace must show both the items you receive and the items you offer');
+    await page.evaluate(()=>barterToggle('items','trade-e2e-owned'));
+    assert((await page.locator('.barter-total').textContent()).includes('ACCEPTED'),
+      'NPC preferences should credit the offered skin fairly');
+    await page.getByRole('button',{name:'Complete trade'}).click();
+    assert((await page.locator('.dialog').textContent()).includes('Trade accepted'));
+    const swapped=await page.evaluate(()=>({
+      incoming:s.items.find(x=>x.id==='trade-e2e-reward'),
+      outgoing:s.items.some(x=>x.id==='trade-e2e-owned'),
+      stock:s.market.npcListings.some(x=>x.id==='trade-e2e-list'),
+      wallet:s.coins
+    }));
+    assert(swapped.incoming&&swapped.incoming.wearGrade===3&&
+      !swapped.outgoing&&!swapped.stock&&swapped.wallet===400,
+      'NPC trade must transfer exact skin ID and wear, without unexpected coin spending');
+    await page.getByRole('button',{name:'Go to Inventory'}).click();
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.items.some(x=>x.id==='trade-e2e-reward'&&x.wearGrade===3)),
+      'Bartered exact skin must survive a complete iPhone browser reload');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
