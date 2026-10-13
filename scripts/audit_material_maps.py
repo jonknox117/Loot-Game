@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Visual and semantic QA for all 24 weapon material maps.
+"""Visual and semantic QA for all live weapon material maps.
 
 Verify every known reference point is inside the source silhouette and has the
 expected material category. Draw an all-weapon contact sheet for visual review.
@@ -21,9 +21,16 @@ def audit(output=None):
     items,profiles=source_files()
     expected=set(profiles)
     actual=set(landmarks.get('weapons',{}))
-    if expected!=actual:
-        raise AssertionError('Each master needs landmarks. Missing: '+
-            str(sorted(expected-actual))+' extra: '+str(sorted(actual-expected)))
+    if actual - expected:
+        raise AssertionError('Landmarks for unknown masters: ' + str(sorted(actual-expected)))
+    # New images can be staged with conservative OTHER-only maps; a released,
+    # reviewed material profile must instead have owner-chosen semantic anchors.
+    missing = expected - actual
+    if any(profiles[slug]['wear'].get('reviewed') or
+           profiles[slug]['wear'].get('reviewStatus') != 'unreviewed-draft'
+           for slug in missing):
+        raise AssertionError('Only unreviewed new masters may lack landmarks: ' +
+                             str(sorted(missing)))
     count=0
     exceptions=[]
     blocks=[]
@@ -41,7 +48,7 @@ def audit(output=None):
         verify_pixels(material,silhouette)
         counts={k:material.getchannel(c).histogram()[255] for k,c in
           [('metal','R'),('wood','G'),('other','B')]}
-        for label,x,y in landmarks['weapons'][slug]:
+        for label,x,y in landmarks['weapons'].get(slug, []):
             count+=1
             ix=min(1599,int(x*1600))
             iy=min(799,int(y*800))
@@ -57,7 +64,10 @@ def audit(output=None):
         overlay.putalpha(overlay.getchannel('A').point(lambda v:int(v*.42)))
         mixed=Image.alpha_composite(plain,overlay)
         blocks.append((slug,plain.convert('RGB'),mixed.convert('RGB'),counts))
-    if count<48:raise AssertionError('Too few independent reference points')
+    if count < min(48, 2 * len(actual)):
+        raise AssertionError('Too few independent reference points')
+    if missing:
+        print('UNREVIEWED new masters still need semantic anchors:', ', '.join(sorted(missing)))
     print('PASS:',len(items),'complete silhouettes,',count,
       'human-selected semantic landmarks, 3 mutually exclusive materials')
     if output:
