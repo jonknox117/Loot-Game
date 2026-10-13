@@ -182,6 +182,76 @@ test('Arsenal Case matches dynamically registered base weapons and ten owner-app
     ['SPAS-12','Blood Thirsty',3,1100,'🔫'],
     ['AWP','Crimson Delight',4,4200,'🎯']]);
 });
+test('Official 25th weapon uses uploaded transparent double barrel and wear maps',()=>{
+  const g=boot();
+  const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
+  const weapon='Double-Barrel Shotgun',slug='double-barrel-shotgun';
+  assert(MASTER_COUNT>=25,'The original double barrel is the 25th weapon');
+  assert.equal(manifest.items.length,MASTER_COUNT);
+  assert.equal(manifest.items[24].weapon,weapon);
+  assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
+  const entry=manifest.items.find(x=>x.weapon===weapon);
+  assert(entry,'New official shotgun is absent from catalog');
+  assert.equal(entry.id,slug+'--base');
+  assert.equal(entry.modelSlug,slug);
+  assert.equal(entry.kind,'weapon');
+  assert.equal(entry.tier,2);
+  assert.equal(entry.baseValue,90);
+  assert.equal(entry.skin,null);
+  assert.equal(entry.finish,null);
+  assert.equal(entry.hasCosmeticSkin,false);
+  assert.equal(entry.sourceType,'user-supplied-original-image');
+  assert.equal(entry.renderMode,'transparent-webp-file');
+  assert.equal(entry.sourceImage,'assets/weapon-sources/'+slug+'-original.png');
+  const uploaded=fs.readFileSync(path.join(root,entry.sourceImage));
+  assert.equal(uploaded.toString('ascii',1,4),'PNG','Original source should stay an unmodified PNG');
+  const catalog=JSON.parse(g.run('JSON.stringify(window.LootHubWeaponCatalog.catalog)'));
+  assert.equal(catalog.length,MASTER_COUNT);
+  assert.deepEqual(catalog[24],[weapon,2,90,'🔫']);
+  assert.equal(g.run('window.LootHubSkinLines.modelSlugs["Double-Barrel Shotgun"]'),slug);
+  for(const [view,width] of [['reel',400],['inventory',800],['inspect',1600]]){
+    const file='assets/renders/masters/'+slug+'-neutral-'+width+'.webp';
+    const data=fs.readFileSync(path.join(root,file));
+    assert.equal(data.toString('ascii',0,4),'RIFF');
+    assert.equal(data.toString('ascii',8,12),'WEBP');
+    const art=g.run('visualArt({kind:"weapon",weapon:"Double-Barrel Shotgun",tier:2,base:90},'+JSON.stringify(view)+')');
+    assert(art.includes('data-weapon-model="'+weapon+'"'));
+    assert(art.includes('data-resolution="'+width+'"'));
+    assert(art.includes(slug+'-neutral-'+width+'.webp'));
+    assert(art.includes('data-art-status="base"'));
+    assert(!art.includes('data-finish='));
+  }
+  const masks=['assets/skin-lines/materials/'+slug+'--silhouette-1600.png',
+    'assets/skin-lines/materials/'+slug+'--material-1600.png',
+    'assets/skin-lines/masks/'+slug+'--paint-main-1600.png'];
+  for(const filename of masks){
+    const bytes=fs.readFileSync(path.join(root,filename));
+    assert.equal(bytes.toString('hex',0,8),'89504e470d0a1a0a',
+      'Wear map must be a native full-resolution PNG: '+filename);
+  }
+  const maskPath=g.run('window.LootHubWearMaterials.materialPath("Double-Barrel Shotgun")');
+  assert(maskPath.endsWith(slug+'--material-1600.png'));
+  assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
+  assert.equal(g.run('approvedSkins.length'),10);
+  assert(g.run('cases()').includes('Double-Barrel Shotgun'));
+  assert(g.run('cases()').includes(MASTER_COUNT+' base weapons'));
+  assert(!g.run('cases()').includes('Blackout Case'));
+  assert(!g.run('cases()').includes('Damascus Case'));
+  // Test actual loot generation at a rarity and random index that selects the
+  // newly appended item without needing a hard-coded drop table.
+  const all=JSON.parse(g.run('JSON.stringify(dropCatalog)'));
+  assert.equal(all.filter(x=>x.weapon===weapon).length,1);
+  assert.deepEqual(all.slice(-1).map(x=>x.skin),['Crimson Delight']);
+  const fresh=boot();
+  fresh.run('s.items.push({id:"double-barrel-25",kind:"weapon",weapon:"Double-Barrel Shotgun",tier:2,base:90,wearGrade:2});go("Inventory")');
+  assert(fresh.run('inventory()').includes('Double-Barrel Shotgun'));
+  assert(fresh.run('enhancedMarket()').includes('Double-Barrel Shotgun')||
+    fresh.run('renderMarketOwnedResults()').includes('Double-Barrel Shotgun'),
+    'Owned double barrel should be eligible for trading');
+  fresh.run('save()');
+  const reload=boot(fresh.store);
+  assert(reload.state().items.some(x=>x.id==='double-barrel-25'&&x.weapon===weapon));
+});
 test('All active weapon masters resolve to neutral WebP art only',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
   assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
@@ -1884,7 +1954,7 @@ test('0.5.4 wear metadata follows every context while catalog templates, cases a
     const html=g.run('visualArt('+JSON.stringify(item)+','+JSON.stringify(context)+')');
     assert(html.includes('data-wear-grade="4"'));
     assert(html.includes('data-wear-seed="worn-glock"'));
-    assert(html.includes('glock-18-neutral-1600.webp'));
+    assert(html.includes('glock-18-neutral-'+(context==='inspect'?1600:context==='reel'?400:800)+'.webp'));
     assert(!html.includes('data-finish='));
   }
   const pristine=g.run('visualArt('+JSON.stringify({...item,wearGrade:0})+',"inventory")');
@@ -2103,7 +2173,7 @@ test('All registered weapons have anchored semantic profiles, preserving legacy 
  for(const slug of slugs){
    const profile=p.weapons[slug],points=anchors.weapons[slug];
    assert(profile&&profile.wear,'Missing material profile '+slug);
-   assert(['refined-draft','owner-reviewed'].includes(profile.wear.reviewStatus));
+   assert(['unreviewed-draft','refined-draft','owner-reviewed'].includes(profile.wear.reviewStatus));
    assert.equal(profile.wear.reviewed,profile.wear.reviewStatus==='owner-reviewed');
    assert(points.length>=2,'Need at least two visible source reference landmarks for '+slug);
    for(const [kind,x,y] of points){

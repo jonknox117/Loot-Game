@@ -1,4 +1,23 @@
-# LootHub — Curated Arsenal (Material Map Refinement 0.5.5c)
+# LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
+
+## 25th official weapon: Double-Barrel Shotgun
+
+The **Double-Barrel Shotgun** is a new individually obtainable **Rare** base
+weapon (90-coin base value). Its 2172×724 source is the owner's exact transparent
+uploaded PNG, stored at `assets/weapon-sources/double-barrel-shotgun-original.png`.
+The standard 1600×800, 800×400 and 400×200 transparent WebPs preserve its
+original silhouette and orientation, without stretching or invented paint.
+
+It appears in the existing Arsenal Case (no separate shotgun case), inventory,
+opening reels and marketplace. The existing 24 weapons and ten personally approved
+skins remain unchanged; all five original rarity tiers retain their probabilities.
+
+The new `double-barrel-shotgun` material/silhouette/coating masks are used
+**only for condition-based wear**. Metal barrels and engraved receiver, walnut
+stock and fore-end, and the buttpad are conservatively mapped. The new profile
+is an unreviewed draft for fine-detail wear boundaries, with seven audited
+metal/wood/other reference points. Procedural skin generation remains disabled.
+
 
 **October 2026 update — procedural skin cases retired.** The Blackout and Damascus
 cases and their generated weapon art are no longer part of the game. Material,
