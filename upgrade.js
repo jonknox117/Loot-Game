@@ -910,8 +910,8 @@ function visualArt(item,context='inventory') {
   // photographs; no re-rendered SVG or generated replacement. The open pose is
   // used only in opening/reveal UI, while shop, inventory and trade stay sealed.
   if(item&&item.kind==='case'&&(!item.caseId||item.caseId==='arsenal')){
-    const pose=context==='open'?'open':'closed';
-    const pixelSize=context==='inspect'||context==='open'?1254:context==='reel'?400:800;
+    const pose=context==='open'||context==='open-small'?'open':'closed';
+    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
     const src='./assets/cases/arsenal-case-'+pose+'-'+pixelSize+'.webp';
     return '<div class="art weapon-art arsenal-case-image arsenal-case-'+pose+'" data-art-status="owner-supplied-case"'+
       ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
@@ -921,8 +921,8 @@ function visualArt(item,context='inventory') {
   // Exact owner-supplied Cartel chest: closed for trading/shop/inventory and
   // open ONLY on the final reward display. No spinning-reel chest overlay.
   if(item&&item.kind==='case'&&item.caseId==='cartel'){
-    const pose=context==='open'?'open':'closed';
-    const pixelSize=context==='inspect'||context==='open'?1254:context==='reel'?400:800;
+    const pose=context==='open'||context==='open-small'?'open':'closed';
+    const pixelSize=context==='open-small'?400:context==='inspect'||context==='open'?1254:context==='reel'?400:800;
     const src='./assets/cases/cartel-case-'+pose+'-'+pixelSize+'.webp';
     return '<div class="art weapon-art cartel-crate cartel-case-image cartel-case-'+pose+'" data-art-status="owner-supplied-cartel-case"'+
       ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
