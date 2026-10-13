@@ -876,34 +876,8 @@ function enhancedPortfolio(){
   '</div><p class="muted tiny">All recorded events remain in the local save and exported backup; the journal displays the most recent 50.</p></section>';
 }
 // Exactly one neutral master per model. Retired finishes are never displayed.
-const lootHubNeutralModels=Object.freeze({
-  'Butterfly Knife':'butterfly-knife',
-  '12 Gauge Pump Shotgun':'pump-shotgun',
-  'Desert Eagle':'desert-eagle',
-  'Tactical Machete':'machete',
-  'Colt .45 Revolver':'colt-45-revolver',
-  'MP5':'mp5',
-  'MAC-10':'mac-10',
-  'Tec-9':'tec-9',
-  'Tactical Tomahawk':'tactical-tomahawk',
-  'SPAS-12':'spas-12',
-  'M60':'m60',
-  'RPG-7':'rpg-7',
-  'M1911':'m1911',
-  'M1 Garand':'m1-garand',
-  'Kar98k':'kar98k',
-  'Thompson SMG':'thompson-smg',
-  'FN SCAR-L':'fn-scar-l',
-  'FN FAL':'fn-fal',
-  'M134 Minigun':'m134-minigun'
-});
-const lootHubOriginalBaseMasters=Object.freeze({
-  'Glock-18':'assets/renders/masters/glock-18-neutral-1600.webp',
-  'AK-47':'assets/renders/masters/ak-47-neutral-1600.webp',
-  'AWP':'assets/renders/masters/awp-neutral-1600.webp',
-  'M4A4':'assets/renders/masters/m4a4-neutral-1600.webp',
-  'Karambit':'assets/renders/masters/karambit-neutral-1600.webp'
-});
+const lootHubNeutralModels=window.LootHubWeaponCatalog.neutralModels;
+const lootHubOriginalBaseMasters=window.LootHubWeaponCatalog.fileMasters;
 function visualArt(item,context='inventory') {
   const safeAttr=value=>String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const size=context==='inspect'?'1600':context==='reel'?'400':'800';
@@ -939,7 +913,7 @@ function visualArt(item,context='inventory') {
     }
     const master=lootHubOriginalBaseMasters[item.weapon];
     if(master){
-      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="1600" data-art-status="base"'+wearMeta+'>'+
+      return '<div class="art weapon-art master-raster neutral-master" data-weapon-model="'+safeAttr(item.weapon)+'" data-resolution="'+size+'" data-art-status="base"'+wearMeta+'>'+
         '<img src="./'+master+'" alt="'+safeAttr(item.weapon)+' base weapon" decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
     }
     // Legacy retired weapon models from old saves remain accessible, never skinned.

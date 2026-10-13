@@ -17,8 +17,12 @@ PROLOGUE = "window.LootHubPaintProfiles = Object.freeze("
 
 def render():
     data = json.loads(SOURCE.read_text("utf-8"))
-    if data.get("schemaVersion") != 1 or len(data.get("weapons", {})) != 24:
-        raise ValueError("Expected 24 mask profiles and schema version 1")
+    if data.get('schemaVersion') != 1 or not isinstance(data.get('weapons'), dict):
+        raise ValueError('Invalid material-profile schema')
+    manifest = json.loads((ROOT / 'assets/manifest.json').read_text('utf-8'))
+    slugs = [item.get('modelSlug') or item['id'].removesuffix('--base') for item in manifest['items']]
+    if not slugs or len(set(slugs)) != len(slugs) or set(slugs) != set(data['weapons']):
+        raise ValueError('Profiles must match every unique manifest weapon')
     for slug, item in data["weapons"].items():
         wear = item.get("wear")
         if not isinstance(wear, dict):
