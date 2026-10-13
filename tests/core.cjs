@@ -475,7 +475,7 @@ test('All four newly approved cosmetics have real WebP art and survive save migr
 test('October five original skins load with valid transparent WebP in every view and are obtainable and tradeable',()=>{
   const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/manifest.json'),'utf8'));
   assert.equal(manifest.approvedSkins.length,15);
-  assert.equal(manifest.skinPipeline.activeSkinCount,10);
+  assert.equal(manifest.skinPipeline.activeSkinCount,15);
   assert.equal(manifest.neutralMasterPipeline.baseModelCount,MASTER_COUNT);
   assert.deepEqual(JSON.parse(boot().run('JSON.stringify(odds)')),[70,20,7.5,2,.5]);
   const added=manifest.approvedSkins.slice(5,10);
