@@ -781,6 +781,65 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(refined.every(x=>x.canRust===(x.wanted==='metal')),
       'No metal oxidation should be allowed on wood, polymer or protected optics');
     assert(errors.length===0,'Material map refinements produced browser errors: '+errors.join('; '));
+    // Cartel Case: all five original assets must load, drop pool must be separate
+    // from Arsenal, and sealed cases must survive the live mobile purchase flow.
+    const cartelArt=await page.evaluate(async()=>{
+      const out=[],pool=cartelCatalog;
+      for(const item of pool){
+        const source=window.LootHubSkinArt?.[item.weapon+'|Cartel'];
+        const node=document.createElement('div');
+        node.innerHTML=visualArt({...item,id:'smoke-'+item.tier,wearGrade:0},'inspect');
+        const img=node.querySelector('.approved-skin > img');
+        let ok=false,alpha=255;
+        if(img){
+          try{
+            await img.decode();
+            const cv=document.createElement('canvas');cv.width=2;cv.height=2;
+            const ctx=cv.getContext('2d');ctx.drawImage(img,0,0);
+            alpha=ctx.getImageData(0,0,1,1).data[3];
+            ok=img.naturalWidth>=1500&&alpha===0&&
+              source&&['400','800','1600'].every(size=>source[size]?.length>1000);
+          }catch(_){}
+        }
+        out.push({name:item.weapon,tier:item.tier,ok:!!ok,alpha});
+      }
+      return {out,masterCount:catalog.length,arsenal:dropCatalog.length,market:allMarketCatalog.length,
+        casePrice:cartelCase.casePrice};
+    });
+    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===40,
+      'Cartel must not change the 25-master Arsenal drop pool');
+    assert(cartelArt.casePrice===75,'Cartel Case price must be 75 coins');
+    assert(cartelArt.out.length===5&&cartelArt.out.every(x=>x.ok),
+      'Cartel artwork must be transparent high-resolution original assets: '+JSON.stringify(cartelArt.out));
+    await page.evaluate(()=>{
+      s.coins=Math.max(s.coins,350);
+      save();
+      go('Cases');
+    });
+    assert(await page.getByRole('button',{name:'Buy Cartel Case'}).count()===1,
+      'Cartel case must be purchasable, with its own shop tile');
+    await page.getByRole('button',{name:'Buy Cartel Case'}).click();
+    const cartelOwned=await page.evaluate(()=>s.items.find(x=>x.kind==='case'&&x.caseId==='cartel'));
+    assert(cartelOwned&&cartelOwned.paid===75,
+      'Cartel purchase must create one 75-coin sealed case');
+    assert((await page.locator('.dialog').textContent()).includes('Cartel Case'),
+      'Purchased Cartel case must be labeled distinctly from Arsenal');
+    await page.getByRole('button',{name:'Open case'}).click();
+    const cartelSaved=await page.evaluate(()=>s.items.find(x=>x.kind==='skin'&&x.skin==='Cartel'));
+    assert(cartelSaved&&cartelSaved.wearGrade>=0&&cartelSaved.wearGrade<=4,
+      'Cartel drop must save as an approved skin with its own persistent wear grade');
+    assert(cartelArt.out.some(x=>x.name===cartelSaved.weapon&&x.tier===cartelSaved.tier),
+      'Cartel reel awarded a foreign or wrongly-tiered item');
+    assert(await page.locator('#track .tile').count()===48,
+      'Cartel opening must have the normal 48-item animation');
+    await page.getByRole('button',{name:'Skip animation'}).click();
+    assert((await page.locator('.dialog').textContent()).includes(cartelSaved.weapon+' | Cartel'),
+      'Cartel reveal must match the committed prize');
+    await page.getByRole('button',{name:'Keep item'}).click();
+    await page.reload({waitUntil:'load'});
+    assert((await page.evaluate((id)=>s.items.some(x=>x.kind==='skin'&&x.skin==='Cartel'&&x.id===id),cartelSaved.id))===true,
+      'Cartel reward must persist through a full page reload');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
