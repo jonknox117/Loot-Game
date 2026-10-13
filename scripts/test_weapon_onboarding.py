@@ -38,7 +38,7 @@ def main():
                     assert rendered.getchannel('A').getextrema()[0] == 0
             with Image.open(STAGING / 'material-1600.png') as material:
                 assert material.size == (1600, 800)
-                assert material.getpixel((800, 260))[:3] == (0, 0, 255)
+                assert material.getpixel((800, 360))[:3] == (0, 0, 255)
             assert (STAGING / 'material-review.png').is_file()
             denied = subprocess.run(cmd + ['--publish'], cwd=ROOT,
                                     capture_output=True, text=True)
