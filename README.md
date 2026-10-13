@@ -4,9 +4,9 @@
 
 The **Arsenal Case** uses the user's two original case photographs, not the former
 placeholder SVG. The closed case is displayed on Home, Cases, in owned inventory,
-in marketplace cards and in item inspection. During opening the matching **open**
-case sits above the reel; when the saved reward is revealed, the weapon floats
-visually over the open case.
+in marketplace cards and in item inspection. The scrolling reel stays
+unobstructed; when the saved reward is revealed, the weapon floats visually
+over the matching **open** case.
 
 The photographed designs and lettering were preserved. Only the white source
 background was removed and three transparent WebP exports were made per pose:
@@ -19,6 +19,16 @@ material-aware wear mapping. **Cartel retains its own dedicated case artwork.**
 
 
 ## Cartel Case — five exclusive original skins
+
+The closed and opened Cartel chest artwork are the owner's two supplied
+photographs (olive metal with the crown/skull emblem), not the former placeholder
+SVG. They are carefully cut out onto transparent square canvases without changing
+the branding or chest geometry, then published at **400, 800 and 1254px** as
+`assets/cases/cartel-case-{closed,open}-{400,800,1254}.webp`.
+The sealed chest appears in the Cases shop, purchased inventory, marketplace and
+inspection. The reel remains free of chest props and glow. **Only the final
+Cartel reward reveal** shows the won skin floating above its open Cartel chest,
+using the same saved-result, rarity-light and sound effects as Arsenal.
 
 The live **Cartel Case** is separate from the existing 25-weapon Arsenal Case.
 It costs **75 coins** and contains exactly five owner-supplied skin designs,
