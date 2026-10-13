@@ -100,8 +100,9 @@ assert(future.LootHubCaseRegistry.chestImage('gallery-test','open',1254)
 assert(future.LootHubCaseRegistry.skinImage({kind:'skin',weapon:'Mosin-Nagant',skin:'Gallery'},1600)
  .endsWith('kar98k--gallery-test-1600.webp'));
 assert.equal(future.LootHubCollectionCatalog.length,5);
-assert.equal(future.LootHubCollectionCatalog[4].id,'gallery-test-v1');
-assert.equal(future.LootHubCollectionCatalog[4].items.length,5);
+const gallery=future.LootHubCollectionCatalog.find(c=>c.id==='gallery-test-v1');
+assert(gallery,'A future registered collection appears automatically');
+assert.equal(gallery.items.length,5);
 const draft=boot(JSON.stringify({...fixture,id:'gallery-draft',released:false,collectionId:'gallery-draft-v1'})+',');
 assert.equal(draft.LootHubCaseRegistry.pool('gallery-draft'),null);
 assert.equal(draft.LootHubCaseRegistry.priceFor('gallery-draft'),null);
