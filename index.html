@@ -155,8 +155,8 @@ function cartelSection(){
   '<div><div class="section-eyebrow">NEW COLLECTION · 002</div><h2>Cartel Case</h2>'+
   '<p class="muted">Five original skull-and-tally finishes. One exclusive skin at every rarity.</p>'+
   '<div class="price">'+cartelCase.casePrice+' coins</div>'+
-  '<div class="row"><button onclick="buyCartelCase()">Buy one sealed case</button>'+
-  '<button onclick="previewCartelCase()">View five skins</button></div>'+multiPurchaseControl('cartel')+'</div></div>'+
+  multiPurchaseControl('cartel')+'<div class="row"><button onclick="buyCartelCase()">Buy one sealed case</button>'+
+  '<button onclick="previewCartelCase()">View five skins</button></div>'+'</div></div>'+
   '<div class="cartel-odds">'+cartelCatalog.map(x=>
    '<div class="cartel-reward"><div class="tag '+cls(tiers[x.tier])+'">'+tiers[x.tier]+' · '+odds[x.tier]+'%</div>'+
    visualArt(x)+'<strong>'+escapeHTML(x.weapon+' | Cartel')+'</strong></div>').join('')+'</div></section>';
