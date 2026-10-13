@@ -906,6 +906,18 @@ function visualArt(item,context='inventory') {
       ' data-paint-mask="'+safeAttr(window.LootHubWearMaterials.maskPath(item.weapon))+'"'+
       ' data-material-mask="'+safeAttr(window.LootHubWearMaterials.materialPath(item.weapon))+'"'+
       ' data-silhouette-mask="'+safeAttr(window.LootHubWearMaterials.silhouettePath(item.weapon))+'"':''):'';
+  // Owner-supplied Arsenal Case: exact artwork, alpha-cut from the two uploaded
+  // photographs; no re-rendered SVG or generated replacement. The open pose is
+  // used only in opening/reveal UI, while shop, inventory and trade stay sealed.
+  if(item&&item.kind==='case'&&(!item.caseId||item.caseId==='arsenal')){
+    const pose=context==='open'?'open':'closed';
+    const pixelSize=context==='inspect'||context==='open'?1254:context==='reel'?400:800;
+    const src='./assets/cases/arsenal-case-'+pose+'-'+pixelSize+'.webp';
+    return '<div class="art weapon-art arsenal-case-image arsenal-case-'+pose+'" data-art-status="owner-supplied-case"'+
+      ' data-case-pose="'+pose+'" data-resolution="'+pixelSize+'">'+
+      '<img src="'+src+'" alt="'+(pose==='open'?'Opened':'Sealed')+' Arsenal Case, original Loot Hub artwork"'+
+      ' decoding="async" loading="'+(context==='inventory'?'lazy':'eager')+'"></div>';
+  }
   // Unique Cartel crate illustration: separate from the original Arsenal Case.
   if(item&&item.kind==='case'&&item.caseId==='cartel'){
     return '<div class="art weapon-art cartel-crate"><svg viewBox="0 0 360 190" role="img" aria-label="Sealed Cartel Case">'+
