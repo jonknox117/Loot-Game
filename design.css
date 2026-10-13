@@ -1020,3 +1020,49 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .collection-tile-art{height:87px}
  .collection-tile-art .weapon-art{height:80px!important}
 }
+
+/* QoL 0.6.2: no nested dialog scrolling. The full backdrop scrolls only
+   when content genuinely cannot fit in the viewport (e.g. large catalogs). */
+.modal{
+ display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;
+ overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+ padding:12px 12px calc(14px + env(safe-area-inset-bottom));
+}
+.modal .dialog,.dialog:has(.multi-spin-screen),.dialog:has(.multi-winnings){
+ max-height:none;overflow:visible;margin:auto 0;min-width:0;
+}
+.dialog .cartel-collection,.dialog .multi-case-choices,.dialog .offer-history{
+ max-height:none;overflow:visible;
+}
+.multi-case-choices{display:grid;gap:7px}
+.multi-case-group{
+ display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;
+ border:1px solid #394e66;background:#192638;min-width:0;
+}
+.multi-case-details{min-width:0;flex:1;display:grid;gap:3px;font-size:12px}
+.multi-case-details strong{overflow-wrap:anywhere}
+.multi-case-counter{display:flex;align-items:center;gap:6px;flex:none}
+.multi-case-counter span{min-width:16px;text-align:center;font-variant-numeric:tabular-nums}
+.dialog .multi-case-counter button{padding:5px 9px;min-width:36px;min-height:38px}
+.multi-shop-actions{display:flex;flex-wrap:wrap;gap:8px}
+.multi-shop-actions button{flex:1;min-width:106px}
+.multi-shop-buy small{align-self:center;font-size:11px}
+.multi-buy-receipt .row{display:flex;gap:9px;flex-wrap:wrap}
+@media(max-width:700px){
+ .modal{padding:8px 8px calc(12px + env(safe-area-inset-bottom))}
+ .modal .dialog{padding:14px;border-radius:14px}
+ .multi-picker-head{flex-wrap:wrap}
+ .multi-picker-head .row{margin-top:0;flex-wrap:nowrap}
+ .multi-shop-buy{align-items:end;justify-content:stretch}
+ .multi-shop-buy label{flex:none}
+ .multi-shop-actions{flex:1;min-width:0}
+ .multi-shop-actions button{min-width:100px;padding:9px 10px}
+ .multi-shop-buy small{flex-basis:100%;text-align:left}
+ .dialog .multi-picker-actions,.dialog > .row:last-child,
+ .dialog .multi-winnings > .row:last-child,
+ .dialog .reward-reveal > .row:last-child{
+  position:sticky;bottom:0;z-index:4;
+  background:linear-gradient(180deg,rgba(19,30,46,.96),#121d2d);
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom));
+ }
+}
