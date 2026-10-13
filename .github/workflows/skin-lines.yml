@@ -1,4 +1,4 @@
-name: Build universal weapon skin lines
+name: Verify weapon wear maps and neutral masters
 on:
   push:
     branches: [main, feature/universal-skin-lines, wear-material-map-refinement-0.5.5c]
@@ -32,7 +32,7 @@ jobs:
           python scripts/export_paint_profiles.py --check
           python scripts/build_material_maps.py
           python scripts/build_material_maps.py --check
-      - name: Generate and verify all neutral-master-derived variants
+      - name: Verify neutral masters and explicitly disabled procedural skin lines
         run: |
           python scripts/build_skin_lines.py --self-test
           python scripts/build_skin_lines.py
@@ -58,6 +58,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A assets/weapon-catalog.js assets/skin-lines/paint-profile-data.js assets/skin-lines/line-data.js assets/skin-lines/masks assets/skin-lines/materials assets/renders/
           if ! git diff --cached --quiet; then
-            git commit -m 'Build transparent universal skin-line assets [skip ci]'
+            git commit -m 'Sync neutral masters and wear maps [skip ci]'
             git push origin HEAD:${GITHUB_REF_NAME}
           fi

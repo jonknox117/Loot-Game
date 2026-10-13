@@ -67,106 +67,24 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
 
-    // Paid Blackout case: test in an isolated mobile browser context so the
-    // existing new-account economy smoke scenario remains untouched.
-    const paidPage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
-    await paidPage.goto(url,{waitUntil:'load'});
-    await paidPage.getByRole('button',{name:'Cases',exact:true}).click();
-    assert(await paidPage.getByRole('button',{name:'Buy Blackout Case'}).count()===1,
-      'Paid Blackout case must be visible in the Cases store');
-    assert((await paidPage.locator('#main').textContent()).includes('5 weapon variants'),
-      'Blackout drop pool must remain limited to five guns');
-    await paidPage.locator('.item').filter({has:paidPage.getByRole('heading',{name:'Blackout Case',exact:true})}).getByRole('button',{name:'View collection'}).click();
-    assert(await paidPage.locator('.dialog .item').count()===5,
-      'Published Blackout collection must list five inspectable guns');
-    await paidPage.waitForFunction(()=>[...document.querySelectorAll('.dialog .universal-skin img')].length===5&&
-      [...document.querySelectorAll('.dialog .universal-skin img')].every(i=>i.complete&&i.naturalWidth>=800),
-      null,{timeout:15000});
-    await paidPage.getByRole('button',{name:'Close',exact:true}).last().click();
-    await paidPage.evaluate(()=>{for(let i=0;i<25;i++)clickEarn()});
-    await paidPage.getByRole('button',{name:'Buy Blackout Case'}).click();
-    await paidPage.getByRole('heading',{name:'Sealed Blackout Case',exact:true}).waitFor();
-    const bought=await paidPage.evaluate(()=>({coins:s.coins,items:s.items.map(x=>({
-      id:x.id,kind:x.kind,caseId:x.caseId,paid:x.paid}))}));
-    assert(bought.coins===0&&bought.items.length===1&&
-      bought.items[0].kind==='case'&&bought.items[0].caseId==='blackout'&&
-      bought.items[0].paid===25,'Paid Blackout case purchase must save a real sealed case');
-    await paidPage.getByRole('button',{name:'Open case'}).click();
-    await paidPage.getByRole('button',{name:'Skip animation'}).click();
-    await paidPage.waitForFunction(()=>{
-      const image=document.querySelector('.dialog .universal-skin img');
-      return image&&image.complete&&image.naturalWidth===1600;
-    },null,{timeout:15000});
-    const prize=await paidPage.evaluate(()=>({
-      name:s.items[0].weapon,skin:s.items[0].skin,kind:s.items[0].kind,
-      grade:s.items[0].wearGrade,openings:s.openings,coins:s.coins,
-      registered:window.LootHubSkinLines.isRegistered(s.items[0]),
-      id:s.items[0].id
+    // Only the Arsenal Case is live. The metal/wood/other maps are used
+    // solely for wear, not procedural collectible finishes or themed cases.
+    await page.getByRole('button',{name:'Cases',exact:true}).click();
+    const caseShop=await page.locator('#main').textContent();
+    assert(caseShop.includes('Arsenal Case'),'Arsenal Case must remain in the store');
+    assert(!caseShop.includes('Blackout Case')&&!caseShop.includes('Damascus Case'),
+      'Retired procedural cases must no longer be displayed');
+    assert(await page.getByRole('button',{name:'Buy Blackout Case'}).count()===0&&
+      await page.getByRole('button',{name:'Buy Damascus Case'}).count()===0,
+      'Retired cases must not remain purchasable');
+    const wearOnly=await page.evaluate(()=>({
+      lineCount:window.LootHubSkinLines.lines.length,
+      materialPath:window.LootHubWearMaterials.materialPath('AK-47'),
+      paintMask:window.LootHubWearMaterials.maskPath('AK-47')
     }));
-    assert(prize.kind==='skin'&&prize.skin==='Blackout'&&prize.registered&&
-      prize.coins===0&&prize.openings===1&&prize.grade>=0&&prize.grade<=4,
-      'Case opening must give a persistent real Blackout skin with actual artwork');
-    await paidPage.reload({waitUntil:'load'});
-    const persistence=await paidPage.evaluate(()=>({
-      id:s.items[0].id,skin:s.items[0].skin,coins:s.coins,openings:s.openings
-    }));
-    assert(persistence.id===prize.id&&persistence.skin==='Blackout'&&
-      persistence.coins===0&&persistence.openings===1,
-      'Blackout collectible, coins and openings must survive reload');
-    await paidPage.close();
-
-    // Damascus uses a different five-weapon roster and three independent
-    // material textures, but the same real paid-case inventory/opening flow.
-    const damascusPage=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
-    await damascusPage.goto(url,{waitUntil:'load'});
-    await damascusPage.getByRole('button',{name:'Cases',exact:true}).click();
-    assert(await damascusPage.getByRole('button',{name:'Buy Damascus Case'}).count()===1,
-      'Damascus Case should be purchasable from the Cases shop');
-    const dCard=damascusPage.locator('.item').filter({
-      has:damascusPage.getByRole('heading',{name:'Damascus Case',exact:true})
-    });
-    assert((await dCard.textContent()).includes('5 weapon variants'),'Damascus should include exactly five skins');
-    await dCard.getByRole('button',{name:'View collection'}).click();
-    assert(await damascusPage.locator('.dialog .item').count()===5,
-      'Damascus collection preview must include five guns');
-    await damascusPage.waitForFunction(()=>{
-      const images=[...document.querySelectorAll('.dialog .universal-skin img')];
-      return images.length===5&&images.every(i=>i.complete&&i.naturalWidth>=800&&
-        i.src.includes('/damascus/'));
-    },null,{timeout:18000});
-    await damascusPage.getByRole('button',{name:'Close',exact:true}).last().click();
-    await damascusPage.evaluate(()=>{for(let i=0;i<25;i++)clickEarn()});
-    await damascusPage.getByRole('button',{name:'Buy Damascus Case'}).click();
-    await damascusPage.getByRole('heading',{name:'Sealed Damascus Case',exact:true}).waitFor();
-    const dBought=await damascusPage.evaluate(()=>({
-      coins:s.coins,spent:s.spent,caseId:s.items[0]?.caseId,
-      paid:s.items[0]?.paid,kind:s.items[0]?.kind
-    }));
-    assert(dBought.coins===0&&dBought.spent===25&&dBought.caseId==='damascus'&&
-      dBought.paid===25&&dBought.kind==='case',
-      'Damascus Case must cost 25 coins and store a sealed case');
-    await damascusPage.getByRole('button',{name:'Open case'}).click();
-    await damascusPage.getByRole('button',{name:'Skip animation'}).click();
-    await damascusPage.waitForFunction(()=>{
-      const image=document.querySelector('.dialog .universal-skin img');
-      return image&&image.complete&&image.naturalWidth===1600&&image.src.includes('/damascus/');
-    },null,{timeout:18000});
-    const dPrize=await damascusPage.evaluate(()=>({
-      id:s.items[0]?.id,weapon:s.items[0]?.weapon,skin:s.items[0]?.skin,
-      skinLine:s.items[0]?.skinLine,grade:s.items[0]?.wearGrade,
-      openings:s.openings,registered:window.LootHubSkinLines.isRegistered(s.items[0])
-    }));
-    assert(['Glock-18','Colt .45 Revolver','AK-47','M1 Garand','Karambit'].includes(dPrize.weapon)&&
-      dPrize.skin==='Damascus'&&dPrize.skinLine==='damascus'&&dPrize.registered&&
-      dPrize.openings===1&&dPrize.grade>=0&&dPrize.grade<=4,
-      'Damascus opening must award one real, registered five-weapon cosmetic');
-    await damascusPage.reload({waitUntil:'load'});
-    const dSaved=await damascusPage.evaluate(()=>({
-      id:s.items[0]?.id,skin:s.items[0]?.skin,coins:s.coins,openings:s.openings
-    }));
-    assert(dSaved.id===dPrize.id&&dSaved.skin==='Damascus'&&dSaved.coins===0&&dSaved.openings===1,
-      'Damascus reward and payment must survive mobile reload');
-    await damascusPage.close();
+    assert(wearOnly.lineCount===0&&wearOnly.materialPath?.endsWith('--material-1600.png')&&
+      wearOnly.paintMask?.endsWith('--paint-main-1600.png'),
+      'Wear-material classification and coating masks must survive case removal');
 
     // 0.4.2: browsing is live on iPhone and stock must not reroll on reload.
     await page.getByRole('button', { name: 'Market', exact: true }).click();

@@ -3,6 +3,18 @@ const BACKUP_KEY='loothub-arsenal-alpha-v1-backup';
 function isApprovedSkin(item){
   return !!(item&&item.kind==='skin'&&(approvedSkins.some(a=>a[0]===item.weapon&&a[1]===item.skin)||window.LootHubSkinLines?.isRegistered(item)));
 }
+// Retired procedural collections no longer appear in shops or generate art.
+// Former sealed cases become regular Arsenal Cases with the same identity/value.
+// Former generated finishes become neutral weapons, retaining wear and item value.
+function isRetiredProceduralSkin(item){
+  return !!(item&&item.kind==='skin'&&
+    ((item.skinLine==='blackout'&&item.skin==='Blackout')||
+     (item.skinLine==='damascus'&&item.skin==='Damascus')));
+}
+function isRetiredProceduralCase(item){
+  return !!(item&&item.kind==='case'&&
+    (item.caseId==='blackout'||item.caseId==='damascus'));
+}
 function ensureMarketData(data){return window.LootHubMarketCore.ensureMarketState(data)}
 let saveFailure=false, saveConflict=false, recoveryRequired=false, lastPersistedRevision=null, lastPersistedSnapshot=null, saveRevisionSequence=0;
 function isSaveCurrent(){
@@ -40,7 +52,9 @@ function isValidSave(data) {
 function migrateLegacyFinishData(data){
   if(!data||typeof data!=='object')return data;
   const migrate=item=>{
-    if(!item||typeof item!=='object'||item.kind==='case')return;
+    if(!item||typeof item!=='object')return;
+    if(isRetiredProceduralCase(item)){delete item.caseId;return}
+    if(item.kind==='case')return;
     // Keep user-selected approved finish intact; retire only older unapproved skins.
     if(isApprovedSkin(item))return;
     if(item.kind==='skin'){
@@ -59,10 +73,13 @@ function migrateLegacyFinishData(data){
       delete item.float;
       delete item.pattern;
       delete item.stattrak;
+      delete item.skinLine;
     }
   };
   if(Array.isArray(data.items))data.items.forEach(migrate);
   if(Array.isArray(data.listings))data.listings.forEach(l=>migrate(l&&l.item));
+  if(data.market&&Array.isArray(data.market.npcListings))
+    data.market.npcListings.forEach(l=>migrate(l&&l.item));
   return data;
 }
 function loadGame(key) {
@@ -165,7 +182,7 @@ function safeUpload(data) {
       const approved=isApprovedSkin(item);
       const legacyWear=Number.isFinite(item.float)&&item.float>=0&&item.float<=1&&
         Number.isFinite(item.pattern)&&item.pattern>=0;
-      if(!approved&&!legacyWear)return false;
+      if(!approved&&!legacyWear&&!isRetiredProceduralSkin(item))return false;
     }
   }
   if(data.market!=null){
@@ -217,7 +234,7 @@ function safeUpload(data) {
       if(l.item.kind!=='case'&&(!Number.isInteger(l.item.tier)||l.item.tier<0||
          l.item.tier>4||!Number.isFinite(l.item.base)||l.item.base<=0||
          typeof l.item.weapon!=='string'||l.item.weapon.length>120))return false;
-      if(l.item.kind==='skin'&&!isApprovedSkin(l.item))return false;
+      if(l.item.kind==='skin'&&!isApprovedSkin(l.item)&&!isRetiredProceduralSkin(l.item))return false;
       listingIds.add(l.id);
       ids.add(l.item.id);
     }

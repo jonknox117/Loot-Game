@@ -1,5 +1,12 @@
 # LootHub — Curated Arsenal (Material Map Refinement 0.5.5c)
 
+**October 2026 update — procedural skin cases retired.** The Blackout and Damascus
+cases and their generated weapon art are no longer part of the game. Material,
+coating and silhouette maps now support wear and damage rendering only. Existing
+unopened retired cases become equivalent Arsenal Cases; former patterned skins
+become neutral versions of their weapons. All 10 separately approved custom
+skins remain available.
+
 **Playable:** https://jonknox117.github.io/Loot-Game/
 
 A mobile-first, browser-based collectible weapon and marketplace game. The collection contains **24 unskinned base weapon models and ten owner-approved collectible skins**. Future skins may enter only through the game owner's explicit selection and approval.
@@ -150,7 +157,7 @@ After comparing all **24 neutral master images** with their three-channel materi
 - `assets/skin-lines/material-landmarks.json` fixes **57 visible source-art reference points** across all 24 weapon models. The Python map audit fails if any known metal, wood or other point changes to the wrong material or becomes transparent.
 - `scripts/audit_material_maps.py --output tests/material-review-sheet.png` produces one contact sheet displaying every original weapon next to a color-coded material overlay. The `Build universal weapon skin lines` GitHub workflow runs this audit, uploads the review-sheet artifact and regenerates deterministic maps whenever the source changes.
 - AWP barrel oxidation is no longer wrongly suppressed by the optic's protection rectangle. The scope remains protected. SCAR-L central receiver is eligible metal again, without treating synthetic handguard sections as metal.
-- The browser's existing material-aware scratch/chip/rust renderer consumes the regenerated maps automatically. No new weapon or skin artwork, changes to saved wear grade, price, rarity or item identity. The first skin lines are **not** automatically released.
+- The browser's existing material-aware scratch/chip/rust renderer consumes the regenerated maps automatically. No new weapon or skin artwork, changes to saved wear grade, price, rarity or item identity. Procedural skin lines are **disabled**; material maps are for wear only.
 
 The visual comparison can be reviewed from the successful **Build universal weapon skin lines** GitHub Actions run on this branch: download the `material-map-review` artifact and inspect `material-review-sheet.png` before approving a material profile.
 
@@ -168,7 +175,7 @@ Five condition levels now render **different mixes of damage**, not a single uni
 - **Pristine:** the source image only. Lightly Worn focuses on fine abrasion. Field-Tested introduces finish damage; Heavily Worn adds chipped patches; Battle-Scarred has the densest finish breakup, grime and metal-only oxidation.
 - **Determinism and performance:** every mark remains stable for the item's saved ID and grade, clipped to the original WebP transparency. All 24 material/paint masks are shared via lazy cached 400×200 reads; overlays render only near the viewport. No new weapon/skin artwork, extra item IDs, rarity changes, valuation changes, or save migration.
 
-Material maps are still marked **unreviewed**, so 0.5.5c will visually inspect and refine their boundaries before owner-approved skin lines are released. Material-map and pixel-channel tests guard the rendering behavior, but draft boundaries can still require correction.
+Material maps are still marked **unreviewed**, so 0.5.5c will visually inspect and refine their boundaries before any further wear-mask refinement. Material-map and pixel-channel tests guard the rendering behavior, but draft boundaries can still require correction.
 
 ## Wear overhaul 0.5.5a — Complete silhouette and material maps
 
@@ -179,7 +186,7 @@ All 24 base masters now have two **generated, source-aligned 1600×800 PNG maps*
 
 Profiles for all 24 masters contain conservative normalized metal, wood, and polymer/other zones in `paint-profiles.json`. The generator (`scripts/build_material_maps.py`) uses the original full-resolution alpha, applies the explicit region priorities and makes the entire remainder safe **OTHER**. These are *initial machine-assisted drafts*, not visually approved per-pixel material annotations; `reviewed:false` remains until the relevant maps are reviewed and corrected. Wood, polymer and unknown are not rust-eligible. The previous paint-main PNG is still for finish/skin eligibility, never proof that a surface is metal.
 
-The browser API (`market/wear-materials.js`) loads the real material map on demand with a small cache. The app exposes its path on weapon art. Patch 0.5.5a created/verified these maps and the material API; Patch 0.5.5b now uses them for separate rendering passes. No new skin line has been released.
+The browser API (`market/wear-materials.js`) loads the real material map on demand with a small cache. The app exposes its path on weapon art. These masks now exist solely to support condition-based wear.
 
 To generate and validate: `python scripts/build_material_maps.py` then `python scripts/build_material_maps.py --check`. Weapon art, inventories, odds, values, condition grades and approved custom skins are unchanged.
 
