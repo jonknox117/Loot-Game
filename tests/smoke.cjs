@@ -874,8 +874,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();
       go('Cases');
     });
-    assert(await page.getByRole('button',{name:'Buy Cartel Case'}).count()===1,
-      'Cartel case must be purchasable, with its own shop tile');
+    assert(await page.locator('#multi-qty-cartel').count()===1&&
+      await page.locator('.cartel-section .multi-shop-actions button').count()===2,
+      'Cartel shop must support one to five sealed or instant-open purchases');
     const cartelShopArt=page.locator('.cartel-case-art .cartel-case-closed img');
     await cartelShopArt.waitFor({state:'visible',timeout:15000});
     await cartelShopArt.scrollIntoViewIfNeeded();
@@ -900,7 +901,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(chestShop.frameHeight>=230&&chestShop.fit==='contain'&&
       Math.min(chestShop.top,chestShop.bottom,chestShop.left,chestShop.right)>=-1,
       'Cartel shop chest must fit fully on iPhone: '+JSON.stringify(chestShop));
-    await page.getByRole('button',{name:'Buy Cartel Case'}).click();
+    await page.evaluate(()=>buyCartelCase()); // Keep the legacy single-case reel under test.
     const cartelOwned=await page.evaluate(()=>s.items.find(x=>x.kind==='case'&&x.caseId==='cartel'));
     assert(cartelOwned&&cartelOwned.paid===75,
       'Cartel purchase must create one 75-coin sealed case');
@@ -949,7 +950,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const beforeMulti=await page.evaluate(()=>({
       n:s.items.length,c:s.coins,opened:s.openings,spent:s.spent
     }));
-    await page.locator('.hero .multi-shop-buy button').click();
+    await page.locator('.hero .multi-shop-actions .primary').click();
     assert(await page.locator('.multi-lane').count()===5,'Five independent reels should spin together');
     assert(await page.locator('.multi-lane .tile').count()===70,
       'Multi-open should render fourteen lightweight preview tiles per reel');
@@ -996,8 +997,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();go('Inventory');
     });
     await page.getByRole('button',{name:'Open up to 5 cases'}).click();
-    assert(await page.locator('.multi-case-choice').count()===2);
-    assert(await page.locator('.multi-case-choice input:checked').count()===2);
+    assert(await page.locator('.multi-case-group').count()===2);
+    assert(JSON.stringify(await page.locator('.multi-case-counter span').allTextContents())==='["1","1"]',
+      'Case picker must display one selected per type without a scrolling checkbox list');
     await page.getByRole('button',{name:'Open 2 cases'}).click();
     assert(await page.locator('.multi-lane').count()===2);
     assert((await page.locator('.multi-lane-header').allTextContents()).some(x=>x.includes('Cartel')));
