@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build reusable skin-line WebPs from the actual 24 Loot Hub neutral masters."""
+"""Build reusable skin-line WebPs from the approved Loot Hub neutral masters."""
 import argparse,base64,io,json,re,shutil
 from pathlib import Path
 from PIL import Image,ImageChops,ImageDraw,ImageOps
@@ -202,7 +202,9 @@ def sources():
     return manifest['items'],definitions,profiles
 def build():
     items,defs,profiles=sources()
-    if len(items)!=24 or len(profiles)!=24:raise ValueError('24 profiles and 24 weapon masters required')
+    slugs=[item.get('modelSlug') or item['id'].removesuffix('--base') for item in items]
+    if not slugs or len(set(slugs))!=len(slugs) or set(slugs)!=set(profiles):
+        raise ValueError('Each unique weapon master must have exactly one material profile')
     (ROOT/'assets/skin-lines/line-data.js').write_text(
         '/* Generated from lines.json; do not edit. */\nwindow.LootHubSkinLineData = Object.freeze('+
         json.dumps(defs,separators=(',',':'))+');\n',encoding='utf-8')
