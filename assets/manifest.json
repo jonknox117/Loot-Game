@@ -2,9 +2,9 @@
   "schemaVersion": 3,
   "collectionId": "arsenal-001",
   "caseName": "Arsenal Case",
-  "catalogMode": "25-base-weapon-models-plus-ten-user-approved-skins",
-  "assetStatus": "25-original-neutral-masters-and-ten-owner-approved-skins",
-  "notes": "25 distinct neutral base weapon masters and ten hand-approved cosmetic skins. The 25th original is the owner-supplied transparent Double-Barrel Shotgun. Its silhouette and original color are preserved; wear masks remain separate from cosmetic artwork. Existing weapon art, inventories, rarity weights and cases remain unchanged.",
+  "catalogMode": "25-base-weapon-models-plus-ten-arsenal-and-five-cartel-skins",
+  "assetStatus": "25-original-neutral-masters-and-fifteen-owner-approved-skins",
+  "notes": "25 neutral base weapons, ten original Arsenal skins, plus five exclusive Cartel Case skins. Cartel Case costs 75 coins and uses original tier odds. Existing Arsenal drops and prices are unchanged; all supplied Cartel images retain their designs as transparent WebP assets.",
   "caseOddsPercent": [
     70,
     20,
@@ -227,6 +227,106 @@
       "inventory": "assets/skins/awp--crimson-delight.js#800",
       "inspection": "assets/skins/awp--crimson-delight.js#1600",
       "note": "User-supplied original art. Distinct collectible from original neutral weapon. Transparent WebP at native-as-possible 400/800/1600 display width."
+    },
+    {
+      "id": "rpg-7--cartel",
+      "kind": "skin",
+      "weapon": "RPG-7",
+      "skin": "Cartel",
+      "displayName": "RPG-7 | Cartel",
+      "tier": 0,
+      "rarity": "Common",
+      "baseValue": 40,
+      "approved": true,
+      "caseId": "cartel",
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/rpg-7.js",
+      "finishArt": "assets/skins/rpg-7--cartel.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/rpg-7--cartel.js#400",
+      "inventory": "assets/skins/rpg-7--cartel.js#800",
+      "inspection": "assets/skins/rpg-7--cartel.js#1600",
+      "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
+    },
+    {
+      "id": "12-gauge-pump-shotgun--cartel",
+      "kind": "skin",
+      "weapon": "12 Gauge Pump Shotgun",
+      "skin": "Cartel",
+      "displayName": "12 Gauge Pump Shotgun | Cartel",
+      "tier": 1,
+      "rarity": "Uncommon",
+      "baseValue": 110,
+      "approved": true,
+      "caseId": "cartel",
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/pump-shotgun.js",
+      "finishArt": "assets/skins/12-gauge-pump-shotgun--cartel.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/12-gauge-pump-shotgun--cartel.js#400",
+      "inventory": "assets/skins/12-gauge-pump-shotgun--cartel.js#800",
+      "inspection": "assets/skins/12-gauge-pump-shotgun--cartel.js#1600",
+      "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
+    },
+    {
+      "id": "ak-47--cartel",
+      "kind": "skin",
+      "weapon": "AK-47",
+      "skin": "Cartel",
+      "displayName": "AK-47 | Cartel",
+      "tier": 2,
+      "rarity": "Rare",
+      "baseValue": 350,
+      "approved": true,
+      "caseId": "cartel",
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/renders/masters/ak-47-neutral-1600.webp",
+      "finishArt": "assets/skins/ak-47--cartel.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/ak-47--cartel.js#400",
+      "inventory": "assets/skins/ak-47--cartel.js#800",
+      "inspection": "assets/skins/ak-47--cartel.js#1600",
+      "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
+    },
+    {
+      "id": "desert-eagle--cartel",
+      "kind": "skin",
+      "weapon": "Desert Eagle",
+      "skin": "Cartel",
+      "displayName": "Desert Eagle | Cartel",
+      "tier": 3,
+      "rarity": "Super Rare",
+      "baseValue": 1050,
+      "approved": true,
+      "caseId": "cartel",
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/desert-eagle.js",
+      "finishArt": "assets/skins/desert-eagle--cartel.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/desert-eagle--cartel.js#400",
+      "inventory": "assets/skins/desert-eagle--cartel.js#800",
+      "inspection": "assets/skins/desert-eagle--cartel.js#1600",
+      "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
+    },
+    {
+      "id": "tactical-machete--cartel",
+      "kind": "skin",
+      "weapon": "Tactical Machete",
+      "skin": "Cartel",
+      "displayName": "Tactical Machete | Cartel",
+      "tier": 4,
+      "rarity": "Legendary",
+      "baseValue": 4200,
+      "approved": true,
+      "caseId": "cartel",
+      "sourceType": "user-supplied-original-image",
+      "master": "assets/neutral-art/machete.js",
+      "finishArt": "assets/skins/tactical-machete--cartel.js",
+      "renderMode": "transparent-webp-data-uri",
+      "thumbnail": "assets/skins/tactical-machete--cartel.js#400",
+      "inventory": "assets/skins/tactical-machete--cartel.js#800",
+      "inspection": "assets/skins/tactical-machete--cartel.js#1600",
+      "note": "Exclusive owner-supplied Cartel Case finish; does not alter the original base weapon or Arsenal case"
     }
   ],
   "items": [
@@ -790,7 +890,7 @@
     "removedItems": false
   },
   "skinPipeline": {
-    "activeSkinCount": 10,
+    "activeSkinCount": 15,
     "allowedSkinIds": [
       "mac-10--red-devil",
       "rpg-7--glory",
@@ -823,5 +923,33 @@
       "spas-12--blood-thirsty": "88996F62-58A0-4E4B-8C3F-46462C1D01C9.jpeg",
       "awp--crimson-delight": "F7C245E4-E3B2-4A90-AD47-31FF1003FB08.png"
     }
-  }
+  },
+  "caseCollection": [
+    {
+      "id": "arsenal",
+      "name": "Arsenal Case",
+      "casePrice": 25,
+      "contents": "25 original weapons plus 10 approved Arsenal finishes"
+    },
+    {
+      "id": "cartel",
+      "name": "Cartel Case",
+      "casePrice": 75,
+      "contents": "Exactly five Cartel skins, one per rarity",
+      "oddsPercent": [
+        70,
+        20,
+        7.5,
+        2,
+        0.5
+      ],
+      "weapons": [
+        "RPG-7",
+        "12 Gauge Pump Shotgun",
+        "AK-47",
+        "Desert Eagle",
+        "Tactical Machete"
+      ]
+    }
+  ]
 }
