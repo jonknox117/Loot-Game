@@ -1,5 +1,13 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.6 — Fast Case Loop
+
+- **Open directly from a case card:** Arsenal, Cartel, Spec Ops and Lavish each expose a compact 1–5 quantity picker and **Buy & Open**, alongside secondary case details. The selector displays live total cost. The last chosen case and quantity are stored with existing preferences and restored after reload.
+- **Stay at the reward:** Single-case openings now immediately show **Keep**, **Instant sell**, **Open same case again**, **Inspect** and **Auction**. Instant sell displays the original condition-adjusted 78% quote, requires confirmation, and uses the existing atomic sale path with failed-save rollback. The newly awarded item is safe by default; no automatic sale.
+- **Loop without visiting Inventory:** Open Again initiates one atomic purchase/open of the same case. Insufficient funds present Earn and Inventory options within the current flow. One-case quick purchases reuse the existing purchase-and-commit engine and the single-item reveal presentation; larger selections retain the existing multi-reward reveal.
+- **Crash/save safeguards:** Multi-opening results are now saved once before any animation. If that save fails, the wallet, unopened cases, item IDs and RNG serial state are rolled back. Prize results cannot be rerolled by skipping, refreshing or repeated actions.
+- Added core regression tests for quick opening, saved case preferences, one-time payout, repeat purchase and failed-save rollback, plus an iPhone end-to-end fast-loop test. Case odds, prices, published artwork, wear/rarity and collection rewards remain unchanged.
+
 ## Patch 0.7.5 — Early Auction Acceptance & Bulk Instant Selling
 
 - **End auctions early:** In Market → Auction House → View bids, an auction with bids offers **Accept highest bid**. Confirm the exact leading bid and its net proceeds after the existing 5% sale fee. The funded winner receives the item, proceeds are credited once, and the listing is removed immediately rather than waiting 1–24 hours. Unbid auctions can still be cancelled without a fee.
