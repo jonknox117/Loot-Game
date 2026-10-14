@@ -66,24 +66,29 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Owner-approved cosmetics must all load as 1600px transparent, separate inspection art: '+JSON.stringify(skinsRendered));
 
     assert((await page.locator('#wallet').textContent()).includes('0'), 'New account must start at zero coins');
-    // 0.5.8: Sound is a real persistent, accessible player control.
+    // Sound has moved to Menu while retaining immediate, persisted toggling.
     const sound=page.locator('#soundToggle');
-    assert(await sound.isVisible(),'Mobile sound toggle must be visible');
+    assert(!(await sound.isVisible()),'Utility controls must stay out of primary navigation');
+    await page.locator('#menuToggle').click();
+    assert(await sound.isVisible(),'Menu must expose the sound toggle');
     assert(await sound.getAttribute('aria-pressed')==='true','Sound should start enabled');
     await sound.click();
     assert(await sound.getAttribute('aria-pressed')==='false','Mute must respond immediately');
     assert((await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).preferences.fxMuted))===true,
       'Mute preference must be persisted with the existing save');
     await page.reload({waitUntil:'load'});
-    assert(await page.locator('#soundToggle').getAttribute('aria-pressed')==='false',
-      'Player mute setting must survive a full reload');
-    await page.locator('#soundToggle').click();
-    assert(await page.locator('#soundToggle').getAttribute('aria-pressed')==='true',
-      'Sound should be re-enableable from mobile');
+    await page.locator('#menuToggle').click();
+    assert(await sound.getAttribute('aria-pressed')==='false','Muted setting must survive reload');
+    await sound.click();
+    assert(await sound.getAttribute('aria-pressed')==='true','Sound should be re-enableable from mobile');
+    assert(await page.locator('#nav button').count()===4,'Only four primary destinations belong in navigation');
+    assert(await page.locator('aside').count()===0,'Portfolio and history cannot occupy a permanent gameplay sidebar');
 
     // Only the Arsenal Case is live. The metal/wood/other maps are used
     // solely for wear, not procedural collectible finishes or themed cases.
     await page.getByRole('button',{name:'Cases',exact:true}).click();
+    assert(await page.locator('.case-choice').count()===4,'Storefront must show four case choices');
+    await page.getByRole('button',{name:'View Arsenal Case'}).click();
     const caseShop=await page.locator('#main').textContent();
     // Uploaded closed crate appears in the shop with native transparency, not SVG.
     const closedCase=page.locator('#main .hero .arsenal-case-closed img').first();
@@ -117,6 +122,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     // Spec Ops 0.6.3: the closed chest must occupy the entire framed shop
     // artwork area on iPhone, not show a 145px sliver of its 800px image.
+    await page.getByRole('button',{name:'View Spec Ops Case'}).click();
     const specOpsShopArt=page.locator('.spec-ops-section .spec-ops-case-closed img');
     await specOpsShopArt.waitFor({state:'visible',timeout:15000});
     await specOpsShopArt.scrollIntoViewIfNeeded();
@@ -159,6 +165,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     // 0.7.2: Both case poses and all five user-uploaded Lavish skins
     // must load uncropped on the same iPhone viewport as the other cases.
+    await page.getByRole('button',{name:'View Lavish Case'}).click();
     const lavishPreview=await page.locator('.lavish-section .curated-case-image img').evaluate(async img=>{
       await img.decode();
       const frame=img.closest('.cartel-case-art'),holder=img.closest('.curated-case-image');
@@ -212,6 +219,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     assert(caseShop.includes('Double-Barrel Shotgun'),
       '25th official gun must appear in the available Arsenal Case weapon gallery');
+    await page.getByRole('button',{name:'View Arsenal Case'}).click();
+    await page.locator('.case-catalog-details').first().locator('summary').click();
     const gunCard=page.locator('#main .item').filter({
       has:page.getByRole('heading',{name:'Double-Barrel Shotgun',exact:true})
     });
@@ -293,7 +302,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await page.reload({waitUntil:'load'});
     const sameNpcOffers=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.npcListings);
     assert(JSON.stringify(originalNpcOffers)===JSON.stringify(sameNpcOffers),'Opening and reloading market must preserve NPC offers');
-    await page.getByRole('button', { name: 'Earn', exact: true }).click();
+    await page.locator('#walletButton').click();
+    await page.getByRole('button',{name:'Earn coins',exact:true}).click();
     await waitForVisible('text=MicroTasks');
     for (let i = 0; i < 25; i++) {
       await page.getByRole('button', { name: /Earn 1 coin/ }).click();
@@ -427,7 +437,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
 
     // Test the new save management and durable marketplace listings.
-    await page.getByRole('button', { name: 'Earn', exact: true }).click();
+    await page.locator('#walletButton').click();
+    await page.getByRole('button',{name:'Earn coins',exact:true}).click();
     while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, '')) < 25){
       await page.getByRole('button', { name: /Earn 1 coin/ }).click();
     }
@@ -468,7 +479,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await page.getByRole('button', { name: 'Inventory', exact: true }).click();
     assert(await page.locator('.item').count()===1, 'Cancel must return item to inventory');
 
-    await page.getByRole('button', { name: 'Saves', exact: true }).click();
+    await page.locator('#menuToggle').click();
+    await page.getByRole('button',{name:'Backups & saves'}).click();
     await waitForVisible('text=My Save');
     assert(await page.getByText('Autosave active on this device.').count()===1, 'Autosave explanation missing');
     const saveBefore=await page.evaluate(() => JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
@@ -481,6 +493,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     // Corrupted primary recovers from the previous valid local snapshot.
     await page.evaluate(() => localStorage.setItem('loothub-arsenal-alpha-v1','{broken-json'));
     await page.reload({waitUntil:'load'});
+    await page.locator('#menuToggle').click();
+    await page.getByRole('button',{name:'Backups & saves'}).click();
     await waitForVisible('text=My Save');
     const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')));
     assert(restored.items.length===1,'Backup must restore inventory after primary corruption');
@@ -493,7 +507,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       return saved.market.npcListings.reduce((best,x)=>!best||x.ask<best.ask?x:best,null);
     });
     assert(cheapestOffer,'NPC stock unexpectedly disappeared');
-    await page.getByRole('button',{name:'Earn',exact:true}).click();
+    await page.locator('#walletButton').click();
+    await page.getByRole('button',{name:'Earn coins',exact:true}).click();
     while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g,''))<cheapestOffer.ask){
       await page.getByRole('button',{name:/Earn 1 coin/}).click();
     }
@@ -555,7 +570,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const agreedBuy=await page.evaluate(id=>JSON.parse(localStorage.getItem('loothub-arsenal-alpha-v1')).market.negotiations.find(x=>x.id==='buy:'+id),bargain.id);
     assert(agreedBuy.status==='agreed','Accepting seller counter must create agreement');
     await page.getByRole('button',{name:'Close negotiation'}).click();
-    await page.getByRole('button',{name:'Earn',exact:true}).click();
+    await page.locator('#walletButton').click();
+    await page.getByRole('button',{name:'Earn coins',exact:true}).click();
     while(Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g,''))<agreedBuy.agreedPrice){
       await page.getByRole('button',{name:/Earn 1 coin/}).click();
     }
@@ -1122,7 +1138,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       s.items.push(...additions);
       save();go('Cases');
     });
-    await page.getByRole('button',{name:'Open Collection Book'}).click();
+    await page.getByRole('button',{name:'Collections',exact:true}).click();
+    assert((await page.evaluate(()=>s.tab))==='Collections','Collections must be a primary saved destination');
     assert(await page.locator('.collection-panel').count()===4,
       'The iPhone Collection Book must show Arsenal, Cartel, Spec Ops and Lavish progress');
     assert((await page.locator('.collection-book').textContent()).includes('35 / 35'),
