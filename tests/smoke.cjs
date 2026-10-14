@@ -1341,11 +1341,11 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();render();
     });
     const earlyCoins=await page.evaluate(()=>s.coins);
-    await earlyNoBid.getByRole('button',{name:'Review & accept bid'}).click();
-    assert((await page.locator('.dialog').textContent()).includes('190'),
-      'Early sale preview must account for 5% success fee');
+    const inlineAccept=earlyNoBid.getByRole('button',{name:/Accept bid/});
+    assert((await inlineAccept.textContent()).includes('190'),
+      'Auction listing must show the net payout directly beside Accept Bid');
     page.once('dialog',confirmation=>confirmation.accept());
-    await page.getByRole('button',{name:/Accept highest bid/}).click();
+    await inlineAccept.click();
     const earlyState=await page.evaluate(()=>({
       coins:s.coins,open:s.listings.some(x=>x.item.id==='mobile-early-auction'),
       owns:s.items.some(x=>x.id==='mobile-early-auction'),
@@ -1467,6 +1467,61 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Kept Legendary must still exist after reloading the browser');
     assert(await page.evaluate(()=>s.coins)===afterSale.coins,
       'Bulk sale proceeds must persist across reload');
+
+    // v0.7.8: perform a weapon sale and 12h auction directly from Inventory cards.
+    await page.evaluate(()=>{
+      s.items.push(
+        {id:'mobile-quick-sell',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:0},
+        {id:'mobile-quick-auction',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:1},
+        {id:'mobile-quick-sealed',kind:'case',paid:25}
+      );
+      save();go('Inventory');
+    });
+    const sellCard=page.locator('#inventoryGrid .item').filter({hasText:'AK-47'})
+      .filter({has:page.locator('button[onclick*=mobile-quick-sell]')});
+    assert(await sellCard.getByRole('button',{name:'Sell · 78 ◈'}).count()===1,
+      'Inventory should display a condition-adjusted instant-sale action');
+    const quickBefore=await page.evaluate(()=>s.coins);
+    page.once('dialog',d=>d.accept());
+    await sellCard.getByRole('button',{name:'Sell · 78 ◈'}).click();
+    assert(await page.evaluate(()=>s.coins)===quickBefore+78&&
+      await page.evaluate(()=>s.items.every(x=>x.id!=='mobile-quick-sell')),
+      'Inline sale must pay once and remove only the selected weapon');
+    const auctionCard=page.locator('#inventoryGrid .item')
+      .filter({has:page.locator('button[onclick*=mobile-quick-auction]')});
+    assert(await auctionCard.getByRole('button',{name:'Auction · 12h'}).count()===1,
+      'Inventory should offer a 12-hour quick auction without opening the editor');
+    page.once('dialog',d=>d.accept());
+    await auctionCard.getByRole('button',{name:'Auction · 12h'}).click();
+    const quickAuction=await page.evaluate(()=>{
+      const listing=s.listings.find(x=>x.item.id==='mobile-quick-auction');
+      return {id:listing?.id,duration:listing?.durationHours,
+        owned:s.items.some(x=>x.id==='mobile-quick-auction'),start:listing?.ask};
+    });
+    assert(quickAuction.id&&quickAuction.duration===12&&!quickAuction.owned&&quickAuction.start>0,
+      'One quick-auction confirmation must escrow the item for 12 hours');
+    const sealedOwned=await page.evaluate(()=>s.items.some(x=>x.id==='mobile-quick-sealed'));
+    assert(sealedOwned,'Quick trading must not touch sealed cases');
+    await page.evaluate(()=>{
+      const listing=s.listings.find(x=>x.item.id==='mobile-quick-auction');
+      const buyer=window.LootHubTraders.ensure(s).find(x=>x.role==='buyer');
+      listing.bids=[{bidder:buyer.id,amount:200,at:listing.createdAt}];
+      listing.highestBid=200;listing.highestBidder=buyer.id;
+      save();render();
+    });
+    const directAccept=page.locator('#market-auctions .auction-listing')
+      .filter({hasText:'SPAS-12'}).getByRole('button',{name:/Accept bid/});
+    assert((await directAccept.textContent()).includes('190'),
+      'Inline auction controls must show after-fee proceeds');
+    const proceedsBefore=await page.evaluate(()=>s.coins);
+    page.once('dialog',d=>d.accept());
+    await directAccept.click();
+    assert(await page.evaluate(()=>s.coins)===proceedsBefore+190&&
+      await page.evaluate(()=>s.listings.every(x=>x.item.id!=='mobile-quick-auction')),
+      'Inline bid acceptance must settle exactly once');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.coins)===proceedsBefore+190,
+      'Direct trading wallet and auction settlement must persist after reload');
 
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
