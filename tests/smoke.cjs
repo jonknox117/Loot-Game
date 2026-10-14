@@ -1524,6 +1524,60 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.evaluate(()=>s.coins)===proceedsBefore+190,
       'Direct trading wallet and auction settlement must persist after reload');
 
+    // v0.7.9: select two weapons once, quick-auction both, then accept both
+    // highest funded bids from the Market screen with a single confirmation.
+    await page.evaluate(()=>{
+      s.items.push(
+       {id:'batch-mobile-one',kind:'weapon',weapon:'AK-47',tier:1,base:100,wearGrade:0},
+       {id:'batch-mobile-two',kind:'weapon',weapon:'MP5',tier:1,base:110,wearGrade:0},
+       {id:'batch-mobile-sealed',kind:'case',paid:25}
+      );
+      save();go('Inventory');
+    });
+    await page.getByRole('button',{name:'Select weapons to sell'}).click();
+    await page.locator('input[onchange*="batch-mobile-one"]').check();
+    await page.locator('input[onchange*="batch-mobile-two"]').check();
+    assert((await page.locator('#bulkSellToolbar').textContent()).includes('Auction selected · 12h'),
+      'Bulk selection toolbar must let users auction the same selected weapons');
+    page.once('dialog',d=>d.accept());
+    await page.getByRole('button',{name:'Auction selected · 12h'}).click();
+    const created=await page.evaluate(()=>({
+      listings:s.listings.filter(l=>['batch-mobile-one','batch-mobile-two'].includes(l.item.id))
+        .map(l=>({id:l.id,hours:l.durationHours})),
+      stillOwned:s.items.filter(x=>['batch-mobile-one','batch-mobile-two','batch-mobile-sealed'].includes(x.id)).map(x=>x.id)
+    }));
+    assert(created.listings.length===2&&created.listings.every(x=>x.hours===12)&&
+      JSON.stringify(created.stillOwned)==='["batch-mobile-sealed"]',
+      'Both weapons must enter separate 12-hour escrow; sealed cases remain owned');
+    await page.evaluate(()=>{
+      const buyers=window.LootHubTraders.ensure(s).filter(t=>t.role==='buyer');
+      buyers[0].wallet=Math.max(buyers[0].wallet,5000);
+      buyers[1].wallet=Math.max(buyers[1].wallet,5000);
+      const bids=[100,150],ids=['batch-mobile-one','batch-mobile-two'];
+      ids.forEach((id,i)=>{
+        const listing=s.listings.find(l=>l.item.id===id);
+        listing.bids=[{bidder:buyers[i].id,amount:bids[i],at:listing.createdAt}];
+        listing.highestBid=bids[i];listing.highestBidder=buyers[i].id;
+      });
+      save();render();
+    });
+    await page.locator('input[onchange*="listing-batch-mobile-one"]').check();
+    await page.locator('input[onchange*="listing-batch-mobile-two"]').check();
+    assert((await page.locator('#batchBidToolbar').textContent()).includes('237 ◈ combined net payout'),
+      'Selected auction offers should display the exact combined after-fee payout');
+    const batchBalance=await page.evaluate(()=>s.coins);
+    page.once('dialog',d=>d.accept());
+    await page.locator('#batchBidToolbar').getByRole('button',{name:/Accept selected/}).click();
+    const settled=await page.evaluate(()=>({
+      coins:s.coins,listingIds:s.listings.filter(l=>l.item.id.startsWith('batch-mobile-')).map(l=>l.id),
+      sealed:s.items.some(x=>x.id==='batch-mobile-sealed')
+    }));
+    assert(settled.coins===batchBalance+237&&settled.listingIds.length===0&&settled.sealed,
+      'Selected bids must settle once, transfer both items and leave unrelated cases alone');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.coins)===settled.coins,
+      'Bulk auction settlement must survive reload without double payment');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
