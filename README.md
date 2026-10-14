@@ -1,5 +1,14 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.8.0 — Smart Inventory & Market Organization
+
+- **Compact duplicate groups:** Base weapons and skins that share the same model and finish now appear as a single expandable inventory group with quantity, aggregate market value and the best-condition copy at a glance. Expanding shows each actual weapon and its individual wear, price and trading actions. **No IDs, wear grades, artwork, collection records, or item ownership are merged**; sealed cases remain separate.
+- **Useful sorting and quick filters:** Players can sort Inventory by newest, market value, rarity, condition, or duplicate count. Rarity filtering remains supported, alongside All Items, Duplicates, Common and High Value (market estimate of at least 500 coins). Last-used sort and filters persist in save preferences.
+- **Safer batch shortcuts:** The existing **Select weapons to trade** toolbar adds **Select Commons** and **Select Duplicates**. Duplicates selects extra copies while preserving the best-condition copy of each model/finish; automatic selections omit Super Rare and Legendary items. Explicit individual selection remains available. Sorting and filtering no longer discard an existing selection.
+- **Active auctions first:** Auction House now visually separates bids ready to accept, auctions ending within an hour, and auctions waiting for bids, showing summary counts and putting actionable auctions first. The existing early-accept and multi-bid settlement options are preserved. This sort only changes presentation and never changes auction settlement order or saved listing data.
+- **Browsing polish:** Expanded duplicate groups stay expanded across filters, and the inventory scroll position is preserved after a confirmed bulk instant sale. Expanding a group initializes its wear overlays so details remain sharp and correct.
+- Added core and iPhone browser tests for duplicate grouping, preserving the best-condition item, protected rare items, filtering, persistence and auction prioritization. Existing case prices, rarity odds, instant-sale percentages, auction fees and approved weapon artwork are unchanged.
+
 ## Patch 0.7.9 — Batch Trading & Inventory Efficiency
 
 - **One inventory selection, two possible actions:** The existing multi-select toolbar now supports **Instant Sell selected** or **Auction selected · 12h** for up to 40 currently owned weapons and skins. Select individual weapons or select all visible weapons under the current rarity filter. One confirmation starts a separate 12-hour auction for each chosen weapon, at the same 80% market-estimate starting bid as the existing quick auction. An additional warning appears if the batch contains Super Rare or Legendary items. Sealed cases and already-escrowed listings cannot be selected.
