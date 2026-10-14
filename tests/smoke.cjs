@@ -1496,8 +1496,16 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const sellGroup=page.locator('#inventoryGrid .inventory-group').filter({has:sellCard});
     if(await sellGroup.count()&&!(await sellGroup.first().evaluate(el=>el.open)))
       await sellGroup.first().locator('summary').click();
+    const sellDiagnostics=await page.evaluate(()=>{
+      const el=document.querySelector('#inventoryGrid button[onclick*="mobile-quick-sell"]');
+      const parent=el&&el.closest('details');
+      return {text:el&&el.textContent,html:el&&el.outerHTML,
+        visible:!!(el&&el.getClientRects().length),groupOpen:parent&&parent.open,
+        sort:s.preferences.inventorySort,quick:s.preferences.inventoryQuick,
+        rarity:s.preferences.inventoryRarity};
+    });
     assert(await sellCard.getByRole('button',{name:'Sell · 78 ◈'}).count()===1,
-      'Inventory should display a condition-adjusted instant-sale action');
+      'Inventory should display a condition-adjusted instant-sale action: '+JSON.stringify(sellDiagnostics));
     const quickBefore=await page.evaluate(()=>s.coins);
     page.once('dialog',d=>d.accept());
     await sellCard.getByRole('button',{name:'Sell · 78 ◈'}).click();
