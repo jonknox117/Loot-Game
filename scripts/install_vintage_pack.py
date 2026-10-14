@@ -90,6 +90,19 @@ def install(archive: Path) -> int:
             target.write_bytes(data)
     if DRAFT in current:
         ENTRY.write_text(current.replace(DRAFT, LIVE, 1), encoding="utf-8")
+    readme = ROOT / "README.md"
+    old_docs = readme.read_text(encoding="utf-8")
+    new_docs = old_docs.replace(
+        "## Vintage Case — Artwork ready; activation pending",
+        "## Vintage Case — Officially released",
+        1,
+    ).replace(
+        "Vintage is intentionally **hidden until its full image pack is installed**.",
+        "Vintage is **officially released with its approved artwork**.",
+        1,
+    )
+    if new_docs != old_docs:
+        readme.write_text(new_docs, encoding="utf-8")
     # Only announce the new version once the approved image set is installed.
     index = ROOT / "index.html"
     source = index.read_text(encoding="utf-8")
