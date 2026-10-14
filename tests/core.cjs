@@ -82,6 +82,42 @@ function test(name,fn){
   try{fn();console.log('PASS',name)}catch(err){console.error('FAIL',name,'\n',err.stack);process.exitCode=1}
 }
 
+test('v0.7.4 navigation prioritizes four core player actions and preserves legacy tabs',()=>{
+ const fresh=boot();
+ const nav=fresh.byId('nav').innerHTML;
+ for(const label of ['Cases','Inventory','Market','Collections'])
+   assert(nav.includes("go('"+label+"')"),'Missing primary navigation: '+label);
+ for(const retired of ['Home','Earn','Portfolio','Saves'])
+   assert(!nav.includes("go('"+retired+"')"),'Utility leaked into main nav: '+retired);
+ assert(fresh.byId('main').innerHTML.includes('Choose your collection'));
+ assert.equal((fresh.byId('main').innerHTML.match(/class="case-choice case-choice-/g)||[]).length,4);
+ assert(!fresh.byId('main').innerHTML.includes('Available base weapons'),
+   'Case catalogs must not crowd the store before selecting a case');
+ fresh.run("selectStoreCase('arsenal')");
+ assert(fresh.byId('main').innerHTML.includes('Browse 25 base weapons'));
+ assert(fresh.byId('main').innerHTML.includes('multi-qty-arsenal'));
+ fresh.run("selectStoreCase('lavish')");
+ assert(fresh.byId('main').innerHTML.includes('multi-qty-lavish'));
+ fresh.run("go('Collections')");
+ assert(fresh.byId('main').innerHTML.includes('collection-panel'));
+ fresh.run("showCollection('lavish-v1')");
+ assert(fresh.byId('main').innerHTML.includes('collection-tile'));
+ fresh.run("go('Inventory')");
+ assert.equal(fresh.run('selectedCollectionId'),null);
+ fresh.run("openUtility('Saves')");
+ assert(fresh.byId('main').innerHTML.includes('My Save'));
+ assert.equal(fresh.state().tab,'Inventory','Utility should not replace saved primary location');
+ fresh.run("leaveUtility()");
+ assert.equal(fresh.run('utilityView'),null);
+ for(const [oldTab,newTab] of [['Home','Cases'],['Earn','Cases'],['Saves','Cases'],['Portfolio','Market']]){
+   const store=new LocalStore(),prior={...fresh.persisted(),tab:oldTab};
+   store.setItem(KEY,JSON.stringify(prior));
+   const migrated=boot(store);
+   assert.equal(migrated.state().tab,newTab,'Wrong navigation migration: '+oldTab);
+   assert.equal(migrated.state().coins,prior.coins,'Migration altered wallet');
+   assert.equal(migrated.state().items.length,prior.items.length,'Migration altered inventory');
+ }
+});
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
