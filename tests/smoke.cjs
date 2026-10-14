@@ -1236,6 +1236,13 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Claiming again must never grant another 25 cases');
 
 
+    async function selectGroupedInventoryCopy(id){
+      const checkbox=page.locator('input[onchange*="'+id+'"]');
+      const group=page.locator('#inventoryGrid .inventory-group').filter({has:checkbox});
+      if(await group.count()&&!(await group.first().evaluate(el=>el.open)))
+        await group.first().locator('summary').click();
+      await checkbox.check();
+    }
     // v0.7.5: multi-select instant sale sells only weapons, at original
     // condition-adjusted values, with a single confirmation and saved wallet.
     await page.evaluate(()=>{
@@ -1247,8 +1254,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     });
     await page.getByRole('button',{name:'Select weapons to trade'}).click();
     const bulkBefore=await page.evaluate(()=>({coins:s.coins,sales:s.sales,rep:s.rep}));
-    await page.locator('input[onchange*="mobile-bulk-sale-a"]').check();
-    await page.locator('input[onchange*="mobile-bulk-sale-b"]').check();
+    await selectGroupedInventoryCopy('mobile-bulk-sale-a');
+    await selectGroupedInventoryCopy('mobile-bulk-sale-b');
     assert((await page.locator('#bulkSellToolbar').textContent()).includes('121 coins instant value'),
       'Bulk sell must quote original 78/43 condition-adjusted prices');
     assert(await page.getByRole('checkbox',{name:/Select Sealed/}).count()===0,
@@ -1541,8 +1548,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();go('Inventory');
     });
     await page.getByRole('button',{name:'Select weapons to trade'}).click();
-    await page.locator('input[onchange*="batch-mobile-one"]').check();
-    await page.locator('input[onchange*="batch-mobile-two"]').check();
+    await selectGroupedInventoryCopy('batch-mobile-one');
+    await selectGroupedInventoryCopy('batch-mobile-two');
     assert((await page.locator('#bulkSellToolbar').textContent()).includes('Auction selected · 12h'),
       'Bulk selection toolbar must let users auction the same selected weapons');
     page.once('dialog',d=>d.accept());
