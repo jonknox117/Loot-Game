@@ -1229,8 +1229,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     });
     await page.getByRole('button',{name:'Select weapons to sell'}).click();
     const bulkBefore=await page.evaluate(()=>({coins:s.coins,sales:s.sales,rep:s.rep}));
-    await page.getByRole('checkbox',{name:'Select AK-47'}).check();
-    await page.getByRole('checkbox',{name:'Select SPAS-12 | Spec Ops'}).check();
+    await page.locator('input[onchange*="mobile-bulk-sale-a"]').check();
+    await page.locator('input[onchange*="mobile-bulk-sale-b"]').check();
     assert((await page.locator('#bulkSellToolbar').textContent()).includes('121 coins instant value'),
       'Bulk sell must quote original 78/43 condition-adjusted prices');
     assert(await page.getByRole('checkbox',{name:/Select Sealed/}).count()===0,
