@@ -1218,6 +1218,37 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Claiming again must never grant another 25 cases');
 
 
+    // v0.7.5: multi-select instant sale sells only weapons, at original
+    // condition-adjusted values, with a single confirmation and saved wallet.
+    await page.evaluate(()=>{
+      s.items.push(
+        {id:'mobile-bulk-sale-a',kind:'weapon',weapon:'AK-47',tier:2,base:100,wearGrade:0},
+        {id:'mobile-bulk-sale-b',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:100,wearGrade:4},
+        {id:'mobile-bulk-sale-case',kind:'case',caseId:'lavish',paid:75});
+      save();go('Inventory');
+    });
+    await page.getByRole('button',{name:'Select weapons to sell'}).click();
+    const bulkBefore=await page.evaluate(()=>({coins:s.coins,sales:s.sales,rep:s.rep}));
+    await page.getByRole('checkbox',{name:'Select AK-47'}).check();
+    await page.getByRole('checkbox',{name:'Select SPAS-12 | Spec Ops'}).check();
+    assert((await page.locator('#bulkSellToolbar').textContent()).includes('121 coins instant value'),
+      'Bulk sell must quote original 78/43 condition-adjusted prices');
+    assert(await page.getByRole('checkbox',{name:/Select Sealed/}).count()===0,
+      'Sealed cases must not enter the weapon bulk-sale selection');
+    page.once('dialog',confirmation=>confirmation.accept());
+    await page.getByRole('button',{name:'Sell selected · 121 ◈'}).click();
+    const bulkAfter=await page.evaluate(()=>({
+      coins:s.coins,sales:s.sales,rep:s.rep,
+      ids:s.items.filter(x=>x.id.startsWith('mobile-bulk-sale-')).map(x=>x.id)
+    }));
+    assert(bulkAfter.coins===bulkBefore.coins+121&&bulkAfter.sales===bulkBefore.sales+121&&
+      bulkAfter.rep===bulkBefore.rep+2&&
+      JSON.stringify(bulkAfter.ids)==='["mobile-bulk-sale-case"]',
+      'Bulk sale must credit full quote once and preserve the sealed case');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.coins)===bulkAfter.coins,
+      'Bulk sale wallet must survive an iPhone reload');
+
     // 0.7 iPhone auction and independent-price negotiation end-to-end.
     await page.evaluate(()=>{
       s.items.push({id:'mobile-auction-spas',kind:'skin',weapon:'SPAS-12',
@@ -1273,6 +1304,48 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     }));
     assert(stable.coins===auctionAfter.coins&&stable.notifications===auctionAfter.notices.length&&
       stable.auction===false,'Refreshing must not duplicate the sale or reset the auction');
+
+    // v0.7.5: early accept an existing high bid on a 12-real-hour auction.
+    await page.evaluate(()=>{
+      s.items.push({id:'mobile-early-auction',kind:'weapon',weapon:'AK-47',tier:2,base:350,wearGrade:1});
+      save();
+      go('Inventory');
+      window.LootHubAuctionUI.openEditor('mobile-early-auction');
+    });
+    await page.locator('#auctionStartingBid').fill('100');
+    await page.locator('#auctionDuration').selectOption('12');
+    await page.getByRole('button',{name:'Start auction'}).click();
+    const earlyNoBid=page.locator('#market-auctions .auction-listing')
+      .filter({hasText:'AK-47'});
+    assert(await earlyNoBid.count()===1,'Twelve-hour auction must enter escrow');
+    await earlyNoBid.getByRole('button',{name:'View bids'}).click();
+    assert(await page.getByRole('button',{name:/Accept highest bid/}).count()===0,
+      'Unbid auctions cannot be accepted early');
+    await page.getByRole('button',{name:'Close',exact:true}).click();
+    await page.evaluate(()=>{
+      const l=s.listings.find(x=>x.item.id==='mobile-early-auction');
+      const buyer=window.LootHubTraders.ensure(s).find(x=>x.role==='buyer');
+      l.bids=[{bidder:buyer.id,amount:200,at:l.createdAt}];
+      l.highestBid=200;l.highestBidder=buyer.id;
+      save();render();
+    });
+    const earlyCoins=await page.evaluate(()=>s.coins);
+    await earlyNoBid.getByRole('button',{name:'Review & accept bid'}).click();
+    assert((await page.locator('.dialog').textContent()).includes('190'),
+      'Early sale preview must account for 5% success fee');
+    page.once('dialog',confirmation=>confirmation.accept());
+    await page.getByRole('button',{name:/Accept highest bid/}).click();
+    const earlyState=await page.evaluate(()=>({
+      coins:s.coins,open:s.listings.some(x=>x.item.id==='mobile-early-auction'),
+      owns:s.items.some(x=>x.id==='mobile-early-auction'),
+      notice:s.market.notifications.filter(x=>x.type==='sold'&&x.message.includes('sold early')).length
+    }));
+    assert(earlyState.coins===earlyCoins+190&&!earlyState.open&&!earlyState.owns&&
+      earlyState.notice===1,'Early acceptance must settle exactly one funded bid and end auction');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.coins)===earlyState.coins&&
+      await page.locator('#market-auctions .auction-listing').filter({hasText:'AK-47'}).count()===0,
+      'Early accepted auctions must not settle again after reload');
 
     await page.evaluate(()=>{
       s.items.push({id:'mobile-desk-spas',kind:'skin',weapon:'SPAS-12',
