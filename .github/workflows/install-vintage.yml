@@ -1,0 +1,47 @@
+name: Install approved Vintage case artwork
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/vintage-release.zip'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: vintage-release-main
+  cancel-in-progress: false
+jobs:
+  install-vintage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install artwork validator
+        run: python -m pip install 'Pillow>=10,<13'
+      - name: Validate and install the exact supplied art
+        run: python scripts/install_vintage_pack.py --archive assets/vintage-release.zip
+      - name: Check curated pools, prices and collection rewards
+        run: node tests/case-registry.cjs
+      - name: Run save, market and gameplay regression tests
+        run: node tests/core.cjs
+      - name: Run pixel integrity and transparency audit
+        run: python scripts/audit_artwork_integrity.py
+      - name: Remove temporary upload and publish the verified case
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm assets/vintage-release.zip
+          git add -A assets/case-registry.js assets/cases assets/renders/lines/vintage assets/vintage-release.zip
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish Vintage collection with approved transparent artwork'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
