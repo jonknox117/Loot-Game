@@ -2929,6 +2929,100 @@ test('0.7 auctions with unaffordable starting bids return the exact original ite
  assert(g.state().market.notifications.some(x=>x.type==='unsold'));
  assert.equal(g.run('window.LootHubAuctions.advance(s,Date.now()).expired'),0);
 });
+test('v0.7.5 accepting a funded highest bid ends a 12h auction early exactly once',()=>{
+ const g=boot();
+ const item={id:'early-bid-weapon',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:1};
+ g.run('s.items.push('+JSON.stringify(item)+');save()');
+ assert(g.run('window.LootHubAuctions.create(s,"early-bid-weapon",100,12,Date.now())'));
+ assert.equal(g.run('window.LootHubAuctions.acceptHighestBid(s,"listing-early-bid-weapon",100,"someone")'),null,
+   'No-bid auctions cannot close as sales');
+ g.run('const early=s.listings.find(x=>x.id==="listing-early-bid-weapon");'+
+  'const buyer=window.LootHubTraders.ensure(s).find(x=>x.role==="buyer");'+
+  'early.bids.push({bidder:buyer.id,amount:150,at:early.createdAt});'+
+  'early.highestBid=150;early.highestBidder=buyer.id;');
+ const before=g.state();
+ const bidder=before.listings[0].highestBidder;
+ assert.equal(g.run('window.LootHubAuctions.acceptHighestBid(s,"listing-early-bid-weapon",149,'+JSON.stringify(bidder)+')'),null,
+   'A stale bid quote must not settle');
+ assert.equal(g.run('window.LootHubAuctions.acceptHighestBid(s,"listing-early-bid-weapon",150,"wrong-buyer")'),null,
+   'A stale bidder ID must not settle');
+ assert.equal(g.state().coins,before.coins);
+ assert.equal(g.state().listings.length,1);
+ const result=JSON.parse(g.run('JSON.stringify(window.LootHubAuctions.acceptHighestBid(s,"listing-early-bid-weapon",150,'+JSON.stringify(bidder)+'))'));
+ assert.equal(result.status,'sold');
+ assert.equal(result.early,true);
+ assert.equal(result.price,150);
+ assert.equal(result.net,142);
+ assert.equal(result.fee,8);
+ assert.equal(g.state().coins,before.coins+142);
+ assert.equal(g.state().sales,before.sales+142);
+ assert.equal(g.state().rep,before.rep+1);
+ assert.equal(g.state().listings.length,0);
+ assert(!g.state().items.some(x=>x.id===item.id));
+ assert(g.state().market.notifications.some(x=>x.type==='sold'&&x.message.includes('sold early')));
+ assert.equal(g.run('window.LootHubAuctions.acceptHighestBid(s,"listing-early-bid-weapon",150,'+JSON.stringify(bidder)+')'),null);
+ assert.equal(g.run('window.LootHubAuctions.advance(s,Date.now()+12*3600000).sales.length'),0);
+ g.run('save()');
+ const restored=boot(g.store);
+ assert.equal(restored.state().coins,g.state().coins);
+ assert.equal(restored.state().market.notifications.filter(n=>n.type==='sold').length,1);
+});
+test('v0.7.5 early auction accept rejects insolvent bidders without forfeiting escrow',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"insolvent-bid",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});save()');
+ g.run('window.LootHubAuctions.create(s,"insolvent-bid",100,12,Date.now());'+
+ 'const l=s.listings[0],b=window.LootHubTraders.ensure(s).find(x=>x.role==="buyer");'+
+ 'l.bids=[{bidder:b.id,amount:150,at:l.createdAt}];'+
+ 'l.highestBid=150;l.highestBidder=b.id;b.wallet=0;');
+ const before=JSON.stringify(g.state());
+ const bidder=g.state().listings[0].highestBidder;
+ assert.equal(g.run('window.LootHubAuctions.acceptHighestBid(s,"listing-insolvent-bid",150,'+JSON.stringify(bidder)+')'),null);
+ assert.equal(JSON.stringify(g.state()),before);
+});
+test('v0.7.5 instant sell batch is atomic, wear-priced, and excludes sealed and escrowed items',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"bulk-a",kind:"weapon",weapon:"AK-47",tier:2,base:100,wearGrade:0},'+
+  '{id:"bulk-b",kind:"skin",weapon:"SPAS-12",skin:"Spec Ops",tier:2,base:100,wearGrade:4},'+
+  '{id:"bulk-sealed",kind:"case",paid:25});save()');
+ assert.equal(g.run('window.LootHubMarketTransactions.instantSellPrice(s.items[0])'),78);
+ assert.equal(g.run('window.LootHubMarketTransactions.instantSellPrice(s.items[1])'),43);
+ assert.equal(g.run('window.LootHubMarketTransactions.instantSellPrice(s.items[2])'),null);
+ const before=JSON.stringify(g.state());
+ for(const ids of [['bulk-a','bulk-a'],['bulk-a','bulk-sealed'],['bulk-a','gone'],[]]){
+   assert.equal(g.run('window.LootHubMarketTransactions.sellOwnedBatch(s,'+JSON.stringify(ids)+')'),null);
+   assert.equal(JSON.stringify(g.state()),before,'Invalid batch caused partial mutation');
+ }
+ g.run('toggleBulkSellMode()');
+ assert(g.byId('main').innerHTML.includes('Sell selected'));
+ assert(!g.byId('main').innerHTML.includes('Select Sealed'));
+ g.run('toggleBulkSellItem("bulk-a",true);toggleBulkSellItem("bulk-b",true)');
+ assert(g.run('bulkSellToolbar()').includes('121 coins instant value'));
+ const receipt=JSON.parse(g.run('JSON.stringify(window.LootHubMarketTransactions.sellOwnedBatch(s,["bulk-a","bulk-b"]))'));
+ assert.equal(receipt.count,2);assert.equal(receipt.total,121);
+ assert.equal(g.state().coins,121);
+ assert.equal(g.state().sales,121);
+ assert.equal(g.state().rep,2);
+ assert.deepEqual(g.state().items.map(x=>x.id),['bulk-sealed']);
+ assert.equal(g.run('window.LootHubMarketTransactions.sellOwnedBatch(s,["bulk-a","bulk-b"])'),null);
+});
+test('v0.7.5 bulk UI confirmation and failed save never silently remove weapons',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"bulk-ui",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:1});save();toggleBulkSellMode();toggleBulkSellItem("bulk-ui",true)');
+ assert.equal(g.run('confirmBulkSell()'),true);
+ assert.equal(g.state().items.length,0);
+ assert.equal(g.state().coins,g.run('Math.round(110*1.18*.78)'));
+ assert.equal(g.run('bulkSellMode'),false);
+ g.run('save()');
+ assert.equal(boot(g.store).state().items.length,0);
+ const fail=boot();
+ fail.run('s.items.push({id:"bulk-fail",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});save();toggleBulkSellMode();toggleBulkSellItem("bulk-fail",true)');
+ const wallet=fail.state().coins;
+ const realSet=fail.store.setItem.bind(fail.store);
+ fail.store.setItem=(k,v)=>{if(k===KEY)throw Error('Write failed');realSet(k,v)};
+ assert.equal(fail.run('confirmBulkSell()'),false);
+ assert.equal(fail.state().items.length,1);
+ assert.equal(fail.state().coins,wallet);
+});
 test('0.7 active Trading Desk never passively settles while player is away',()=>{
  const g=boot();
  const item={id:'desk-no-auto',kind:'weapon',weapon:'AWP',tier:3,base:1000,wearGrade:1};
