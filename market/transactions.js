@@ -29,6 +29,30 @@ function sellOwned(game,itemId,price,reputation){
   game.rep+=reputation;
   return {item,price};
 }
+function instantSellPrice(item){
+ if(!item||!['weapon','skin'].includes(item.kind)||!core.eligible(item))return null;
+ const quote=Math.round(core.estimated(item)*.78);
+ return core.validAsk(quote)?quote:null;
+}
+function sellOwnedBatch(game,ids){
+ if(!game||!Array.isArray(ids)||ids.length<1||!Array.isArray(game.items)||
+   !Number.isSafeInteger(game.coins)||game.coins<0||
+   !Number.isSafeInteger(game.sales)||game.sales<0||
+   !Number.isSafeInteger(game.rep)||game.rep<0)return null;
+ const unique=new Set(ids);
+ if(unique.size!==ids.length||[...unique].some(id=>typeof id!=='string'))return null;
+ const selected=ids.map(id=>game.items.find(x=>x.id===id));
+ if(selected.some(x=>!x))return null;
+ const prices=selected.map(instantSellPrice);
+ if(prices.some(x=>x===null))return null;
+ const total=prices.reduce((sum,p)=>sum+p,0);
+ if(!Number.isSafeInteger(total)||!Number.isSafeInteger(game.coins+total)||
+    !Number.isSafeInteger(game.sales+total)||!Number.isSafeInteger(game.rep+ids.length))return null;
+ // All validation completes before the first mutation. Only owned items are eligible.
+ game.items=game.items.filter(x=>!unique.has(x.id));
+ game.coins+=total;game.sales+=total;game.rep+=ids.length;
+ return {count:ids.length,total,items:selected.map((item,i)=>({item,price:prices[i]}))};
+}
 function createListing(game,itemId,ask,now,mode='legacy'){
   if(!['legacy','desk','auction'].includes(mode)||!core.validAsk(ask)||!Number.isFinite(now)||!Array.isArray(game.items)||
     !Array.isArray(game.listings))return null;
@@ -141,6 +165,6 @@ function settleListing(game,listingId,negotiatedPrice){
   return {item:listing.item,ask:price,net,fee:price-net};
 }
 root.LootHubMarketTransactions=Object.freeze({
-  purchaseCase,sellOwned,createListing,repriceListing,cancelListing,settleListing,buyNpcListing,settleNpcTrade
+  purchaseCase,sellOwned,sellOwnedBatch,instantSellPrice,createListing,repriceListing,cancelListing,settleListing,buyNpcListing,settleNpcTrade
 });
 })(window);

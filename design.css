@@ -1246,3 +1246,23 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .owned-case-shortcut{flex-wrap:wrap}
  .general-menu{top:calc(100% + 8px);right:0}
 }
+
+/* v0.7.5 — selectable instant-sale inventory and funded auction acceptance */
+.bulk-sell-toolbar{padding:13px 15px;border:1px solid #6e8eae;background:linear-gradient(120deg,#1b3146,#162638);
+ border-radius:13px;margin:12px 0 16px;display:grid;gap:10px}
+.bulk-sell-toolbar .row{display:flex;gap:8px;flex-wrap:wrap}
+.bulk-sell-toolbar button{min-height:42px}
+.bulk-sell-toolbar p{margin:0}
+.bulk-pick{display:flex;align-items:center;gap:8px;color:#f5d49d;padding:6px 3px;font-weight:750;
+ font-size:13px;cursor:pointer}
+.bulk-pick input{width:20px;height:20px;accent-color:#dcb276;cursor:pointer}
+#inventoryGrid .item.bulk-selected{outline:2px solid #e5b773;outline-offset:-2px;background:#24364a}
+.auction-listing .market-listing-controls .primary{border-color:#cfaa6f}
+@media(max-width:700px){
+ .bulk-sell-toolbar .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .bulk-sell-toolbar .row button:last-child{grid-column:1 / -1}
+ .bulk-sell-toolbar .row button{padding:10px 7px;font-size:12px}
+ .bulk-pick{min-height:34px;font-size:12px}
+ .auction-listing .market-listing-controls .row{display:flex;flex-wrap:wrap}
+ .auction-listing .market-listing-controls .row button{flex:1;min-width:120px}
+}

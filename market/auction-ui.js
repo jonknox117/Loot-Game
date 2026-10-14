@@ -17,7 +17,7 @@ function openEditor(k){
  '<label for="auctionDuration">Auction duration</label>'+
  '<select id="auctionDuration" class="field">'+api.DURATIONS.map(h=>
  '<option value="'+h+'"'+(h===12?' selected':'')+'>'+h+' hour'+(h===1?'':'s')+'</option>').join('')+'</select>'+
- '<p class="muted tiny">Your item is held in escrow. Auctions can be cancelled before the first bid. When time expires, the highest funded bid wins or your item returns unsold. A 5% fee applies only to successful sales.</p>'+
+ '<p class="muted tiny">Your item is held in escrow. Cancel before the first bid, or accept the current highest funded bid at any time to end early. Otherwise, the auction settles when it expires. A 5% fee applies to successful sales.</p>'+
  '<div class="row"><button class="primary" onclick="'+action('start',k)+'">Start auction</button>'+
  '<button onclick="'+marketAction('inspect',k)+'">Back</button></div>');
 }
@@ -51,8 +51,38 @@ function details(k){
  '<div class="auction-bid-history">'+(l.bids.length?l.bids.slice(-18).map(x=>
   '<div class="stat"><span>'+escapeHTML(x.bidder)+' · '+new Date(x.at).toLocaleString()+'</span><b>'+money(x.amount)+' coins</b></div>').join(''):
   '<p class="muted">No bids yet. Buyers may arrive before the auction ends.</p>')+'</div>'+
- '<div class="row">'+(!l.bids.length?'<button onclick="'+action('cancel',k)+'">Cancel auction</button>':'')+
+ '<div class="row">'+(!l.bids.length?'<button onclick="'+action('cancel',k)+'">Cancel auction</button>':
+ '<button class="primary" onclick="window.LootHubAuctionUI.accept('+escapeHTML(JSON.stringify(String(k)))+','+l.highestBid+','+escapeHTML(JSON.stringify(l.highestBidder))+')">Accept highest bid · '+money(root.LootHubMarketCore.netProceeds(l.highestBid))+' ◈ net</button>')+
  '<button onclick="closeDialog()">Close</button></div>');
+}
+function accept(k,expectedAmount,expectedBuyer){
+ if(!canMutate())return false;
+ const listing=s.listings.find(x=>x.id===k&&api.isAuction(x));
+ if(!listing||!listing.highestBid||listing.highestBid!==expectedAmount||
+   listing.highestBidder!==expectedBuyer)return false;
+ const net=root.LootHubMarketCore.netProceeds(expectedAmount);
+ if(!confirm('End this auction now? Sell for '+money(expectedAmount)+
+   ' coins and receive '+money(net)+' coins after the 5% fee? This cannot be undone.'))return false;
+ // Advance any elapsed bid slots before settling so a newly-arrived bid
+ // cannot be silently sold at the price shown in an older dialog.
+ marketTick();
+ const current=s.listings.find(x=>x.id===k);
+ if(!current||current.highestBid!==expectedAmount||current.highestBidder!==expectedBuyer){
+   alert('The auction or leading bid changed. Review current bids before accepting.');
+   closeDialog();render();return false;
+ }
+ if(!canMutate())return false;
+ const before=JSON.stringify(s);
+ const receipt=api.acceptHighestBid(s,k,expectedAmount,expectedBuyer,Date.now());
+ if(!receipt){alert('The current bid could not be settled. Your auction remains active.');return false}
+ recordActivity(s,'Accepted auction bid: '+listingItemName(receipt.item)+' for '+
+   receipt.price+' coins ('+receipt.net+' after fees)');
+ if(!save()){
+   s=JSON.parse(before);alert('The auction sale could not be saved. No sale was committed.');
+   return false;
+ }
+ closeDialog();render();
+ return true;
 }
 function cancel(k){
  if(!canMutate())return false;
@@ -95,9 +125,10 @@ function house(){
  '<div class="market-listing-controls"><b>'+(l.highestBid?money(l.highestBid)+' ◈ highest':'Awaiting first bid')+'</b>'+
  '<span class="muted tiny">Potential proceeds '+(l.highestBid?money(root.LootHubMarketCore.netProceeds(l.highestBid))+' ◈':'—')+'</span>'+
  '<div class="row"><button onclick="'+action('details',l.id)+'">View bids</button>'+
+ (l.highestBid?'<button class="primary" onclick="'+action('details',l.id)+'">Review &amp; accept bid</button>':'')+
  (!l.bids.length?'<button onclick="'+action('cancel',l.id)+'">Cancel</button>':'')+'</div></div></div>').join(''):
  '<p class="muted tiny">No auctions yet. Select a weapon below and choose Auction.</p>')+
- '<p class="muted tiny">Duration: 1, 6, 12 or 24 hours · 5% success fee · No bids means no sale.</p></section>';
+ '<p class="muted tiny">Duration: 1, 6, 12 or 24 hours · Accept any highest funded bid early · 5% success fee · No bids means no sale.</p></section>';
 }
-root.LootHubAuctionUI=Object.freeze({openEditor,start,remaining,details,cancel,alerts,markRead,house});
+root.LootHubAuctionUI=Object.freeze({openEditor,start,remaining,details,accept,cancel,alerts,markRead,house});
 })(window);

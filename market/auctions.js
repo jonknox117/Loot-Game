@@ -101,6 +101,30 @@ function settle(game,listing,now){
  notify(game,'sold',listing,label(listing.item)+' sold for '+price+' coins. You received '+net+' after fees.',now);
  return {status:'sold',item:listing.item,price,net,fee:price-net,buyer:buyer.id};
 }
+// Early acceptance is an explicit final sale, never a cancellation or simulation reroll.
+// The expected amount and buyer bind the confirmation to the bid the player saw.
+function acceptHighestBid(game,id,expectedAmount,expectedBuyer,now=Date.now()){
+ if(!game||!Array.isArray(game.listings)||!Array.isArray(game.items)||!Number.isFinite(now))return null;
+ const listing=game.listings.find(l=>l.id===id);
+ if(!isAuction(listing)||now<listing.createdAt||now>=listing.endsAt||
+    !core.validAsk(expectedAmount)||typeof expectedBuyer!=='string'||
+    listing.highestBid!==expectedAmount||listing.highestBidder!==expectedBuyer||
+    !listing.bids.length||listing.bids[listing.bids.length-1].amount!==expectedAmount||
+    listing.bids[listing.bids.length-1].bidder!==expectedBuyer||
+    game.items.some(x=>x.id===listing.item.id))return null;
+ const price=listing.highestBid,buyer=root.LootHubTraders.get(game,expectedBuyer);
+ const net=core.netProceeds(price);
+ if(!buyer||buyer.role!=='buyer'||!root.LootHubTraders.canFund(game,buyer.id,price)||
+    !Number.isSafeInteger(game.coins+net)||!Number.isSafeInteger(game.sales+net)||
+    !Number.isSafeInteger(game.rep+1))return null;
+ if(!root.LootHubTraders.finishSale(game,buyer.id,price))return null;
+ game.listings.splice(game.listings.indexOf(listing),1);
+ game.coins+=net;game.sales+=net;game.rep++;
+ root.LootHubEconomy.recordTrade(game,listing.item,price,'sell',now);
+ notify(game,'sold',listing,label(listing.item)+' sold early for '+price+
+   ' coins. You received '+net+' after fees.',now);
+ return {status:'sold',early:true,item:listing.item,price,net,fee:price-net,buyer:buyer.id};
+}
 function advance(game,now=Date.now()){
  const outcome={changed:false,bids:0,sales:[],expired:0};
  if(!game||!Array.isArray(game.listings)||!Number.isFinite(now))return outcome;
@@ -151,5 +175,5 @@ function validate(game){
  return true;
 }
 root.LootHubAuctions=Object.freeze({DURATIONS,STEP,hash,notifications,isAuction,create,
- ceiling,increment,advance,cancel,validate,settle});
+ ceiling,increment,advance,cancel,validate,settle,acceptHighestBid});
 })(window);
