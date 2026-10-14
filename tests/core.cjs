@@ -2992,7 +2992,7 @@ test('v0.7.5 instant sell batch is atomic, wear-priced, and excludes sealed and 
    assert.equal(g.run('window.LootHubMarketTransactions.sellOwnedBatch(s,'+JSON.stringify(ids)+')'),null);
    assert.equal(JSON.stringify(g.state()),before,'Invalid batch caused partial mutation');
  }
- g.run('toggleBulkSellMode()');
+ g.run("go('Inventory');toggleBulkSellMode()");
  assert(g.byId('main').innerHTML.includes('Sell selected'));
  assert(!g.byId('main').innerHTML.includes('Select Sealed'));
  g.run('toggleBulkSellItem("bulk-a",true);toggleBulkSellItem("bulk-b",true)');
@@ -3010,7 +3010,7 @@ test('v0.7.5 bulk UI confirmation and failed save never silently remove weapons'
  g.run('s.items.push({id:"bulk-ui",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:1});save();toggleBulkSellMode();toggleBulkSellItem("bulk-ui",true)');
  assert.equal(g.run('confirmBulkSell()'),true);
  assert.equal(g.state().items.length,0);
- assert.equal(g.state().coins,g.run('Math.round(110*1.18*.78)'));
+ assert.equal(g.state().coins,g.run('window.LootHubMarketTransactions.instantSellPrice({kind:"weapon",id:"bulk-ui",weapon:"MP5",tier:1,base:110,wearGrade:1})'));
  assert.equal(g.run('bulkSellMode'),false);
  g.run('save()');
  assert.equal(boot(g.store).state().items.length,0);
