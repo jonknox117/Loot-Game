@@ -759,6 +759,10 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     // 0.5.4 — wear is now visible on cards, filtered market results, listings and reels.
     await page.evaluate(()=>go('Inventory'));
+    const wearGroup=page.locator('#inventoryGrid .inventory-group')
+      .filter({has:page.locator('[data-wear-seed="wear-visual-proof"]')});
+    if(await wearGroup.count()&&!(await wearGroup.evaluate(el=>el.open)))
+      await wearGroup.locator('summary').click();
     const ownedArt=page.locator('#inventoryGrid .master-raster[data-wear-seed="wear-visual-proof"]');
     assert(await ownedArt.count()===1,'Inventory art must retain its saved grade and seed');
     await ownedArt.scrollIntoViewIfNeeded();

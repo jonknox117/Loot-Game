@@ -509,8 +509,10 @@ const expandedInventoryGroups=new Set();
 function inventoryGroupToggled(details){
  if(!details||!details.dataset)return;
  const key=details.dataset.groupKey;
- if(details.open)expandedInventoryGroups.add(key);
- else expandedInventoryGroups.delete(key);
+ if(details.open){
+  expandedInventoryGroups.add(key);
+  window.LootHubWearRenderer.attach(details);
+ }else expandedInventoryGroups.delete(key);
 }
 function inventoryGroupCard(group){
  if(group.items.length<2)return card(group.items[0]);
