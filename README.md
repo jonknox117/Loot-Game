@@ -1,5 +1,19 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Vintage Case — Artwork ready; activation pending
+
+The fifth case is registered with five exclusive owner-approved Vintage finishes:
+**Colt .45 Revolver, FN FAL, M60, M1 Garand, Butterfly Knife**.
+The intended 75-coin case and 25-coin collection reward use LootHub's existing
+drop probabilities and transaction systems.
+
+Vintage is intentionally **hidden until its full image pack is installed**.
+Upload the prepared `vintage-release.zip` file into `assets/` on `main`.
+The `Install approved Vintage case artwork` workflow validates all 21 lossless
+transparent WebP renders, runs the gameplay and art audits, enables the case,
+updates the version label, deletes the upload ZIP and deploys the release.
+Existing four collections, weapon identities and player saves are preserved.
+
 ## Patch 0.8.0 — Smart Inventory & Market Organization
 
 - **Compact duplicate groups:** Base weapons and skins that share the same model and finish now appear as a single expandable inventory group with quantity, aggregate market value and the best-condition copy at a glance. Expanding shows each actual weapon and its individual wear, price and trading actions. **No IDs, wear grades, artwork, collection records, or item ownership are merged**; sealed cases remain separate.
