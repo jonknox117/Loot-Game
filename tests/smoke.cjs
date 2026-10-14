@@ -87,7 +87,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     // Only the Arsenal Case is live. The metal/wood/other maps are used
     // solely for wear, not procedural collectible finishes or themed cases.
     await page.getByRole('button',{name:'Cases',exact:true}).click();
-    assert(await page.locator('.case-choice').count()===4,'Storefront must show four case choices');
+    assert(await page.locator('.case-choice').count()===
+      await page.evaluate(()=>window.LootHubCaseRegistry.all().filter(x=>x.released).length),
+      'Storefront must show exactly the released case choices');
     await page.getByRole('button',{name:'View Arsenal Case'}).click();
     const caseShop=await page.locator('#main').textContent();
     // Uploaded closed crate appears in the shop with native transparency, not SVG.
@@ -990,7 +992,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       return {out,masterCount:catalog.length,arsenal:dropCatalog.length,market:allMarketCatalog.length,
         casePrice:cartelCase.casePrice};
     });
-    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===50,
+    assert(cartelArt.masterCount===25&&cartelArt.arsenal===35&&cartelArt.market===
+      50+(await page.evaluate(()=>window.LootHubCaseRegistry.isReleased('vintage'))?5:0),
       'Cartel must not change the 25-master Arsenal drop pool');
     assert(cartelArt.casePrice===75,'Cartel Case price must be 75 coins');
     assert(cartelArt.out.length===5&&cartelArt.out.every(x=>x.ok),
@@ -1163,8 +1166,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     });
     await page.getByRole('button',{name:'Collections',exact:true}).click();
     assert((await page.evaluate(()=>s.tab))==='Collections','Collections must be a primary saved destination');
-    assert(await page.locator('.collection-panel').count()===4,
-      'The iPhone Collection Book must show Arsenal, Cartel, Spec Ops and Lavish progress');
+    assert(await page.locator('.collection-panel').count()===
+       await page.evaluate(()=>window.LootHubCollections.definitions.length),
+      'The iPhone Collection Book must show every published case collection');
     assert((await page.locator('.collection-book').textContent()).includes('35 / 35'),
       'Owned original weapons and Arsenal skins must all count once');
     assert((await page.locator('.collection-book').textContent()).includes('5 / 5'),
@@ -1645,6 +1649,33 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'smart-rare-best','smart-rare-worn'].includes(x.id)).length)===5,
       'Sorting and grouping may not merge or remove any owned copies');
 
+    // Vintage is deliberately hidden until its approved asset archive has
+    // been unpacked and all 21 image variants have passed the release audit.
+    if(await page.evaluate(()=>window.LootHubCaseRegistry.isReleased('vintage'))){
+      await page.getByRole('button',{name:'Cases',exact:true}).click();
+      assert(await page.locator('.case-choice-vintage').count()===1,
+        'Released Vintage case must appear in storefront');
+      await page.getByRole('button',{name:'View Vintage Case'}).click();
+      const checkVintage=await page.evaluate(async()=>{
+        const reg=window.LootHubCaseRegistry,entry=reg.get('vintage'),images=[];
+        const check=async src=>{
+          const img=new Image();img.src=src;await img.decode();
+          return {src,width:img.naturalWidth,height:img.naturalHeight}
+        };
+        for(const pose of ['closed','open'])for(const size of [400,800,1254])
+          images.push(await check(reg.chestImage('vintage',pose,size)));
+        for(const item of entry.items)for(const size of [400,800,1600])
+          images.push(await check(reg.skinImage(item,size)));
+        return {images,price:reg.priceFor('vintage'),items:entry.items.length};
+      });
+      assert(checkVintage.price===75&&checkVintage.items===5&&checkVintage.images.length===21&&
+        checkVintage.images.every(x=>x.width===Number(x.src.match(/-(\d+)\.webp$/)[1])&&
+          x.width===x.height),
+        'Vintage must display all 21 approved square WebP variants');
+      await page.getByRole('button',{name:'Collections',exact:true}).click();
+      assert((await page.locator('.collection-book').textContent()).includes('Vintage'),
+        'Vintage must join the Collection Book when officially released');
+    }
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
