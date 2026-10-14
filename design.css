@@ -1337,3 +1337,37 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .bulk-sell-toolbar .row{grid-template-columns:repeat(2,minmax(0,1fr))}
  .bulk-sell-toolbar .row button:last-child{grid-column:1/-1}
 }
+
+/* v0.8.0 — information first: group identical weapons, find actionable bids. */
+.inventory-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.inventory-filters label{display:grid;gap:5px;font-size:12px;font-weight:650;color:#c8d5e7}
+.inventory-filters .field{width:100%;min-width:0}
+.inventory-quick-filters{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.inventory-quick-filters button{padding:8px 12px;min-height:40px;font-size:12px}
+.inventory-quick-filters button.active{background:#4d3d2e;border-color:#c4a275;color:#ffe4b8}
+#inventoryGrid{min-width:0}
+.inventory-group{min-width:0;border:1px solid #44566d;border-radius:13px;background:linear-gradient(135deg,#1d2c3e,#152232);grid-column:1/-1;margin-bottom:7px}
+.inventory-group-head{cursor:pointer;display:flex;gap:14px;align-items:center;padding:12px 15px;list-style:none;min-height:86px}
+.inventory-group-head::-webkit-details-marker{display:none}
+.inventory-group-head::before{content:'▸';color:#d4b387;margin-right:0;font-size:17px}
+.inventory-group[open]>.inventory-group-head::before{content:'▾'}
+.inventory-group-art{width:100px;max-height:90px;flex:0 0 100px;display:flex;align-items:center;justify-content:center}
+.inventory-group-art img,.inventory-group-art .weapon-art{max-width:100%;max-height:88px;object-fit:contain}
+.inventory-group-info{display:grid;gap:5px;min-width:0;flex:1}
+.inventory-group-info strong{overflow-wrap:anywhere}
+.inventory-group-count{font-weight:850;color:#f6d29d;font-size:17px;flex:0 0 auto}
+.inventory-group-items{padding:12px;border-top:1px solid #3c5066;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px}
+.auction-attention{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:12px 0;padding:10px;background:#17283b;border:1px solid #435b75;border-radius:10px;font-size:12px}
+.auction-attention>*{padding:4px 8px;border-radius:6px}
+.auction-attention strong{background:#403122;color:#ffdaa9}
+.auction-status{display:inline-block;width:max-content;max-width:100%;font-size:11px;font-weight:780;padding:4px 7px;background:#243f53;color:#c8dce9;border-radius:5px;margin-bottom:4px}
+.auction-status.auction-ready{background:#563a25;color:#ffe0aa}
+@media(max-width:700px){
+ .inventory-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .inventory-group-head{padding:10px 8px;gap:8px}
+ .inventory-group-art{width:70px;flex-basis:70px}
+ .inventory-group-items{grid-template-columns:repeat(2,minmax(0,1fr));padding:7px;gap:7px}
+ .inventory-group-info{font-size:12px}
+ .inventory-group-count{font-size:14px}
+ .inventory-quick-filters button{flex:1 1 21%;font-size:11px;padding:8px 6px}
+}

@@ -207,18 +207,35 @@ function acceptSelectedBids(){
  }
  selectedBids.clear();closeDialog();render();return true;
 }
+function auctionPriority(listing,now=Date.now()){
+ if(listing.highestBid&&listing.highestBidder)return 0;
+ if(listing.endsAt-now<=60*60*1000)return 1;
+ return 2;
+}
 function house(){
- const listings=s.listings.filter(api.isAuction);
+ const now=Date.now();
+ const listings=s.listings.filter(api.isAuction).sort((a,b)=>
+  auctionPriority(a,now)-auctionPriority(b,now)||
+  a.endsAt-b.endsAt||String(a.id).localeCompare(String(b.id)));
+ const ready=listings.filter(l=>auctionPriority(l,now)===0).length;
+ const ending=listings.filter(l=>auctionPriority(l,now)===1).length;
  return '<section class="panel auction-house" id="market-auctions">'+
  '<div class="section-eyebrow">PASSIVE SALES · BIDDING OVER TIME</div>'+
  '<div class="row space"><h2>Auction House</h2><span class="muted tiny">'+listings.length+' active</span></div>'+
+ (listings.length?'<div class="auction-attention" aria-label="Auction priorities"><strong>'+
+  ready+' ready to accept</strong><span>'+ending+' ending soon</span><span>'+
+  Math.max(0,listings.length-ready-ending)+' waiting for bids</span></div>':'')+
  '<p class="muted">Set a starting price and let independent NPC buyers compete. Your item sells automatically when the auction ends, or returns unsold.</p>'+
  (listings.some(l=>l.highestBid)?'<div class="batch-bid-tools"><div class="row"><button onclick="window.LootHubAuctionUI.selectAllBids()">Select all active bids</button>'+
  '<button onclick="window.LootHubAuctionUI.clearSelectedBids()">Clear</button></div>'+
  '<div id="batchBidToolbar" class="batch-bid-toolbar">'+bidToolbar()+'</div></div>':'')+
  (listings.length?listings.map(l=>
- '<div class="listing-line auction-listing"><div class="listing-identity">'+visualArt(l.item)+
- '<div class="listing-identity-copy"><b>'+escapeHTML(listingItemName(l.item))+'</b>'+
+ '<div class="listing-line auction-listing" data-auction-priority="'+auctionPriority(l,now)+'">'+
+ '<div class="listing-identity">'+visualArt(l.item)+
+ '<div class="listing-identity-copy">'+
+ '<span class="auction-status'+(auctionPriority(l,now)===0?' auction-ready':'')+'">'+
+ (auctionPriority(l,now)===0?'Bid ready to accept':auctionPriority(l,now)===1?'Ending soon':'Waiting for bids')+'</span>'+
+ '<b>'+escapeHTML(listingItemName(l.item))+'</b>'+
  '<span class="muted tiny">Market '+money(marketEstimate(l.item))+' ◈ · Opening '+money(l.ask)+' ◈</span>'+
  '<span class="muted tiny">'+remaining(l)+' · '+l.bids.length+' bids</span></div></div>'+
  '<div class="market-listing-controls">'+(l.highestBid?
