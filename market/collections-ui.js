@@ -1,5 +1,5 @@
 /* 0.6.1 Collection Book UI, deliberately reachable from Cases/Inventory
-   without crowding the seven-tab iPhone navigation. */
+   with its own primary destination on mobile and desktop. */
 let collectionBookOpen=false,selectedCollectionId=null;
 function collectionEntry(){
  const data=window.LootHubCollections.ensure(s);
@@ -14,11 +14,11 @@ function collectionEntry(){
 }
 function openCollectionBook(){
  if(busy)return;
- tab='Cases';collectionBookOpen=true;selectedCollectionId=null;render();
+ tab='Collections';utilityView=null;collectionBookOpen=true;selectedCollectionId=null;render();
 }
 function showCollection(id){
  if(!window.LootHubCollections.definitions.some(x=>x.id===id))return;
- collectionBookOpen=true;selectedCollectionId=id;tab='Cases';render();
+ collectionBookOpen=true;selectedCollectionId=id;tab='Collections';utilityView=null;render();
 }
 function backToCollections(){selectedCollectionId=null;collectionBookOpen=true;render()}
 function closeCollectionBook(){collectionBookOpen=false;selectedCollectionId=null;go('Cases')}
@@ -50,8 +50,8 @@ function collectionTile(item,found){
 function collectionBook(){
  const collections=window.LootHubCollections.definitions;
  if(!selectedCollectionId)return '<section class="panel collection-book">'+
-  '<div class="row space"><div><div class="section-eyebrow">PERMANENT DISCOVERIES</div><h2>Collection Book</h2></div>'+
-   '<button onclick="closeCollectionBook()">Back to Cases</button></div>'+
+  '<div class="row space"><div><div class="section-eyebrow">PERMANENT DISCOVERIES</div><h2>Collections</h2></div>'+
+   '</div>'+
   '<p class="muted">Keep your discovery credit after selling or trading. Only distinct approved items count. Previously sold items absent from your old save cannot be reconstructed.</p>'+
   '<div class="collection-list">'+collections.map(collectionStatus).join('')+'</div></section>';
  const c=collections.find(x=>x.id===selectedCollectionId);
