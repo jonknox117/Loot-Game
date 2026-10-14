@@ -1180,3 +1180,69 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 }
 .cartel-case-art .curated-case-image{width:100%;height:100%;min-height:0}
 .curated-case-section .cartel-odds .weapon-art{min-width:0}
+
+/* v0.7.4 — Primary gameplay first, supporting tools in the general menu. */
+.layout{display:block;max-width:1180px;margin:0 auto}
+.layout>div{min-width:0}
+.top{display:flex;gap:12px;position:relative}
+.top .brand{margin-right:auto}
+.top .wallet-button{font:inherit;font-size:15px;font-weight:760;cursor:pointer;min-width:140px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px}
+.top .wallet-button .save-status{display:block;font-weight:520;line-height:1.3}
+.menu-toggle{height:45px;min-width:76px;border-color:rgba(153,174,204,.32);background:#17263a}
+.general-menu-wrap{position:relative;align-self:center}
+.general-menu{position:absolute;z-index:22;right:0;top:calc(100% + 10px);width:min(280px,calc(100vw - 26px));padding:9px;border:1px solid #42546c;background:#101c2b;border-radius:14px;box-shadow:0 20px 54px #0009;display:grid;gap:3px}
+.general-menu[hidden]{display:none!important}
+.general-menu button{text-align:left;border:0;background:transparent;color:#edf1f6;padding:12px;font-size:14px}
+.general-menu button:hover,.general-menu button:focus-visible{background:#263a52;filter:none}
+.general-menu #soundToggle{border-top:1px solid #31425a;border-radius:0;margin-top:4px;width:100%}
+.nav{justify-content:center;overflow-x:visible;gap:12px}
+.nav button{flex:0 1 170px;min-height:49px;text-align:center}
+.case-shop-heading{margin:8px 0 20px}
+.case-shop-heading h1{font-size:clamp(26px,4vw,38px);margin:8px 0 5px}
+.case-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:24px}
+.case-choice{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);align-items:center;gap:12px;padding:16px;border-radius:16px;border:1px solid #34465d;background:linear-gradient(140deg,#192637,#0d1725);min-width:0}
+.case-choice-info{min-width:0}
+.case-choice h3{margin:0 0 7px;font-size:19px}
+.case-choice p{font-size:12px;line-height:1.45;min-height:35px;margin:8px 0}
+.case-choice-price{color:#f5c582;font-size:16px}
+.case-choice button{min-height:42px;width:100%}
+.case-choice-art{height:175px;display:flex;justify-content:center;align-items:center;min-width:0}
+.case-choice-art .weapon-art,.case-choice-art .art,.case-choice-art .curated-case-image,.case-choice-art .arsenal-case-image{height:100%!important;width:100%!important;max-height:100%!important;object-fit:contain}
+.case-choice-art img{height:100%!important;width:100%!important;max-height:100%!important;object-fit:contain}
+.case-choice-cartel{border-color:#775044;background:linear-gradient(135deg,#2b2021,#161925)}
+.case-choice-spec-ops{border-color:#55616b;background:linear-gradient(135deg,#242b32,#111a25)}
+.case-choice-lavish{border-color:#a17545;background:linear-gradient(135deg,#331e2c,#1a1725)}
+.selected-case-anchor{margin:26px 0 12px;scroll-margin-top:100px}
+.selected-case-anchor h2{margin:0}
+.owned-case-shortcut{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.owned-case-shortcut p{margin:3px 0}
+.starter-earn{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border:1px solid #4e4334;border-radius:11px;background:#241d16;margin-bottom:15px;font-size:13px}
+.starter-earn button{background:transparent;border:0;text-decoration:underline;color:#f6cb8b}
+.case-catalog-details{margin-top:16px}
+.case-catalog-details>summary{cursor:pointer;font-weight:750;font-size:15px;padding:5px 2px}
+.case-catalog-details[open]>summary{margin-bottom:18px}
+.utility-back{margin:0 0 17px}
+.utility-back button{border-color:#445875}
+@media(max-width:900px){.case-choice-grid{grid-template-columns:1fr}.case-choice{grid-template-columns:minmax(0,42%) minmax(0,1fr)}}
+@media(max-width:700px){
+ .top{flex-wrap:nowrap!important;gap:7px;align-items:center!important}
+ .top .brand{order:0!important;flex:1 1 auto;min-width:0}
+ .top .wallet-button{order:1!important;flex:0 0 auto;min-width:0;padding:7px 8px;font-size:12px;white-space:nowrap}
+ .top .wallet-button .save-status{font-size:8px;max-width:112px;white-space:normal}
+ .top .general-menu-wrap{order:2!important;flex:0 0 auto}
+ .menu-toggle{min-width:42px;width:44px;height:43px;padding:5px;font-size:18px}
+ .menu-toggle span{display:none}
+ .nav{gap:3px!important;padding:8px 5px calc(9px + env(safe-area-inset-bottom));justify-content:space-around;overflow:visible;scroll-snap-type:none}
+ .nav button{flex:1 1 25%;min-width:0!important;padding:11px 3px!important;font-size:11px;min-height:47px;white-space:nowrap}
+ .shell{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+ .case-shop-heading{margin-top:13px}
+ .case-choice-grid{gap:11px}
+ .case-choice{padding:10px;gap:10px;grid-template-columns:minmax(0,42%) minmax(0,1fr)}
+ .case-choice-art{height:130px}
+ .case-choice h3{font-size:16px}
+ .case-choice p{font-size:11px;min-height:0;margin:6px 0}
+ .case-choice-price{font-size:14px}
+ .case-choice button{padding:9px 4px;font-size:12px}
+ .owned-case-shortcut{flex-wrap:wrap}
+ .general-menu{top:calc(100% + 8px);right:0}
+}
