@@ -551,7 +551,7 @@ function inventory(){
   '<div class="inventory-quick-filters" aria-label="Inventory shortcuts">'+
   [['all','All items'],['duplicates','Duplicates'],['common','Common'],['valuable','High value']].map(([id,label])=>
   '<button '+(inventoryQuickFilter()===id?'class="active" ':'')+
-   'onclick="setInventoryQuickFilter('+JSON.stringify(id)+')">'+label+'</button>').join('')+'</div>'+
+   'onclick="setInventoryQuickFilter('+escapeHTML(JSON.stringify(id))+')">'+label+'</button>').join('')+'</div>'+
   '<p class="muted tiny">Identical weapons are grouped. Expand a group to see individual wear, values and actions.</p>'+
   '<div class="row multi-inventory-action"><button class="primary" onclick="showMultiPicker()" '+
    (s.items.some(x=>x.kind==='case')?'':'disabled')+'>Open up to 5 cases</button>'+

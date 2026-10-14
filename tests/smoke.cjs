@@ -1633,6 +1633,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.evaluate(()=>bulkSellIds.size)===2,
       'Changing sort must retain the current batch selection');
     await page.getByRole('button',{name:'Duplicates',exact:true}).click();
+    assert(await page.evaluate(()=>s.preferences.inventoryQuick)==='duplicates',
+      'Duplicates filter must actually activate when pressed');
     assert(await page.evaluate(()=>bulkSellIds.size)===2,
       'Changing inventory filter must not lose already selected weapons');
     await page.reload({waitUntil:'load'});
