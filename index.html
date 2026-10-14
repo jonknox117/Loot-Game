@@ -451,12 +451,120 @@ function card(x){let r=rarity(x);return '<div class="item'+(bulkSellMode&&bulkSe
  (bulkSellMode&&isBulkSellEligible(x)?'<label class="bulk-pick"><input type="checkbox" aria-label="Select '+escapeHTML(itemName(x))+'"'+
  (bulkSellIds.has(x.id)?' checked':'')+' onchange="toggleBulkSellItem('+escapeHTML(JSON.stringify(x.id))+',this.checked)"> Select</label>':'')+
  visualArt(x)+'<div class="tag '+cls(r)+'">'+r+'</div><h4>'+escapeHTML(itemName(x))+'</h4><p class="muted">'+(x.kind==='case'?'Unopened · tradeable':(x.kind==='skin'?'Approved skin · '+x.skin:'Base weapon · unskinned'))+'</p><p class="muted tiny">'+conditionTag(x)+'</p><b>≈ '+money(marketEstimate(x))+' coins</b>'+inventoryCardActions(x)+'</div>'}
-function inventory(){return '<section class="panel"><div class="row space"><h2>Inventory</h2><select id="filter" class="field" style="width:155px" onchange="filterInv()"><option value="all">All rarities</option>'+tiers.map(t=>'<option>'+t+'</option>').join('')+'</select></div><p class="muted">Open sealed cases first, or inspect your collectibles to trade and sell.</p><div class="row multi-inventory-action"><button class="primary" onclick="showMultiPicker()" '+(s.items.some(x=>x.kind==='case')?'':'disabled')+'>Open up to 5 cases</button>'+
- '<button onclick="toggleBulkSellMode()">'+(bulkSellMode?'Cancel selection':'Select weapons to trade')+'</button></div>'+
- (bulkSellMode?'<div class="bulk-sell-toolbar" id="bulkSellToolbar">'+bulkSellToolbar()+'</div>':'')+
- '<div id="inventoryGrid" class="cards">'+sortedInventoryItems(s.items).map(card).join('')+'</div>'+(s.items.length?'':'<p class="muted">Nothing here yet. Buy your first case.</p>')+'</section>'}
-function sortedInventoryItems(items){return [...items].sort((a,b)=>Number(b.kind==='case')-Number(a.kind==='case'))}
-function filterInv(){let f=document.getElementById('filter').value;const grid=document.getElementById('inventoryGrid');window.LootHubWearRenderer.release(grid);grid.innerHTML=sortedInventoryItems(s.items.filter(x=>f==='all'||rarity(x)===f)).map(card).join('');window.LootHubWearRenderer.attach(grid)}
+// Item IDs, wear grades, serial numbers and market quotes are never merged.
+// Groups are purely a compact presentation of equivalent weapons / skins.
+function inventoryGroupKey(item){
+ if(!item||!['weapon','skin'].includes(item.kind))return 'individual:'+item.id;
+ return item.kind+'|'+String(item.weapon||'')+'|'+String(item.skin||'');
+}
+function inventorySortMode(){return ['newest','value','rarity','condition','duplicates'].includes(s.preferences.inventorySort)?
+ s.preferences.inventorySort:'newest'}
+function inventoryRarityFilter(){return s.preferences.inventoryRarity||'all'}
+function inventoryQuickFilter(){return ['all','duplicates','common','valuable'].includes(s.preferences.inventoryQuick)?
+ s.preferences.inventoryQuick:'all'}
+function inventoryGroups(items){
+ const groups=new Map();
+ for(const item of items){
+  const key=inventoryGroupKey(item);
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(item);
+ }
+ return [...groups].map(([key,members])=>({key,items:members}));
+}
+function inventoryBestItem(items){
+ return [...items].sort((a,b)=>
+  (Number(a.wearGrade??99)-Number(b.wearGrade??99))||
+  (marketEstimate(b)-marketEstimate(a))||
+  String(a.id).localeCompare(String(b.id)))[0];
+}
+function sortedInventoryItems(items){
+ const mode=inventorySortMode();
+ return [...items].sort((a,b)=>{
+  if(a.kind==='case'&&b.kind!=='case')return -1;
+  if(b.kind==='case'&&a.kind!=='case')return 1;
+  if(mode==='value')return marketEstimate(b)-marketEstimate(a);
+  if(mode==='rarity')return b.tier-a.tier;
+  if(mode==='condition')return (a.wearGrade??99)-(b.wearGrade??99);
+  if(mode==='duplicates'){
+   const counts=new Map();
+   for(const x of items)counts.set(inventoryGroupKey(x),(counts.get(inventoryGroupKey(x))||0)+1);
+   const delta=counts.get(inventoryGroupKey(b))-counts.get(inventoryGroupKey(a));
+   if(delta)return delta;
+  }
+  return 0; // stable insertion order for newest; historical saves are not re-ordered.
+ }).reverse().sort((a,b)=>Number(b.kind==='case')-Number(a.kind==='case'));
+}
+function filteredInventoryItems(){
+ const rarityFilter=inventoryRarityFilter(),quick=inventoryQuickFilter();
+ const counts=new Map();
+ for(const x of s.items)counts.set(inventoryGroupKey(x),(counts.get(inventoryGroupKey(x))||0)+1);
+ return sortedInventoryItems(s.items.filter(x=>{
+  if(rarityFilter!=='all'&&rarity(x)!==rarityFilter)return false;
+  if(quick==='duplicates')return x.kind!=='case'&&(counts.get(inventoryGroupKey(x))||0)>1;
+  if(quick==='common')return ['weapon','skin'].includes(x.kind)&&x.tier<=1;
+  if(quick==='valuable')return ['weapon','skin'].includes(x.kind)&&x.tier>=3;
+  return true;
+ }));
+}
+function inventoryGroupCard(group){
+ if(group.items.length<2)return card(group.items[0]);
+ const best=inventoryBestItem(group.items),copyCount=group.items.length;
+ const value=group.items.reduce((n,x)=>n+marketEstimate(x),0);
+ const selected=group.items.filter(x=>bulkSellIds.has(x.id)).length;
+ const condition=best.wearGrade===undefined?'—':conditionTag(best);
+ return '<details class="inventory-group" data-group-key="'+escapeHTML(group.key)+'"'+
+  (selected?' open':'')+'><summary class="inventory-group-head">'+
+  '<div class="inventory-group-art">'+visualArt(best,'inventory')+'</div>'+
+  '<div class="inventory-group-info"><strong>'+escapeHTML(itemName(best))+'</strong>'+
+  '<span class="muted tiny">'+copyCount+' owned · Best '+condition+'</span>'+
+  '<span class="muted tiny">Combined value '+money(value)+' ◈'+
+  (selected?' · '+selected+' selected':'')+'</span></div>'+
+  '<span class="inventory-group-count">×'+copyCount+'</span></summary>'+
+  '<div class="inventory-group-items">'+group.items.map(card).join('')+'</div></details>';
+}
+function inventoryGridHtml(){
+ return inventoryGroups(filteredInventoryItems()).map(inventoryGroupCard).join('');
+}
+function inventory(){
+ return '<section class="panel"><div class="row space"><h2>Inventory</h2>'+
+  '<span class="muted tiny">'+s.items.length+' owned</span></div>'+
+  '<div class="inventory-filters">'+
+  '<label>Rarity<select id="filter" class="field" aria-label="Inventory rarity filter" onchange="filterInv()">'+
+   '<option value="all"'+(inventoryRarityFilter()==='all'?' selected':'')+'>All rarities</option>'+
+   tiers.map(t=>'<option'+(inventoryRarityFilter()===t?' selected':'')+'>'+t+'</option>').join('')+
+  '</select></label>'+
+  '<label>Sort<select id="inventorySort" class="field" aria-label="Sort inventory" onchange="filterInv()">'+
+   [['newest','Newest'],['value','Highest value'],['rarity','Highest rarity'],
+    ['condition','Best condition'],['duplicates','Most duplicates']].map(([id,label])=>
+     '<option value="'+id+'"'+(inventorySortMode()===id?' selected':'')+'>'+label+'</option>').join('')+
+  '</select></label></div>'+
+  '<div class="inventory-quick-filters" aria-label="Inventory shortcuts">'+
+  [['all','All items'],['duplicates','Duplicates'],['common','Common'],['valuable','High value']].map(([id,label])=>
+  '<button '+(inventoryQuickFilter()===id?'class="active" ':'')+
+   'onclick="setInventoryQuickFilter('+JSON.stringify(id)+')">'+label+'</button>').join('')+'</div>'+
+  '<p class="muted tiny">Identical weapons are grouped. Expand a group to see individual wear, values and actions.</p>'+
+  '<div class="row multi-inventory-action"><button class="primary" onclick="showMultiPicker()" '+
+   (s.items.some(x=>x.kind==='case')?'':'disabled')+'>Open up to 5 cases</button>'+
+   '<button onclick="toggleBulkSellMode()">'+(bulkSellMode?'Cancel selection':'Select weapons to trade')+'</button></div>'+
+  (bulkSellMode?'<div class="bulk-sell-toolbar" id="bulkSellToolbar">'+bulkSellToolbar()+'</div>':'')+
+  '<div id="inventoryGrid" class="cards">'+inventoryGridHtml()+'</div>'+
+  (s.items.length?'':'<p class="muted">Nothing here yet. Buy your first case.</p>')+'</section>';
+}
+function setInventoryQuickFilter(choice){
+ if(!['all','duplicates','common','valuable'].includes(choice))return;
+ s.preferences.inventoryQuick=choice;save();render();
+}
+function filterInv(){
+ const f=document.getElementById('filter'),sort=document.getElementById('inventorySort');
+ if(f)s.preferences.inventoryRarity=f.value;
+ if(sort)s.preferences.inventorySort=sort.value;
+ save();
+ const grid=document.getElementById('inventoryGrid');if(!grid)return;
+ window.LootHubWearRenderer.release(grid);
+ grid.innerHTML=inventoryGridHtml();
+ window.LootHubWearRenderer.attach(grid);
+}
+
 function toggleBulkSellMode(){
  bulkSellMode=!bulkSellMode;bulkSellIds.clear();render();
 }
@@ -475,21 +583,40 @@ function toggleBulkSellItem(id,checked){
 }
 function selectVisibleBulkSell(){
  if(!bulkSellMode)return;
- const filter=document.getElementById('filter');
- const rarityFilter=filter?filter.value:'all';
- s.items.filter(x=>isBulkSellEligible(x)&&(rarityFilter==='all'||rarity(x)===rarityFilter))
-   .forEach(x=>bulkSellIds.add(x.id));
+ filteredInventoryItems().filter(x=>isBulkSellEligible(x)&&x.tier<3)
+  .forEach(x=>bulkSellIds.add(x.id));
  filterInv();updateBulkSellToolbar();
+}
+function selectCommonBulk(){
+ if(!bulkSellMode)return false;
+ filteredInventoryItems().filter(x=>isBulkSellEligible(x)&&x.tier<=1)
+  .forEach(x=>bulkSellIds.add(x.id));
+ filterInv();updateBulkSellToolbar();return true;
+}
+function selectDuplicateBulk(){
+ if(!bulkSellMode)return false;
+ const groups=inventoryGroups(s.items.filter(isBulkSellEligible));
+ const eligible=new Set(filteredInventoryItems().map(x=>x.id));
+ for(const group of groups){
+  if(group.items.length<2)continue;
+  const keep=inventoryBestItem(group.items);
+  for(const item of group.items){
+   if(item.id!==keep.id&&item.tier<3&&eligible.has(item.id))bulkSellIds.add(item.id);
+  }
+ }
+ filterInv();updateBulkSellToolbar();return true;
 }
 function clearBulkSell(){bulkSellIds.clear();filterInv();updateBulkSellToolbar()}
 function bulkSellToolbar(){
  const quote=bulkSellQuote();
  return '<strong>'+quote.items.length+' selected · '+money(quote.total)+' coins instant value</strong>'+
- '<div class="row"><button onclick="selectVisibleBulkSell()">Select visible weapons</button>'+
+ '<div class="row"><button onclick="selectVisibleBulkSell()">Select filtered (safe)</button>'+
+ '<button onclick="selectCommonBulk()">Select Commons</button>'+
+ '<button onclick="selectDuplicateBulk()">Select Duplicates</button>'+
  '<button onclick="clearBulkSell()">Clear</button>'+
  '<button class="primary" '+(quote.items.length?'':'disabled')+' onclick="confirmBulkSell()">Sell selected · '+money(quote.total)+' ◈</button>'+
  '<button '+(quote.items.length&&quote.items.length<=40?'':'disabled')+' onclick="auctionSelectedWeapons()">Auction selected · 12h</button></div>'+
- '<p class="muted tiny">Weapons and skins only. Sealed cases and items listed for sale are excluded. Instant prices use the same condition-adjusted rate as individual sales.</p>';
+ '<p class="muted tiny">Mass select skips Super Rare and Legendary weapons, and duplicates keep the best-condition copy. Manual selections are available for individual items. Sealed cases and escrow are excluded.</p>';
 }
 function updateBulkSellToolbar(){
  const toolbar=document.getElementById('bulkSellToolbar');
