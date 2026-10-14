@@ -386,7 +386,7 @@ test('Old retired raster finishes stay disabled and user-approved finish alone a
   assert.equal((menu.match(/View weapon/g)||[]).length,MASTER_COUNT);
   assert.equal((menu.match(/View skin/g)||[]).length,10);
   assert(menu.includes('MAC-10 | Red Devil'));
-  assert(menu.includes('Available base weapons'));
+  assert(menu.includes('Browse 25 base weapons'));
   for(const finish of ['Starfall','Slate Grid','Voltage Bloom','Crimson Circuit','Metro Fade']){
     assert(!menu.includes(finish),'Retired finish visible: '+finish);
   }
@@ -2315,7 +2315,7 @@ test('0.5.8 synthesized feedback is gesture-only, muteable, save-safe and determ
   assert.equal(reload.run('window.LootHubFX.isMuted()'),false);
   assert(reload.run('window.__testSounds||0')>0,'Unmuting after user gesture should play one cue');
   const before=reload.run('window.__testSounds');
-  reload.run('go("Cases")');
+  reload.run('go("Inventory")');
   assert(reload.run('window.__testSounds')>before,'Navigation must produce its own cue');
   reload.run('window.LootHubFX.play("reveal",{tier:4})');
   assert(reload.run('window.__testSounds')>before+1,'Legendary reveal should have a richer audio cue');
@@ -2355,8 +2355,9 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+10,'The Arsenal drop pool must not be expanded');
  assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+25,'Cartel, Spec Ops and Lavish skins enter market listings');
  assert(g.run('universalCases()').includes('Cartel Case'));
- assert(g.run('universalCases()').includes('multi-qty-cartel'),'Cartel has working quantity-based purchasing');
- assert(g.run('universalCases()').includes('View five skins'));
+ g.run("selectStoreCase('cartel')");
+ assert(g.byId('main').innerHTML.includes('multi-qty-cartel'),'Cartel has working quantity-based purchasing');
+ assert(g.byId('main').innerHTML.includes('View five skins'));
  assert(g.run('visualArt({kind:"case",caseId:"cartel"})').includes('cartel-crate'));
  for(const [i,entry] of entries.entries()){
   const item={id:'cartel-check-'+i,kind:'skin',weapon:entry.weapon,
@@ -2653,7 +2654,7 @@ test('0.6.0 1–5 direct buy-and-open is wallet-atomic for each case',()=>{
 
 test('0.6.0 existing single-case workflow and controls remain available',()=>{
  const g=boot();
- assert(g.run('universalCases()').includes('Select owned cases'));
+ assert(g.run('universalCases()').includes('Choose your collection'));
  assert(g.run('cases()').includes('multi-qty-arsenal'));
  assert(g.run('cartelSection()').includes('multi-qty-cartel'));
  assert(g.run('inventory()').includes('Open up to 5 cases'));
@@ -2786,7 +2787,7 @@ test('0.6.1 Cartel 5/5 grants 25 cartel cases valued at 75 each and opens five s
  assert.equal(g.state().items.filter(x=>x.kind==='case').length,20);
  g.run('finishMultiOpening()');
  assert.equal(g.run('claimCollection("cartel-v1")'),false);
- assert(g.run('collectionBook()').includes('Collection Book'));
+ assert(g.run('collectionBook()').includes('Collections'));
  assert(g.run('inventory()').includes('Collection Book'));
 });
 test('0.6.1 failed local storage write rolls back entire reward and claim receipt',()=>{
@@ -2814,8 +2815,11 @@ test('Spec Ops case has a dedicated contained, centered image frame on iPhone',(
  assert(css.includes('.cartel-case-art .spec-ops-case-image{'));
  assert(css.includes('height:100%'));
  const shop=g.run('universalCases()');
- assert(shop.includes('cartel-section spec-ops-section'));
- assert(shop.includes('spec-ops-case-image spec-ops-case-closed'));
+ assert(shop.includes('case-choice-spec-ops'));
+ g.run("selectStoreCase('spec-ops')");
+ const detail=g.byId('main').innerHTML;
+ assert(detail.includes('cartel-section spec-ops-section'));
+ assert(detail.includes('spec-ops-case-image spec-ops-case-closed'));
 });
 
 test('Spec Ops release has original assets, five fixed rarities, trading values and multi-opening',()=>{
@@ -2962,7 +2966,8 @@ test('0.7.2 Lavish release includes the owner-uploaded chest and five skins',()=
  assert.equal(g.run('window.LootHubCaseRegistry.priceFor("lavish")'),75);
  const menu=g.run('universalCases()');
  assert(menu.includes('Lavish Case'));
- assert(menu.includes('multi-qty-lavish'));
+ g.run("selectStoreCase('lavish')");
+ assert(g.byId('main').innerHTML.includes('multi-qty-lavish'));
  assert(menu.includes('lavish-case-closed-800.webp'));
  assert(g.run('visualArt({kind:"case",caseId:"lavish"},"open")').includes('lavish-case-open-1254.webp'));
  for(const [weapon,tier,base] of variants){
