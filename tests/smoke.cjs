@@ -993,6 +993,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       save();
       go('Cases');
     });
+    await page.getByRole('button',{name:'View Cartel Case'}).click();
     assert(await page.locator('#multi-qty-cartel').count()===1&&
       await page.locator('.cartel-section').first().locator('.multi-shop-actions button').count()===2,
       'Cartel shop must support one to five sealed or instant-open purchases');
