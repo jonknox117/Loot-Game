@@ -1106,6 +1106,17 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Final multi-open reveal must show five individual reward cards');
     assert(await page.locator('.multi-prize-chest .arsenal-case-open img').count()===5,
       'Opened case thumbnails belong only on the completed result screen');
+    assert(await page.locator('.multi-reward-pick').count()===5,
+      'Each newly opened reward must have a selectable sell control');
+    assert((await page.locator('#multiRewardToolbar').textContent()).includes('0 selected'),
+      'No weapons are selected for selling automatically');
+    await page.locator('.multi-reward-pick:not(:disabled)').first().check();
+    assert((await page.locator('#multiRewardToolbar').textContent()).includes('1 selected'),
+      'The sale total must update as each reward is selected');
+    await page.getByRole('button',{name:'Clear selection'}).click();
+    assert((await page.locator('#multiRewardToolbar').textContent()).includes('0 selected'),
+      'Clearing selections must preserve every reward');
+
     await page.getByRole('button',{name:'Keep all'}).click();
     await page.reload({waitUntil:'load'});
     const reloadedIds=await page.evaluate(()=>s.items.slice(-5).map(x=>x.id));
