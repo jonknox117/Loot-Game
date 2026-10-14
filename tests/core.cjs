@@ -94,7 +94,11 @@ test('v0.7.4 navigation prioritizes four core player actions and preserves legac
  assert(!fresh.byId('main').innerHTML.includes('Available base weapons'),
    'Case catalogs must not crowd the store before selecting a case');
  fresh.run("selectStoreCase('arsenal')");
- assert(fresh.byId('main').innerHTML.includes('Browse 25 base weapons'));
+ assert(fresh.byId('main').innerHTML.includes('Browse 25 base weapons'),
+   'Selected: '+fresh.run('selectedStoreCaseId')+'; tab: '+fresh.run('tab')+
+   '; catalog: '+fresh.run('catalog.length')+'; direct: '+
+   fresh.run('cases()').slice(700,1600)+'; screen: '+
+   fresh.byId('main').innerHTML.slice(-2200));
  assert(fresh.byId('main').innerHTML.includes('multi-qty-arsenal'));
  fresh.run("selectStoreCase('lavish')");
  assert(fresh.byId('main').innerHTML.includes('multi-qty-lavish'));
@@ -386,7 +390,8 @@ test('Old retired raster finishes stay disabled and user-approved finish alone a
   assert.equal((menu.match(/View weapon/g)||[]).length,MASTER_COUNT);
   assert.equal((menu.match(/View skin/g)||[]).length,10);
   assert(menu.includes('MAC-10 | Red Devil'));
-  assert(menu.includes('Browse 25 base weapons'));
+  assert(menu.includes('Browse 25 base weapons'),
+    'Arsenal catalog text: '+menu.slice(600,1850));
   for(const finish of ['Starfall','Slate Grid','Voltage Bloom','Crimson Circuit','Metro Fade']){
     assert(!menu.includes(finish),'Retired finish visible: '+finish);
   }
