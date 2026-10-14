@@ -271,6 +271,88 @@ test('v0.7.7 mixed batch does not misrepresent a repeat purchase',()=>{
  assert(!g.byId('overlay').innerHTML.includes('Open 2 Arsenal again'));
  assert.equal(g.state().items.length,2);
 });
+test('v0.7.8 inventory exposes direct sell, quick auction, and inspection without dialogs',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"quick-sale",kind:"weapon",weapon:"AK-47",tier:2,base:100,wearGrade:0},'+
+  '{id:"quick-auction",kind:"skin",weapon:"SPAS-12",skin:"Spec Ops",tier:2,base:350,wearGrade:1},'+
+  '{id:"quick-sealed",kind:"case",paid:25});save();go("Inventory")');
+ const page=g.byId('main').innerHTML;
+ assert(page.includes('quickInstantSell(&quot;quick-sale&quot;)'));
+ assert(page.includes('window.LootHubAuctionUI.quickStart(&quot;quick-auction&quot;)'));
+ assert(page.includes('openCase(&quot;quick-sealed&quot;)'));
+ assert(!page.includes('quickInstantSell(&quot;quick-sealed&quot;)'));
+ assert(!page.includes('quickStart(&quot;quick-sealed&quot;)'));
+ assert(page.includes('Sell · 78 ◈'));
+ assert(page.includes('Auction · 12h'));
+ const before=g.state();
+ assert.equal(g.run('quickInstantSell("quick-sale")'),true);
+ assert.equal(g.state().coins,before.coins+78);
+ assert.equal(g.state().sales,before.sales+78);
+ assert.equal(g.state().rep,before.rep+1);
+ assert(!g.state().items.some(x=>x.id==='quick-sale'));
+ assert(g.state().items.some(x=>x.id==='quick-sealed'));
+ assert.equal(g.run('quickInstantSell("quick-sale")'),false,'Sold weapon cannot be sold twice');
+ const again=boot(g.store);
+ assert.equal(again.state().coins,78);
+ assert(!again.state().items.some(x=>x.id==='quick-sale'));
+ assert(again.state().items.some(x=>x.id==='quick-auction'));
+});
+test('v0.7.8 12h quick auction lists directly, confirms, and respects existing escrow',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"quick-auction",kind:"skin",weapon:"SPAS-12",skin:"Spec Ops",tier:2,base:350,wearGrade:1});save();go("Inventory")');
+ const price=g.run('Math.max(1,Math.round(marketEstimate(s.items.find(x=>x.id==="quick-auction"))*.8))');
+ assert.equal(g.run('window.LootHubAuctionUI.quickStart("quick-auction")'),true);
+ const current=g.state();
+ assert.equal(current.tab,'Market');
+ assert.equal(current.listings.length,1);
+ assert.equal(current.listings[0].item.id,'quick-auction');
+ assert.equal(current.listings[0].durationHours,12);
+ assert.equal(current.listings[0].ask,price);
+ assert(current.listings[0].endsAt-current.listings[0].createdAt===12*3600000);
+ assert(!current.items.some(x=>x.id==='quick-auction'));
+ assert.equal(g.run('window.LootHubAuctionUI.quickStart("quick-auction")'),false,
+   'Already escrowed weapon may not be listed twice');
+ assert.equal(boot(g.store).state().listings.length,1);
+ assert.equal(g.run('window.LootHubAuctionUI.cancel("listing-quick-auction")'),true);
+ assert.equal(g.state().items.filter(x=>x.id==='quick-auction').length,1,
+   'Cancellation must return the same weapon identity');
+});
+test('v0.7.8 market shows a direct bound Accept bid button and settles once',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"direct-accept",kind:"weapon",weapon:"AK-47",tier:2,base:350,wearGrade:0});save()');
+ assert(g.run('window.LootHubAuctions.create(s,"direct-accept",100,12,Date.now())'));
+ g.run('const l=s.listings.find(x=>x.item.id==="direct-accept");'+
+  'const b=window.LootHubTraders.ensure(s).find(x=>x.role==="buyer");'+
+  'l.bids=[{bidder:b.id,amount:200,at:l.createdAt}];'+
+  'l.highestBid=200;l.highestBidder=b.id;save();');
+ const bidder=g.state().listings[0].highestBidder;
+ const panel=g.run('window.LootHubAuctionUI.house()');
+ assert(panel.includes('Accept bid · 190 ◈ net'));
+ assert(panel.includes('window.LootHubAuctionUI.accept(&quot;listing-direct-accept&quot;,200,&quot;'+bidder+'&quot;)'));
+ const wallet=g.state().coins;
+ assert.equal(g.run('window.LootHubAuctionUI.accept("listing-direct-accept",200,'+JSON.stringify(bidder)+')'),true);
+ assert.equal(g.state().coins,wallet+190);
+ assert.equal(g.state().listings.length,0);
+ assert.equal(g.run('window.LootHubAuctionUI.accept("listing-direct-accept",200,'+JSON.stringify(bidder)+')'),false);
+ assert.equal(g.state().coins,wallet+190,'Repeated click may not pay a second time');
+ assert.equal(boot(g.store).state().coins,wallet+190);
+});
+test('v0.7.8 failed saves rollback direct instant sell and quick auction without losing an item',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"fail-sell",kind:"weapon",weapon:"AK-47",tier:1,base:100,wearGrade:0});save()');
+ const disk=JSON.stringify(g.state()),set=g.store.setItem.bind(g.store);
+ g.store.setItem=(k,v)=>{if(k===KEY)throw Error('storage full');return set(k,v)};
+ assert.equal(g.run('quickInstantSell("fail-sell")'),false);
+ assert.equal(JSON.stringify(g.state()),disk);
+ assert.equal(boot(g.store).state().items.filter(x=>x.id==='fail-sell').length,1);
+ const a=boot();
+ a.run('s.items.push({id:"fail-auction",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});save()');
+ const before=JSON.stringify(a.state()),save=a.store.setItem.bind(a.store);
+ a.store.setItem=(k,v)=>{if(k===KEY)throw Error('storage full');return save(k,v)};
+ assert.equal(a.run('window.LootHubAuctionUI.quickStart("fail-auction")'),false);
+ assert.equal(JSON.stringify(a.state()),before);
+ assert.equal(boot(a.store).state().items.filter(x=>x.id==='fail-auction').length,1);
+});
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
