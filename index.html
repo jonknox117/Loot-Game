@@ -23,7 +23,7 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 @media(max-width:600px){.reveal-art .weapon-art{height:155px}.reel{height:125px}.tile .weapon-art{height:74px}}
 </style><link rel="stylesheet" href="./design.css"></head><body><div class="shell">
 <header class="top">
- <div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.7.5 · Trade QoL</small></div>
+ <div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.7.6 · Fast Loop</small></div>
  <button type="button" class="wallet wallet-button" id="walletButton" aria-label="Wallet and earn coins" onclick="openWallet()">◈ <span id="wallet">0</span> coins<span id="saveStatus" class="save-status">● Checking save</span></button>
  <div class="general-menu-wrap">
   <button type="button" id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="generalMenu" onclick="toggleGeneralMenu()">☰ <span>Menu</span></button>
@@ -268,20 +268,90 @@ function buyCartelCase(){if(purchase(cartelCase.casePrice,cartelCase.id))inspect
 function specOpsSection(){return themedCaseSection(curatedCases.get('spec-ops'),1)}
 function previewSpecOpsCase(){return previewThemedCase('spec-ops')}
 
+
+function preferredCaseQuantity(){
+ const n=s.preferences?.fastCaseQuantity;
+ return Number.isInteger(n)&&n>=1&&n<=5?n:1;
+}
+function updateFastCaseQuantity(caseId){
+ const def=curatedCases.get(caseId),node=document.getElementById('fast-qty-'+caseId);
+ const count=Number(node?.value);
+ if(!def?.released||!Number.isInteger(count)||count<1||count>5)return false;
+ s.preferences.fastCaseQuantity=count;s.preferences.lastCaseId=caseId;save();
+ const total=document.getElementById('fast-total-'+caseId);
+ if(total)total.textContent=money(def.casePrice*count)+' coins total';
+ return true;
+}
+function fastBuyOpen(caseId){
+ const def=curatedCases.get(caseId),node=document.getElementById('fast-qty-'+caseId);
+ if(!def?.released)return false;
+ const count=Number(node?.value)||preferredCaseQuantity();
+ return buyCases(caseId,true,count);
+}
+function repeatCaseOpening(caseId,count=1){
+ if(busy||!curatedCases.isReleased(caseId)||!Number.isInteger(count)||count<1||count>5)return false;
+ const price=caseShopPrice(caseId);
+ if(!Number.isSafeInteger(price)||price<1)return false;
+ if(s.coins<price*count){
+  closeDialog();dialog('<h2>Not enough coins</h2><p class="muted">You need '+money(price*count-s.coins)+
+   ' more coins to open another '+escapeHTML(curatedCases.displayName(caseId))+' Case.</p>'+
+   '<div class="row"><button class="primary" onclick="closeDialog();openUtility(\'Earn\')">Earn coins</button>'+
+   '<button onclick="closeDialog();go(\'Inventory\')">Inventory</button>'+
+   '<button onclick="closeDialog()">Close</button></div>');
+  return false;
+ }
+ return buyCases(caseId,true,count);
+}
+function rewardQuickActions(reward,caseId){
+ const price=window.LootHubMarketTransactions.instantSellPrice(reward);
+ const item=JSON.stringify(String(reward.id)).replace(/"/g,'&quot;');
+ const cid=JSON.stringify(String(caseId)).replace(/"/g,'&quot;');
+ return '<div class="reward-fast-actions"><div class="row">'+
+  '<button class="primary" onclick="closeDialog()">Keep</button>'+
+  (price!==null?'<button onclick="instantSellReward('+item+','+cid+')">Instant sell · '+money(price)+' ◈</button>':'')+
+  '</div><button class="repeat-case-button" onclick="repeatCaseOpening('+cid+',1)">Open '+escapeHTML(curatedCases.displayName(caseId))+
+  ' again · '+money(caseShopPrice(caseId))+' ◈</button>'+
+  '<div class="row"><button onclick="inspect('+item+')">Inspect</button>'+
+  '<button onclick="window.LootHubAuctionUI.openEditor('+item+')">Auction</button></div></div>';
+}
+function instantSellReward(itemId,caseId){
+ if(busy||!canMutate())return false;
+ const item=s.items.find(x=>x.id===itemId),price=window.LootHubMarketTransactions.instantSellPrice(item);
+ if(price===null||!item)return false;
+ if(!confirm('Instant sell '+itemName(item)+' for '+money(price)+' coins? This cannot be undone.'))return false;
+ const snapshot=JSON.stringify(s);
+ if(!window.LootHubMarketTransactions.sellOwned(s,itemId,price,1))return false;
+ recordActivity(s,'Instant sold '+itemName(item)+' for '+price+' coins after opening');
+ if(!save()){s=JSON.parse(snapshot);alert('Sale could not be saved. Your item remains yours.');return false}
+ window.LootHubFX.play('coin');render();
+ const cid=JSON.stringify(String(caseId)).replace(/"/g,'&quot;');
+ dialog('<h2>+'+money(price)+' coins</h2><p class="muted">'+escapeHTML(itemName(item))+
+  ' sold. Your wallet was credited.</p><div class="row"><button class="primary" onclick="repeatCaseOpening('+cid+',1)">'+
+  'Open same case again</button><button onclick="closeDialog()">Done</button></div>');
+ return true;
+}
+
 function universalCases(){
  const released=curatedCases.all().filter(def=>def.released);
  const sealed=s.items.filter(x=>x.kind==='case').length;
  const chosen=selectedStoreCaseId&&released.find(x=>x.id===selectedStoreCaseId);
- const cards=released.map(def=>
-  '<article class="case-choice case-choice-'+escapeHTML(def.id)+'">'+
+ const cards=released.map(def=>{
+  const qty=preferredCaseQuantity(),selected=s.preferences.lastCaseId===def.id;
+  const cid=JSON.stringify(def.id).replace(/"/g,'&quot;');
+  return '<article class="case-choice case-choice-'+escapeHTML(def.id)+(selected?' case-choice-last':'')+'">'+
    '<div class="case-choice-art">'+visualArt({kind:'case',caseId:def.id},'inventory')+'</div>'+
    '<div class="case-choice-info"><h3>'+escapeHTML(def.name)+' Case</h3>'+
    '<strong class="case-choice-price">◈ '+money(def.casePrice)+' coins</strong>'+
    '<p class="muted">'+escapeHTML(def.description||'Original collectible weapons and skins.')+'</p>'+
-   '<button class="primary" onclick="selectStoreCase(\''+def.id+'\')">View '+escapeHTML(def.name)+' Case</button></div></article>'
- ).join('');
+   '<div class="quick-case-buy"><label for="fast-qty-'+escapeHTML(def.id)+'">Quantity</label>'+
+   '<select class="field" id="fast-qty-'+escapeHTML(def.id)+'" aria-label="'+escapeHTML(def.name)+' quick open quantity" onchange="updateFastCaseQuantity('+cid+')">'+
+   [1,2,3,4,5].map(n=>'<option value="'+n+'"'+(n===qty?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
+   '<small class="muted" id="fast-total-'+escapeHTML(def.id)+'">'+money(def.casePrice*qty)+' coins total</small></div>'+
+   '<button class="primary" onclick="fastBuyOpen('+cid+')">Buy &amp; Open</button>'+
+   '<button class="case-details-button" onclick="selectStoreCase('+cid+')">View '+escapeHTML(def.name)+' Case</button></div></article>';
+ }).join('');
  return '<section class="case-shop-heading"><div class="section-eyebrow">THE CASE SHOP</div>'+
-  '<h1>Choose your collection</h1><p class="muted">Select a case to see the rewards, odds and purchase options.</p></section>'+
+  '<h1>Choose your collection</h1><p class="muted">Buy and open instantly, or view a case for odds and reward previews.</p></section>'+
   (sealed?'<section class="panel owned-case-shortcut"><div><strong>'+sealed+' sealed case'+(sealed===1?'':'s')+' ready</strong>'+
      '<p class="muted tiny">Open cases you already own without buying more.</p></div>'+
      '<button class="primary" onclick="showMultiPicker()">Open owned cases</button></section>':'')+
@@ -293,7 +363,7 @@ function universalCases(){
 }
 function selectStoreCase(caseId){
  if(busy||!curatedCases.isReleased(caseId))return;
- selectedStoreCaseId=caseId;utilityView=null;tab='Cases';render();
+ selectedStoreCaseId=caseId;s.preferences.lastCaseId=caseId;utilityView=null;tab='Cases';render();
  const target=document.querySelector&&document.querySelector('.selected-case-anchor');
  if(target&&target.scrollIntoView)target.scrollIntoView({block:'start',behavior:'auto'});
 }
@@ -484,8 +554,7 @@ function finishOpening(){
   '<p>'+conditionTag(reward)+'</p>'+conditionPriceRows(reward)+
   '<div class="price">Estimated market value: ≈ '+money(marketEstimate(reward))+' coins</div>'+
   '<p class="muted tiny">Market value is an estimate, not a guaranteed sale price.</p>'+
-  '<div class="row"><button class="primary" onclick="inspect(\''+reward.id+'\')">Inspect / sell</button>'+
-  '<button onclick="closeDialog()">Keep item</button></div></div>');
+  rewardQuickActions(reward,caseId)+'</div>');
 }
 // The secondary menu dismisses on outside click and Escape without affecting game actions.
 if(typeof document.addEventListener==='function'){
