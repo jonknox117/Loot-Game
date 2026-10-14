@@ -360,6 +360,101 @@ test('v0.7.8 failed saves rollback direct instant sell and quick auction without
  assert.equal(JSON.stringify(a.state()),before);
  assert.equal(boot(a.store).state().items.filter(x=>x.id==='fail-auction').length,1);
 });
+test('v0.7.9 a single inventory selection can start multiple 12h auctions atomically',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"batch-first",kind:"weapon",weapon:"AK-47",tier:1,base:100,wearGrade:0},'+
+  '{id:"batch-second",kind:"skin",weapon:"SPAS-12",skin:"Spec Ops",tier:2,base:350,wearGrade:1},'+
+  '{id:"batch-case",kind:"case",paid:25});save();go("Inventory");toggleBulkSellMode();'+
+  'toggleBulkSellItem("batch-first",true);toggleBulkSellItem("batch-second",true)');
+ assert(g.byId('main').innerHTML.includes('Auction selected · 12h'));
+ assert(g.run('bulkSellToolbar()').includes('Auction selected · 12h'));
+ assert.equal(g.run('auctionSelectedWeapons()'),true);
+ assert.equal(g.state().tab,'Market');
+ assert.equal(g.state().listings.filter(x=>x.mode==='auction').length,2);
+ assert(g.state().listings.every(x=>x.durationHours===12));
+ assert(g.state().items.some(x=>x.id==='batch-case'));
+ assert(!g.state().items.some(x=>x.id==='batch-first'||x.id==='batch-second'));
+ assert.equal(g.run('bulkSellMode'),false);
+ const persisted=g.persisted();
+ assert.equal(persisted.listings.length,2);
+ assert.equal(boot(g.store).state().listings.length,2);
+});
+test('v0.7.9 an invalid batch cannot partially escrow owned weapons',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"batch-valid",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0},'+
+   '{id:"batch-case",kind:"case",paid:25});save()');
+ const before=JSON.stringify(g.state());
+ for(const orders of [
+   [{id:"batch-valid",ask:60,hours:12},{id:"missing",ask:20,hours:12}],
+   [{id:"batch-valid",ask:60,hours:12},{id:"batch-valid",ask:60,hours:12}],
+   [{id:"batch-valid",ask:60,hours:12},{id:"batch-case",ask:25,hours:12}],
+   [{id:"batch-valid",ask:60,hours:12},{id:"missing",ask:20,hours:99}]
+ ]){
+  assert.equal(g.run('window.LootHubAuctions.batchCreate(s,'+JSON.stringify(orders)+',Date.now())'),null);
+  assert.equal(JSON.stringify(g.state()),before,'Invalid batch should never partially list');
+ }
+});
+test('v0.7.9 selecting multiple auction bids settles combined net in one sale',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"accept-first",kind:"weapon",weapon:"AK-47",tier:1,base:100,wearGrade:0},'+
+  '{id:"accept-second",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});'+
+  'window.LootHubAuctions.create(s,"accept-first",40,12,Date.now());'+
+  'window.LootHubAuctions.create(s,"accept-second",45,12,Date.now());'+
+  'const buyers=window.LootHubTraders.ensure(s).filter(x=>x.role==="buyer");'+
+  'const first=s.listings[0],second=s.listings[1];'+
+  'buyers[0].wallet=5000;buyers[1].wallet=5000;'+
+  'first.bids=[{bidder:buyers[0].id,amount:100,at:first.createdAt}];'+
+  'first.highestBid=100;first.highestBidder=buyers[0].id;'+
+  'second.bids=[{bidder:buyers[1].id,amount:150,at:second.createdAt}];'+
+  'second.highestBid=150;second.highestBidder=buyers[1].id;save();go("Market")');
+ const panel=g.run('window.LootHubAuctionUI.house()');
+ assert(panel.includes('Select all active bids'));
+ assert(panel.includes('Select bid for AK-47'));
+ const before=g.state();
+ assert.equal(g.run('window.LootHubAuctionUI.selectAllBids()'),true);
+ assert.equal(g.run('window.LootHubAuctionUI.bidToolbar()').includes('2 bids selected'),true);
+ assert.equal(g.run('window.LootHubAuctionUI.acceptSelectedBids()'),true);
+ assert.equal(g.state().coins,before.coins+95+142);
+ assert.equal(g.state().sales,before.sales+95+142);
+ assert.equal(g.state().rep,before.rep+2);
+ assert.equal(g.state().listings.length,0);
+ assert.equal(g.run('window.LootHubAuctionUI.acceptSelectedBids()'),false,'Repeat must not sell twice');
+ assert.equal(boot(g.store).state().coins,before.coins+237);
+});
+test('v0.7.9 stale and unfunded bid batches do not partially settle',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"stale-a",kind:"weapon",weapon:"AK-47",tier:1,base:100,wearGrade:0},'+
+   '{id:"stale-b",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});'+
+   'window.LootHubAuctions.create(s,"stale-a",40,12,Date.now());'+
+   'window.LootHubAuctions.create(s,"stale-b",40,12,Date.now());'+
+   'const buyers=window.LootHubTraders.ensure(s).filter(x=>x.role==="buyer");'+
+   'buyers[0].wallet=5000;buyers[1].wallet=5000;'+
+   's.listings.forEach((l,i)=>{l.bids=[{bidder:buyers[i].id,amount:100,at:l.createdAt}];'+
+   'l.highestBid=100;l.highestBidder=buyers[i].id});save()');
+ const state=g.state();
+ const quotes=state.listings.map(l=>({id:l.id,amount:l.highestBid,buyer:l.highestBidder}));
+ const original=JSON.stringify(g.state());
+ assert.equal(g.run('window.LootHubAuctions.batchAcceptHighestBids(s,'+
+   JSON.stringify([quotes[0],{...quotes[1],amount:101}])+',Date.now())'),null);
+ assert.equal(JSON.stringify(g.state()),original);
+ g.run('window.LootHubTraders.get(s,'+JSON.stringify(quotes[1].buyer)+').wallet=0');
+ const insolvent=JSON.stringify(g.state());
+ assert.equal(g.run('window.LootHubAuctions.batchAcceptHighestBids(s,'+JSON.stringify(quotes)+',Date.now())'),null);
+ assert.equal(JSON.stringify(g.state()),insolvent,'An unfunded second bid cannot partially accept the first');
+});
+test('v0.7.9 failed saves restore every weapon or auction in a multi-action',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"save-one",kind:"weapon",weapon:"AK-47",tier:1,base:100,wearGrade:0},'+
+  '{id:"save-two",kind:"weapon",weapon:"MP5",tier:1,base:110,wearGrade:0});'+
+  'save();go("Inventory");toggleBulkSellMode();'+
+  'toggleBulkSellItem("save-one",true);toggleBulkSellItem("save-two",true)');
+ const before=JSON.stringify(g.state());
+ const set=g.store.setItem.bind(g.store);
+ g.store.setItem=(k,v)=>{if(k===KEY)throw Error('disk full');return set(k,v)};
+ assert.equal(g.run('auctionSelectedWeapons()'),false);
+ assert.equal(JSON.stringify(g.state()),before);
+ assert.equal(boot(g.store).state().items.length,2);
+});
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
