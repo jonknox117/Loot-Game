@@ -1,5 +1,14 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.8 — One-Action Trading
+
+- **Trade directly from Inventory:** Weapon and skin cards display the existing 78% condition-adjusted **Instant Sell** quote, a **12-hour Auction** shortcut, and Inspect. Sealed-case cards instead provide **Open case** and Inspect/Trade; a case is never selected for weapon bulk selling.
+- **One confirmation instead of multiple menus:** Instant Sell requires one clear confirmation, warns specifically for Super Rare/Legendary items, updates the wallet immediately, and saves the complete sale. The same safe process now applies when using the Instant Sell control inside weapon inspection.
+- **Quick auction preset:** Choosing **Auction · 12h** starts the existing auction type at 80% of the current market estimate after confirmation. The item enters escrow; the current detailed auction editor remains available from inspection for custom starting bids and the original 1/6/12/24-hour durations. An auction cannot be listed twice.
+- **Accept bids from the Market list:** Active auctions with a bid now show **Accept bid** and the estimated *net payout after the existing 5% fee* right beside View Bids. One confirmation settles the quoted highest funded bid through the original transaction engine. View Bids remains optional for buyers who want the full bid history.
+- **Safe failure handling:** These new shortcuts check save authority before acting and revalidate quotes and ownership before committing. If a save fails, the previous inventory/wallet/auction state is restored. Existing cross-tab save-conflict protection and duplicate-sale prevention remain enforced.
+- Added core regression scenarios and an iPhone browser flow covering instant sale, quick auction escrow, early acceptance, reload durability, stale/duplicate actions, and save rollbacks. No artwork, weapon IDs, drop odds, case prices, collection rewards, instant-sale percentages, or auction fees were changed.
+
 ## Patch 0.7.7 — Bulk Reward Management
 
 - **Keep or sell on the reveal screen:** Multi-open results (2–5 cases) now include an individual, clearly labelled selection checkbox on every weapon or skin, its original condition-adjusted instant-sale value, and a continuously updated total. Nothing is selected or sold automatically.
