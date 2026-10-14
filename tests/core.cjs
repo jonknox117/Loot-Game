@@ -92,7 +92,7 @@ test('v0.7.4 navigation prioritizes four core player actions and preserves legac
  for(const retired of ['Home','Earn','Portfolio','Saves'])
    assert(!nav.includes("go('"+retired+"')"),'Utility leaked into main nav: '+retired);
  assert(fresh.byId('main').innerHTML.includes('Choose your collection'));
- assert.equal((fresh.byId('main').innerHTML.match(/class="case-choice case-choice-/g)||[]).length,4);
+ assert.equal((fresh.byId('main').innerHTML.match(/class="case-choice case-choice-/g)||[]).length, fresh.run('window.LootHubCaseRegistry.all().filter(x=>x.released).length'));
  assert(!fresh.byId('main').innerHTML.includes('Available base weapons'),
    'Case catalogs must not crowd the store before selecting a case');
  fresh.run("selectStoreCase('arsenal')");
@@ -126,7 +126,7 @@ test('v0.7.4 navigation prioritizes four core player actions and preserves legac
 });
 test('v0.7.6 case cards allow one-tap purchase, keep, sell, repeat and preserve preference',()=>{
  const g=boot();
- assert.equal((g.byId('main').innerHTML.match(/onclick="fastBuyOpen/g)||[]).length,4);
+ assert.equal((g.byId('main').innerHTML.match(/onclick="fastBuyOpen/g)||[]).length,g.run('window.LootHubCaseRegistry.all().filter(x=>x.released).length'));
  assert(g.byId('main').innerHTML.includes('fast-qty-lavish'));
  assert(g.byId('main').innerHTML.includes('View Lavish Case'));
  g.run('s.coins=450;save()');
@@ -556,6 +556,35 @@ test('v0.8.0 actionable auctions sort ahead of expiring no-bid and waiting listi
  assert(html.includes('Bid ready to accept')&&html.includes('Ending soon'));
  assert.equal(g.state().listings[0].item.id,'priority-waiting',
    'Presentation sorting must not re-order saved auctions');
+});
+test('Vintage drafted registry never exposes missing images; release uses exact WebP assets and preserved saves',()=>{
+ const g=boot(),released=g.run('window.LootHubCaseRegistry.isReleased("vintage")');
+ const def=JSON.parse(g.run('JSON.stringify(window.LootHubCaseRegistry.get("vintage"))'));
+ assert.equal(def.casePrice,75);
+ assert.deepEqual(def.items.map(x=>[x.weapon,x.tier,x.base]),[
+  ['Colt .45 Revolver',0,40],['FN FAL',1,110],['M60',2,350],
+  ['M1 Garand',3,1050],['Butterfly Knife',4,4200]
+ ]);
+ if(!released){
+  assert.equal(g.run('window.LootHubCaseRegistry.pool("vintage")'),null);
+  assert(!g.byId('main').innerHTML.includes('View Vintage Case'));
+  return;
+ }
+ assert(g.byId('main').innerHTML.includes('View Vintage Case'));
+ assert(g.run('window.LootHubCaseRegistry.chestImage("vintage","open",1254)').includes('vintage-case-open-1254.webp'));
+ for(const item of def.items){
+  const art=g.run('window.LootHubCaseRegistry.skinImage('+JSON.stringify(item)+',1600)');
+  assert(art.endsWith('--vintage-1600.webp'));
+ }
+ g.run('s.coins=200;save()');
+ g.byId('fast-qty-vintage').value='1';
+ assert.equal(g.run('fastBuyOpen("vintage")'),true);
+ const item=g.state().items.find(x=>x.kind==='skin');
+ assert(item&&item.skin==='Vintage'&&def.items.some(x=>x.weapon===item.weapon));
+ assert.equal(g.state().coins,125);
+ assert.equal(g.state().preferences.lastCaseId,'vintage');
+ g.run('finishMultiOpening();save()');
+ assert.equal(boot(g.store).state().items.find(x=>x.skin==='Vintage').id,item.id);
 });
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
@@ -2793,7 +2822,7 @@ test('Cartel Case contains only five owner-supplied finishes and exactly one ski
  assert.equal(g.run('cartelCase.casePrice'),75);
  assert.equal(g.run('cartelCatalog.length'),5);
  assert.equal(g.run('dropCatalog.length'),MASTER_COUNT+10,'The Arsenal drop pool must not be expanded');
- assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+25,'Cartel, Spec Ops and Lavish skins enter market listings');
+ assert.equal(g.run('allMarketCatalog.length'),MASTER_COUNT+25+(g.run('window.LootHubCaseRegistry.isReleased("vintage")')?5:0),'Published curated case skins enter market listings');
  assert(g.run('universalCases()').includes('Cartel Case'));
  g.run("selectStoreCase('cartel')");
  assert(g.byId('main').innerHTML.includes('multi-qty-cartel'),'Cartel has working quantity-based purchasing');
@@ -3118,7 +3147,7 @@ test('0.6.0 existing single-case workflow and controls remain available',()=>{
 test('0.6.3 frozen collection registry includes five Spec Ops designs',()=>{
  const g=boot();
  const definitions=JSON.parse(g.run('JSON.stringify(window.LootHubCollections.definitions)'));
- assert.equal(definitions.length,4);
+ assert.equal(definitions.length,4+(g.run('window.LootHubCaseRegistry.isReleased("vintage")')?1:0));
  const [arsenal,cartel,specOps,lavish]=definitions;
  assert.deepEqual([arsenal.id,arsenal.items.length,arsenal.reward],['arsenal-v1',35,25]);
  assert.deepEqual([cartel.id,cartel.items.length,cartel.reward],['cartel-v1',5,25]);
@@ -3131,8 +3160,11 @@ test('0.6.3 frozen collection registry includes five Spec Ops designs',()=>{
  assert.equal(arsenal.items.filter(x=>x.kind==='skin').length,10);
  assert(cartel.items.every(x=>x.kind==='skin'&&x.skin==='Cartel'));
  for(const c of definitions)for(const item of c.items){
-  const m=item.kind==='weapon'?CURRENT_MANIFEST.items:
-   CURRENT_MANIFEST.approvedSkins;
+  if(c.id==='vintage-v1'){
+   assert(g.run('!!window.LootHubCaseRegistry.skinFor('+JSON.stringify({kind:'skin',weapon:'FN FAL',skin:'Vintage'})+')'),'Vintage art must be registered');
+   continue;
+  }
+  const m=item.kind==='weapon'?CURRENT_MANIFEST.items:CURRENT_MANIFEST.approvedSkins;
   assert(m.some(x=>x.id===item.id&&x.weapon===item.weapon&&
    (item.kind==='weapon'||x.skin===item.skin)),'Catalog entry must be approved: '+item.id);
  }
