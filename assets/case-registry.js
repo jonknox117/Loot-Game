@@ -27,6 +27,20 @@ const EXTRA_CASES=Object.freeze([
     {kind:'skin',weapon:"Mosin-Nagant",skin:'Lavish',tier:3,base:1050},
     {kind:'skin',weapon:"Tactical Tomahawk",skin:'Lavish',tier:4,base:4200}
    ]},
+  // Vintage: user-approved antique copper/wood illustrations. Keep unreleased
+  // until the seven source pictures and 21 transparent WebP variants arrive.
+  // scripts/install_vintage_pack.py flips this flag only after full verification.
+  {id:'vintage',name:'Vintage',casePrice:75,released:false,
+   description:'Weathered copper, aged wood, and antique firearms.',
+   artStatus:'owner-supplied-vintage-case',skinArt:'webp',
+   collectionId:'vintage-v1',collectionReward:25,
+   items:[
+    {kind:'skin',weapon:"Colt .45 Revolver",skin:'Vintage',tier:0,base:40},
+    {kind:'skin',weapon:"FN FAL",skin:'Vintage',tier:1,base:110},
+    {kind:'skin',weapon:"M60",skin:'Vintage',tier:2,base:350},
+    {kind:'skin',weapon:"M1 Garand",skin:'Vintage',tier:3,base:1050},
+    {kind:'skin',weapon:"Butterfly Knife",skin:'Vintage',tier:4,base:4200}
+   ]},
   // Keep drafts released:false until all approved images are in place.
   // Example:
   // {id:'lavish',name:'Lavish',casePrice:75,released:false,
