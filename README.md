@@ -1,5 +1,13 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.9 — Batch Trading & Inventory Efficiency
+
+- **One inventory selection, two possible actions:** The existing multi-select toolbar now supports **Instant Sell selected** or **Auction selected · 12h** for up to 40 currently owned weapons and skins. Select individual weapons or select all visible weapons under the current rarity filter. One confirmation starts a separate 12-hour auction for each chosen weapon, at the same 80% market-estimate starting bid as the existing quick auction. An additional warning appears if the batch contains Super Rare or Legendary items. Sealed cases and already-escrowed listings cannot be selected.
+- **Accept several auction bids together:** Market → Auction House now lets players check individual active bids or **Select all active bids**, review the **combined net payout after the existing 5% fee**, and settle the selected highest bids with one confirmation. Individual Accept Bid and detailed bid history remain available.
+- **All-or-nothing transactions:** Batch auctions and batch acceptance are first simulated on a detached state snapshot. Any invalid item, auction-capacity violation, duplicate selection, changed bidder/amount, unfunded winner, or combined-payout overflow aborts the *entire* batch without partial transfers. A failed save restores inventory, auction escrow, buyer wallets, and proceeds. Bid selection is transient and does not modify saved inventory.
+- **Less menu navigation:** Batch auction creation lands directly in Market to review new listings; the batch-bid action happens inside the existing Auction House. The four top-level tabs are unchanged.
+- Added core regression tests for multiple auctions, successful and duplicate-proof combined settlement, stale/insolvent bids and failed saves, plus an iPhone browser flow covering both batch operations. Case odds, auction fees, original skin art, wallet economics, and reward identities are unchanged.
+
 ## Patch 0.7.8 — One-Action Trading
 
 - **Trade directly from Inventory:** Weapon and skin cards display the existing 78% condition-adjusted **Instant Sell** quote, a **12-hour Auction** shortcut, and Inspect. Sealed-case cards instead provide **Open case** and Inspect/Trade; a case is never selected for weapon bulk selling.
