@@ -121,26 +121,28 @@ function updateCasePurchaseTotal(caseId){
  label.textContent=count+' case'+(count===1?'':'s')+' · '+(count*price)+' coins total';
 }
 function buyAndMultiOpen(caseId){return buyCases(caseId,true)}
-function buyCases(caseId,openNow){
+function buyCases(caseId,openNow,countOverride){
  if(busy||!canMutate())return false;
  const price=caseShopPrice(caseId);
  const el=document.getElementById('multi-qty-'+caseId);
- const count=Number(el&&el.value);
+ const count=Number.isInteger(countOverride)?countOverride:Number(el&&el.value);
  if(!Number.isSafeInteger(price)||price<1||!Number.isSafeInteger(count)||count<1||count>5)return false;
  const cost=count*price;
  if(!Number.isSafeInteger(cost))return false;
  if(s.coins<cost){window.LootHubFX.play('error');
   alert('Not enough coins for '+count+' cases ('+cost+' needed).');return false}
+ const snapshot=JSON.stringify(s);
  if(openNow){
   const result=window.LootHubMultiOpen.purchaseAndCommit(s,caseId,count,price,caseItem,roll);
   if(!result){window.LootHubFX.play('error');return false}
   busy=true;
-  return beginMultiSpin(result);
+  s.preferences.fastCaseQuantity=count;s.preferences.lastCaseId=caseId;
+  return beginMultiSpin(result,snapshot);
  }
- const snapshot=JSON.stringify(s);
  const result=window.LootHubMultiOpen.purchaseSealed(s,caseId,count,price,caseItem);
  if(!result){window.LootHubFX.play('error');return false}
  const name=escapeHTML(itemName(result.cases[0]).replace(/^Sealed /,''));
+ s.preferences.fastCaseQuantity=count;s.preferences.lastCaseId=caseId;
  recordActivity(s,'Purchased '+count+' sealed '+itemName(result.cases[0]).replace(/^Sealed /,'')+
   (count===1?'':'s')+' for '+cost+' coins');
  if(!save()){
@@ -162,16 +164,21 @@ function buyCases(caseId,openNow){
 function startMultiOpenWithIds(ids){
  if(busy||!canMutate())return false;
  if(!window.LootHubMultiOpen.eligible(s,ids))return false;
+ const snapshot=JSON.stringify(s);
  busy=true;
  const result=window.LootHubMultiOpen.commit(s,ids,roll);
  if(!result){busy=false;window.LootHubFX.play('error');return false}
- return beginMultiSpin(result);
+ return beginMultiSpin(result,snapshot);
 }
-function beginMultiSpin(result){
- multiSelection=[];
- log('Multi-open: '+result.rewards.length+' cases → '+
+function beginMultiSpin(result,snapshot){
+ recordActivity(s,'Multi-open: '+result.rewards.length+' cases → '+
    result.rewards.map(x=>itemName(x)).join(', '));
- save(); // The five results are in persistent inventory before the first frame.
+ // Persist once before any animation. Failed writes restore all inventory and wallet state.
+ if(!save()){
+  s=JSON.parse(snapshot);busy=false;window.LootHubFX.play('error');
+  alert('Opening could not be saved. No coins or cases were lost.');return false;
+ }
+ multiSelection=[];
  window.LootHubFX.play('open');
  dialog('<div class="multi-spin-screen"><div class="reel-header"><span class="spin-eyebrow">MULTI-OPEN · '+
   result.rewards.length+' CASE'+(result.rewards.length===1?'':'S')+
@@ -204,6 +211,7 @@ function finishMultiOpening(){
  const rewards=pending.rewards,cases=pending.cases;
  pending=null;busy=false;s.pendingReveal=null;save();render();
  window.LootHubFX.play('reveal',{tier:Math.max(...rewards.map(x=>x.tier))});
+ if(rewards.length===1){showSingleReward(rewards[0],cases[0].caseId||'arsenal');return}
  dialog('<div class="multi-winnings"><div class="section-eyebrow">MULTI-OPEN COMPLETE</div>'+
   '<h2>'+rewards.length+' new items acquired</h2>'+
   '<p class="muted">All rewards have been added to your inventory.</p>'+
