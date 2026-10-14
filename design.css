@@ -1317,3 +1317,23 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
 .inventory-quick-actions button:focus-visible{outline:2px solid #f2c683;outline-offset:2px}
 .auction-listing .market-listing-controls .row button.primary{border-color:#bda16f}
 @media(max-width:700px){.inventory-quick-actions button{min-height:46px;font-size:12px}}
+
+/* v0.7.9: one selection for multiple auction listings or bulk instant sale. */
+.bulk-sell-toolbar .row button{flex:1 1 150px}
+.bulk-sell-toolbar .row button:last-child{border:1px solid #bd9568;color:#ffe0ac}
+.batch-bid-tools{padding:12px;border:1px solid #556c85;border-radius:12px;margin:12px 0 16px;background:#17283b}
+.batch-bid-tools>.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.batch-bid-tools>.row button{min-height:42px}
+.batch-bid-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.batch-bid-toolbar .batch-bid-status{display:grid;gap:4px;min-width:0}
+.batch-bid-toolbar .batch-bid-status strong{font-size:14px}
+.batch-bid-toolbar button{min-height:46px;flex:0 0 auto}
+.auction-bid-select{display:flex;align-items:center;gap:8px;font-weight:750;font-size:12px;cursor:pointer;margin:0 0 8px;padding:6px 2px;color:#f5d3a0}
+.auction-bid-select input{height:20px;width:20px;accent-color:#dcb476;cursor:pointer}
+@media(max-width:700px){
+ .batch-bid-toolbar{display:grid;grid-template-columns:1fr;gap:9px}
+ .batch-bid-toolbar button{width:100%}
+ .batch-bid-tools>.row button{flex:1 1 45%}
+ .bulk-sell-toolbar .row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .bulk-sell-toolbar .row button:last-child{grid-column:1/-1}
+}
