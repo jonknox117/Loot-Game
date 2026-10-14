@@ -311,6 +311,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await page.locator('#wallet').textContent()).includes('25'), 'Earning must credit 25 coins');
 
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
+    await page.getByRole('button',{name:'View Arsenal Case'}).click();
     await page.locator('#multi-qty-arsenal').selectOption('1');
     await page.locator('.hero .multi-shop-actions button').first().click();
     await page.getByRole('heading', { name: '1 Arsenal Case bought' }).waitFor({ state: 'visible', timeout: 10000 });
@@ -443,6 +444,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       await page.getByRole('button', { name: /Earn 1 coin/ }).click();
     }
     await page.getByRole('button', { name: 'Cases', exact: true }).click();
+    await page.getByRole('button',{name:'View Arsenal Case'}).click();
     await page.locator('#multi-qty-arsenal').selectOption('1');
     await page.locator('.hero .multi-shop-actions button').first().click();
     await page.getByRole('button', { name: 'Keep sealed' }).click();
@@ -1059,10 +1061,12 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     // Patch 0.6.0: buy & open five Arsenal cases with all five reels visible
     // at once in the iPhone viewport; prizes must exist before animation.
     await page.evaluate(()=>{s.coins=2000;save();go('Cases')});
-    assert(await page.locator('#multi-qty-arsenal').count()===1,
-      'Arsenal shop needs a 1–5 bundle selector');
+    await page.getByRole('button',{name:'View Cartel Case'}).click();
     assert(await page.locator('#multi-qty-cartel').count()===1,
-      'Cartel shop needs a 1–5 bundle selector');
+      'Cartel shop needs a 1–5 bundle selector after selecting Cartel');
+    await page.getByRole('button',{name:'View Arsenal Case'}).click();
+    assert(await page.locator('#multi-qty-arsenal').count()===1,
+      'Arsenal shop needs a 1–5 bundle selector after selecting Arsenal');
     await page.locator('#multi-qty-arsenal').selectOption('5');
     const beforeMulti=await page.evaluate(()=>({
       n:s.items.length,c:s.coins,opened:s.openings,spent:s.spent
