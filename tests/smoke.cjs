@@ -778,6 +778,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     const filtered=page.locator('#inventoryGrid .master-raster[data-wear-seed="wear-visual-proof"]');
     await filtered.scrollIntoViewIfNeeded();
     await filtered.locator('canvas.wear-overlay').waitFor({state:'attached',timeout:15000});
+    // Later economy tests need the full inventory; filters now intentionally persist.
+    await page.locator('#filter').selectOption('all');
     await page.evaluate(()=>go('Market'));
     const npcWorn=await page.evaluate(()=>{
       const listing=s.market.npcListings.find(x=>x.item.kind==='weapon');
