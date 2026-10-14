@@ -23,7 +23,7 @@ body{background:radial-gradient(ellipse at top right,#18283a 0,#0b0f16 44%) fixe
 @media(max-width:600px){.reveal-art .weapon-art{height:155px}.reel{height:125px}.tile .weapon-art{height:74px}}
 </style><link rel="stylesheet" href="./design.css"></head><body><div class="shell">
 <header class="top">
- <div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.7.7 · Reward Manager</small></div>
+ <div class="brand">LOOT<span>HUB</span> <small class="muted tiny">0.7.8 · Fast Trading</small></div>
  <button type="button" class="wallet wallet-button" id="walletButton" aria-label="Wallet and earn coins" onclick="openWallet()">◈ <span id="wallet">0</span> coins<span id="saveStatus" class="save-status">● Checking save</span></button>
  <div class="general-menu-wrap">
   <button type="button" id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="generalMenu" onclick="toggleGeneralMenu()">☰ <span>Menu</span></button>
@@ -409,10 +409,48 @@ function bulkSellQuote(){
  const items=bulkSellItems();
  return {items,total:items.reduce((sum,x)=>sum+window.LootHubMarketTransactions.instantSellPrice(x),0)};
 }
+function quickInstantSell(itemId){
+ if(busy||!canMutate())return false;
+ const item=s.items.find(x=>x.id===itemId);
+ const quoted=window.LootHubMarketTransactions.instantSellPrice(item);
+ if(!item||quoted===null)return false;
+ const risky=item.tier>=3?' WARNING: This is a Super Rare or Legendary collectible.':'';
+ if(!confirm('Instant sell '+itemName(item)+' for '+money(quoted)+' coins?'+risky+' This cannot be undone.'))return false;
+ if(!canMutate())return false;
+ const current=s.items.find(x=>x.id===itemId);
+ if(!current||window.LootHubMarketTransactions.instantSellPrice(current)!==quoted)return false;
+ const snapshot=JSON.stringify(s);
+ const receipt=window.LootHubMarketTransactions.sellOwnedBatch(s,[itemId]);
+ if(!receipt||receipt.count!==1||receipt.total!==quoted){
+  s=JSON.parse(snapshot);return false;
+ }
+ recordActivity(s,'Instant sold '+itemName(item)+' for '+quoted+' coins from Inventory');
+ if(!save()){
+  s=JSON.parse(snapshot);
+  alert('Sale could not be saved. Your weapon remains in your inventory.');
+  return false;
+ }
+ bulkSellIds.delete(itemId);
+ window.LootHubFX.play('coin');closeDialog();render();
+ return true;
+}
+function inventoryCardActions(x){
+ const itemId=escapeHTML(JSON.stringify(String(x.id)));
+ const price=window.LootHubMarketTransactions.instantSellPrice(x);
+ if(bulkSellMode)return '<button onclick="inspect('+itemId+')">Inspect</button>';
+ if(price!==null)return '<div class="inventory-quick-actions">'+
+  '<button class="primary" onclick="quickInstantSell('+itemId+')">Sell · '+money(price)+' ◈</button>'+
+  '<button onclick="window.LootHubAuctionUI.quickStart('+itemId+')">Auction · 12h</button>'+
+  '<button onclick="inspect('+itemId+')">Inspect</button></div>';
+ if(x.kind==='case')return '<div class="inventory-quick-actions">'+
+  '<button class="primary" onclick="openCase('+itemId+')">Open case</button>'+
+  '<button onclick="inspect('+itemId+')">Inspect / trade</button></div>';
+ return '<button onclick="inspect('+itemId+')">Inspect / trade</button>';
+}
 function card(x){let r=rarity(x);return '<div class="item'+(bulkSellMode&&bulkSellIds.has(x.id)?' bulk-selected':'')+'">'+
  (bulkSellMode&&isBulkSellEligible(x)?'<label class="bulk-pick"><input type="checkbox" aria-label="Select '+escapeHTML(itemName(x))+'"'+
  (bulkSellIds.has(x.id)?' checked':'')+' onchange="toggleBulkSellItem('+escapeHTML(JSON.stringify(x.id))+',this.checked)"> Select</label>':'')+
- visualArt(x)+'<div class="tag '+cls(r)+'">'+r+'</div><h4>'+escapeHTML(itemName(x))+'</h4><p class="muted">'+(x.kind==='case'?'Unopened · tradeable':(x.kind==='skin'?'Approved skin · '+x.skin:'Base weapon · unskinned'))+'</p><p class="muted tiny">'+conditionTag(x)+'</p><b>≈ '+money(marketEstimate(x))+' coins</b><button onclick="inspect(\''+x.id+'\')">Inspect / trade</button></div>'}
+ visualArt(x)+'<div class="tag '+cls(r)+'">'+r+'</div><h4>'+escapeHTML(itemName(x))+'</h4><p class="muted">'+(x.kind==='case'?'Unopened · tradeable':(x.kind==='skin'?'Approved skin · '+x.skin:'Base weapon · unskinned'))+'</p><p class="muted tiny">'+conditionTag(x)+'</p><b>≈ '+money(marketEstimate(x))+' coins</b>'+inventoryCardActions(x)+'</div>'}
 function inventory(){return '<section class="panel"><div class="row space"><h2>Inventory</h2><select id="filter" class="field" style="width:155px" onchange="filterInv()"><option value="all">All rarities</option>'+tiers.map(t=>'<option>'+t+'</option>').join('')+'</select></div><p class="muted">Open sealed cases first, or inspect your collectibles to trade and sell.</p><div class="row multi-inventory-action"><button class="primary" onclick="showMultiPicker()" '+(s.items.some(x=>x.kind==='case')?'':'disabled')+'>Open up to 5 cases</button>'+
  '<button onclick="toggleBulkSellMode()">'+(bulkSellMode?'Cancel selection':'Select weapons to sell')+'</button></div>'+
  (bulkSellMode?'<div class="bulk-sell-toolbar" id="bulkSellToolbar">'+bulkSellToolbar()+'</div>':'')+
@@ -485,7 +523,20 @@ function wear(f){return f<.07?'Factory New':f<.15?'Minimal Wear':f<.38?'Field-Te
 function dialog(html){const overlay=document.getElementById('overlay');overlay.innerHTML='<div class="modal" onclick="if(event.target===this)closeDialog()"><div class="dialog" role="dialog" aria-modal="true">'+html+'</div></div>';window.LootHubWearRenderer.attach(overlay)}
 function closeDialog(){if(busy)return;window.LootHubFX.stopReel();document.getElementById('overlay').innerHTML=''}
 function inspect(k){let x=s.items.find(v=>v.id===k);if(!x)return;let v=estimated(x);dialog('<div class="tag '+cls(rarity(x))+'">'+rarity(x)+'</div><div class="big reveal-art">'+visualArt(x,'inspect')+'</div><h2>'+escapeHTML(itemName(x))+'</h2><p class="muted">'+(x.kind==='case'?'Sealed · '+(curatedCases.displayName(x.caseId||'arsenal')||'Arsenal')+' Case':x.kind==='skin'?'Approved skin · '+x.skin:'Base weapon · unskinned')+'</p><p>'+conditionTag(x)+'</p>'+conditionPriceRows(x)+'<h3>Estimated market value: '+money(marketEstimate(x))+' coins</h3><p class="muted tiny">Market estimate includes trading activity and supply; it is not a guaranteed sale price. Instant sell uses the condition-adjusted value.</p><div class="row">'+(x.kind==='case'?'<button class="primary" onclick="openCase(\''+x.id+'\')">Open case</button><button onclick="showMultiPicker([\''+x.id+'\'])">Multi-open</button>':'')+'<button onclick="sellNow(\''+x.id+'\')">Instant sell ('+Math.round(v*.78)+')</button><button onclick="window.LootHubAuctionUI.openEditor(\''+x.id+'\')">List for auction</button><button onclick="listItem(\''+x.id+'\')">List for sale</button><button onclick="closeDialog()">Keep item</button></div>')}
-function sellNow(k){if(!canMutate())return;let x=s.items.find(v=>v.id===k);if(!x)return;let p=Math.round(estimated(x)*.78);if(!window.LootHubMarketTransactions.sellOwned(s,k,p,1))return;log('Sold '+itemName(x)+' for '+p+' coins');closeDialog();render()}
+function sellNow(k){
+ const item=s.items.find(x=>x.id===k);
+ if(!item||busy||!canMutate())return false;
+ if(item.kind!=='case')return quickInstantSell(k);
+ const price=Math.round(estimated(item)*.78);
+ if(!confirm('Instant sell '+itemName(item)+' for '+money(price)+' coins? This cannot be undone.'))return false;
+ if(!canMutate())return false;
+ const snapshot=JSON.stringify(s);
+ const receipt=window.LootHubMarketTransactions.sellOwned(s,k,price,1);
+ if(!receipt)return false;
+ recordActivity(s,'Sold '+itemName(item)+' for '+price+' coins');
+ if(!save()){s=JSON.parse(snapshot);alert('Sale could not be saved. Your case remains owned.');return false}
+ window.LootHubFX.play('coin');closeDialog();render();return true;
+}
 function sellOffer(k){let x=s.items.find(v=>v.id===k);if(!x)return;let v=estimated(x);dialog('<h2>Negotiate a sale</h2><p class="muted">A collector is interested in '+escapeHTML(itemName(x))+'. Their budget and patience are limited.</p><p>Market estimate: '+money(v)+' coins</p><label>Your asking price <input class="field" id="ask" type="number" min="1" value="'+Math.round(v*1.06)+'"></label><p><button class="primary" onclick="respondOffer(\''+k+'\')">Send offer</button> <button onclick="inspect(\''+k+'\')">Back</button></p><div id="response"></div>')}
 function respondOffer(k){if(!canMutate())return;let x=s.items.find(v=>v.id===k);if(!x)return;let ask=Math.floor(Number(document.getElementById('ask').value)),v=estimated(x),key='sale-'+k;let o=s.offers[key]||(s.offers[key]={limit:Math.round(v*(.87+Math.random()*.26)),attempts:0});if(!window.LootHubMarketCore.validAsk(ask)){document.getElementById('response').textContent='Enter a valid whole-coin asking price.';return}if(o.closed||o.attempts>=3){document.getElementById('response').textContent='This buyer already walked away from this item.';return}o.attempts++;if(ask<=o.limit){if(!window.LootHubMarketTransactions.sellOwned(s,k,ask,2))return;delete s.offers[key];log('Negotiated sale of '+itemName(x)+' for '+ask+' coins');closeDialog();render()}else if(o.attempts>=3){o.closed=true;document.getElementById('response').textContent='Buyer walked away. This item cannot be renegotiated with the same buyer.';save()}else{document.getElementById('response').textContent='Buyer counters at '+Math.round(o.limit*(.91+.03*o.attempts))+' coins. Attempts '+o.attempts+'/3';save()}}
 function negotiate(price){let limit=Math.max(1,Math.round(price*(.78+Math.random()*.17)));dialog('<h2>Negotiate purchase</h2><p class="muted">The seller is asking '+price+' coins for a sealed Arsenal Case.</p><input id="offer" class="field" type="number" min="1" value="'+Math.round(price*.8)+'"><p><button class="primary" onclick="makeOffer('+limit+')">Send offer</button> <button onclick="closeDialog()">Cancel</button></p><div id="response"></div>')}

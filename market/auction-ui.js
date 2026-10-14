@@ -21,6 +21,27 @@ function openEditor(k){
  '<div class="row"><button class="primary" onclick="'+action('start',k)+'">Start auction</button>'+
  '<button onclick="'+marketAction('inspect',k)+'">Back</button></div>');
 }
+function quickStart(k){
+ if(busy||!canMutate())return false;
+ const item=s.items.find(x=>x.id===k);
+ if(!item||!['weapon','skin'].includes(item.kind)||
+    !root.LootHubMarketCore.eligible(item))return false;
+ const price=Math.max(1,Math.round(marketEstimate(item)*.8)),hours=12;
+ if(!root.LootHubMarketCore.validAsk(price))return false;
+ if(!confirm('Start a 12-hour auction for '+listingItemName(item)+' with a '+money(price)+
+   '-coin starting bid? Your item moves into auction escrow. You can accept a funded bid early.'))return false;
+ if(!canMutate())return false;
+ const stillOwned=s.items.find(x=>x.id===k);
+ if(!stillOwned||!root.LootHubMarketCore.eligible(stillOwned))return false;
+ const snapshot=JSON.stringify(s);
+ const listing=api.create(s,k,price,hours,Date.now());
+ if(!listing)return false;
+ recordActivity(s,'Quick-listed '+listingItemName(listing.item)+' for 12h auction, opening '+price+' coins');
+ if(!save()){
+  s=JSON.parse(snapshot);alert('Auction could not be saved. Your weapon remains owned.');return false;
+ }
+ closeDialog();utilityView=null;tab='Market';render();return true;
+}
 function start(k){
  if(!canMutate())return false;
  const bid=document.getElementById('auctionStartingBid'),duration=document.getElementById('auctionDuration');
@@ -125,10 +146,13 @@ function house(){
  '<div class="market-listing-controls"><b>'+(l.highestBid?money(l.highestBid)+' ◈ highest':'Awaiting first bid')+'</b>'+
  '<span class="muted tiny">Potential proceeds '+(l.highestBid?money(root.LootHubMarketCore.netProceeds(l.highestBid))+' ◈':'—')+'</span>'+
  '<div class="row"><button onclick="'+action('details',l.id)+'">View bids</button>'+
- (l.highestBid?'<button class="primary" onclick="'+action('details',l.id)+'">Review &amp; accept bid</button>':'')+
+ (l.highestBid?'<button class="primary" onclick="window.LootHubAuctionUI.accept('+
+ escapeHTML(JSON.stringify(String(l.id)))+','+l.highestBid+','+
+ escapeHTML(JSON.stringify(String(l.highestBidder)))+
+ ')">Accept bid · '+money(root.LootHubMarketCore.netProceeds(l.highestBid))+' ◈ net</button>':'')+
  (!l.bids.length?'<button onclick="'+action('cancel',l.id)+'">Cancel</button>':'')+'</div></div></div>').join(''):
  '<p class="muted tiny">No auctions yet. Select a weapon below and choose Auction.</p>')+
  '<p class="muted tiny">Duration: 1, 6, 12 or 24 hours · Accept any highest funded bid early · 5% success fee · No bids means no sale.</p></section>';
 }
-root.LootHubAuctionUI=Object.freeze({openEditor,start,remaining,details,accept,cancel,alerts,markRead,house});
+root.LootHubAuctionUI=Object.freeze({openEditor,quickStart,start,remaining,details,accept,cancel,alerts,markRead,house});
 })(window);
