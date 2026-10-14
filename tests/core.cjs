@@ -12,6 +12,7 @@ const upgrade=fs.readFileSync(path.join(root,'upgrade.js'),'utf8');
 const feedback=fs.readFileSync(path.join(root,'market/feedback.js'),'utf8');
 const multiCore=fs.readFileSync(path.join(root,'market/multi-open.js'),'utf8');
 const multiUI=fs.readFileSync(path.join(root,'market/multi-open-ui.js'),'utf8');
+const multiRewardsUI=fs.readFileSync(path.join(root,'market/multi-reward-ui.js'),'utf8');
 const collectionCatalog=fs.readFileSync(path.join(root,'assets/collections.js'),'utf8');
 const collectionCore=fs.readFileSync(path.join(root,'market/collections.js'),'utf8');
 const collectionUI=fs.readFileSync(path.join(root,'market/collections-ui.js'),'utf8');
@@ -20,6 +21,7 @@ for(const p of ['assets/collections.js','market/collections.js','market/collecti
 
 assert(html.includes('<script src="./market/multi-open.js"></script>'));
 assert(html.includes('<script src="./market/multi-open-ui.js"></script>'));
+assert(html.includes('<script src="./market/multi-reward-ui.js"></script>'));
 
 const cartelData=fs.readFileSync(path.join(root,'assets/cartel-case.js'),'utf8');
 const specOpsData=fs.readFileSync(path.join(root,'assets/spec-ops-case.js'),'utf8');
@@ -46,7 +48,7 @@ assert(html.includes('<script src="./assets/skin-lines/paint-profile-data.js"></
 
 assert(html.includes('<script src="./assets/skin-lines/line-data.js"></script>'));
 assert(html.includes('<script src="./market/skin-lines.js"></script>'));
-const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+specOpsData+'\n'+caseRegistryData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
+const script=masters+'\n'+catalogData+'\n'+universalData+'\n'+cartelData+'\n'+specOpsData+'\n'+caseRegistryData+'\n'+collectionCatalog+'\n'+universalRegistry+'\n'+materialProfiles+'\n'+marketModules+'\n'+feedback+'\n'+multiCore+'\n'+multiUI+'\n'+multiRewardsUI+'\n'+collectionCore+'\n'+collectionUI+'\n'+upgrade+'\n'+scriptMatch[1];
 const KEY='loothub-arsenal-alpha-v1';
 const BACKUP=KEY+'-backup';
 class LocalStore {
@@ -186,6 +188,85 @@ test('v0.7.6 insufficient and failed-save direct openings leave wallets and item
  assert.equal(g.run('busy'),false,'Failed purchase must release animation lock');
  store.setItem=set;
  assert.equal(boot(store).state().coins,150,'Reload retains original wallet');
+});
+test('v0.7.7 bulk reward manager sells selected awards only and leaves the rest',()=>{
+ const g=boot();
+ g.run('s.coins=500;save();document.getElementById("multi-qty-arsenal").value="5"');
+ assert.equal(g.run('buyCases("arsenal",true)'),true);
+ const won=g.state().items.map(x=>x.id);
+ assert.equal(won.length,5);
+ const before=g.state();
+ g.run('finishMultiOpening()');
+ assert.equal((g.byId('overlay').innerHTML.match(/class="multi-prize rarity-/g)||[]).length,5);
+ assert(g.byId('overlay').innerHTML.includes('Select Common &amp; Uncommon'));
+ assert(g.byId('overlay').innerHTML.includes('Keep all'));
+ assert(g.byId('overlay').innerHTML.includes('Open 5 Arsenal again'));
+ assert(g.byId('overlay').innerHTML.includes('Sell selected · 0 ◈'));
+ assert.equal(g.run('selectCommonMultiRewards()'),true);
+ assert.equal(g.run('multiRewardSelected.size'),5);
+ g.run('clearMultiRewardSelection()');
+ assert.equal(g.run('multiRewardSelected.size'),0);
+ assert.equal(g.run('selectMultiReward('+JSON.stringify(won[0])+',true)'),true);
+ assert.equal(g.run('selectMultiReward('+JSON.stringify(won[2])+',true)'),true);
+ const price=g.run('multiRewardQuote().total');
+ assert(price>0);
+ assert(g.run('multiRewardToolbar()').includes('Sell selected · '+price+' ◈'));
+ assert.equal(g.run('sellSelectedMultiRewards()'),true);
+ assert.equal(g.state().coins,before.coins+price);
+ assert.equal(g.state().sales,before.sales+price);
+ assert.equal(g.state().rep,before.rep+2);
+ assert.equal(g.state().items.length,3);
+ assert(g.state().items.every(x=>![won[0],won[2]].includes(x.id)));
+ assert(g.byId('overlay').innerHTML.includes('3 rewards remaining'));
+ assert(g.byId('overlay').innerHTML.includes('Sold 2 rewards'));
+ assert.equal(g.run('sellSelectedMultiRewards()'),false,'No selection cannot sell twice');
+ g.run('save()');
+ const reloaded=boot(g.store);
+ assert.deepEqual(reloaded.state().items.map(x=>x.id),g.state().items.map(x=>x.id));
+ assert.equal(reloaded.state().coins,g.state().coins);
+});
+test('v0.7.7 high-rarity rewards are locked by default with explicit unlock',()=>{
+ const g=boot();
+ g.run('s.coins=200;save();document.getElementById("multi-qty-arsenal").value="2"');
+ assert.equal(g.run('buyCases("arsenal",true)'),true);
+ const ids=g.state().items.map(x=>x.id);
+ g.run('pending.rewards[0].tier=4;pending.rewards[0].base=4200;save();finishMultiOpening()');
+ assert(g.byId('overlay').innerHTML.includes('Unlock Super Rare / Legendary'));
+ assert(g.byId('overlay').innerHTML.includes('disabled onchange="selectMultiReward'));
+ assert.equal(g.run('selectMultiReward('+JSON.stringify(ids[0])+',true)'),false);
+ assert.equal(g.run('multiRewardSelected.size'),0);
+ assert.equal(g.run('unlockMultiRewardHighRarity()'),true);
+ assert.equal(g.run('selectMultiReward('+JSON.stringify(ids[0])+',true)'),true);
+ const before=g.state().coins;
+ assert.equal(g.run('sellSelectedMultiRewards()'),true);
+ assert(g.state().coins>before);
+ assert(!g.state().items.some(x=>x.id===ids[0]));
+ assert(g.state().items.some(x=>x.id===ids[1]));
+});
+test('v0.7.7 rejected persistence does not partially sell multi-open rewards',()=>{
+ const store=new LocalStore(),g=boot(store);
+ g.run('s.coins=150;save();document.getElementById("multi-qty-arsenal").value="3"');
+ assert.equal(g.run('buyCases("arsenal",true)'),true);
+ g.run('finishMultiOpening();selectCommonMultiRewards()');
+ const original=JSON.stringify(g.state());
+ const set=store.setItem.bind(store);
+ store.setItem=(k,v)=>{if(k===KEY)throw Error('storage full');return set(k,v)};
+ assert.equal(g.run('sellSelectedMultiRewards()'),false);
+ assert.equal(JSON.stringify(g.state()),original);
+ assert.equal(g.run('multiRewardSelected.size'),3,'Selections retained to retry after save failure');
+ store.setItem=set;
+ assert.equal(boot(store).state().items.length,3);
+ assert.equal(g.run('sellSelectedMultiRewards()'),true);
+ assert.equal(g.state().items.length,0);
+});
+test('v0.7.7 mixed batch does not misrepresent a repeat purchase',()=>{
+ const g=boot();
+ g.run('s.items.push({id:"mr-arsenal",kind:"case",paid:25},{id:"mr-cartel",kind:"case",caseId:"cartel",paid:75});save()');
+ assert.equal(g.run('startMultiOpenWithIds(["mr-arsenal","mr-cartel"])'),true);
+ g.run('finishMultiOpening()');
+ assert(g.byId('overlay').innerHTML.includes('Choose more cases'));
+ assert(!g.byId('overlay').innerHTML.includes('Open 2 Arsenal again'));
+ assert.equal(g.state().items.length,2);
 });
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
