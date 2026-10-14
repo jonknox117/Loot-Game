@@ -1493,6 +1493,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     });
     const sellCard=page.locator('#inventoryGrid .item').filter({hasText:'AK-47'})
       .filter({has:page.locator('button[onclick*=mobile-quick-sell]')});
+    const sellGroup=page.locator('#inventoryGrid .inventory-group').filter({has:sellCard});
+    if(await sellGroup.count()&&!(await sellGroup.first().evaluate(el=>el.open)))
+      await sellGroup.first().locator('summary').click();
     assert(await sellCard.getByRole('button',{name:'Sell · 78 ◈'}).count()===1,
       'Inventory should display a condition-adjusted instant-sale action');
     const quickBefore=await page.evaluate(()=>s.coins);
@@ -1503,6 +1506,9 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Inline sale must pay once and remove only the selected weapon');
     const auctionCard=page.locator('#inventoryGrid .item')
       .filter({has:page.locator('button[onclick*=mobile-quick-auction]')});
+    const auctionGroup=page.locator('#inventoryGrid .inventory-group').filter({has:auctionCard});
+    if(await auctionGroup.count()&&!(await auctionGroup.first().evaluate(el=>el.open)))
+      await auctionGroup.first().locator('summary').click();
     assert(await auctionCard.getByRole('button',{name:'Auction · 12h'}).count()===1,
       'Inventory should offer a 12-hour quick auction without opening the editor');
     page.once('dialog',d=>d.accept());
