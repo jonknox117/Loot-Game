@@ -479,20 +479,19 @@ function inventoryBestItem(items){
 }
 function sortedInventoryItems(items){
  const mode=inventorySortMode();
- return [...items].sort((a,b)=>{
-  if(a.kind==='case'&&b.kind!=='case')return -1;
-  if(b.kind==='case'&&a.kind!=='case')return 1;
-  if(mode==='value')return marketEstimate(b)-marketEstimate(a);
-  if(mode==='rarity')return b.tier-a.tier;
-  if(mode==='condition')return (a.wearGrade??99)-(b.wearGrade??99);
-  if(mode==='duplicates'){
-   const counts=new Map();
-   for(const x of items)counts.set(inventoryGroupKey(x),(counts.get(inventoryGroupKey(x))||0)+1);
-   const delta=counts.get(inventoryGroupKey(b))-counts.get(inventoryGroupKey(a));
-   if(delta)return delta;
-  }
-  return 0; // stable insertion order for newest; historical saves are not re-ordered.
- }).reverse().sort((a,b)=>Number(b.kind==='case')-Number(a.kind==='case'));
+ const counts=new Map();
+ for(const x of items)counts.set(inventoryGroupKey(x),(counts.get(inventoryGroupKey(x))||0)+1);
+ return items.map((item,index)=>({item,index})).sort((a,b)=>{
+  const x=a.item,y=b.item;
+  if(x.kind==='case'&&y.kind!=='case')return -1;
+  if(y.kind==='case'&&x.kind!=='case')return 1;
+  let order=0;
+  if(mode==='value')order=marketEstimate(y)-marketEstimate(x);
+  if(mode==='rarity')order=(y.tier||0)-(x.tier||0);
+  if(mode==='condition')order=(x.wearGrade??99)-(y.wearGrade??99);
+  if(mode==='duplicates')order=(counts.get(inventoryGroupKey(y))||0)-(counts.get(inventoryGroupKey(x))||0);
+  return order||b.index-a.index;
+ }).map(entry=>entry.item);
 }
 function filteredInventoryItems(){
  const rarityFilter=inventoryRarityFilter(),quick=inventoryQuickFilter();
