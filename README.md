@@ -1,5 +1,12 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.5 — Early Auction Acceptance & Bulk Instant Selling
+
+- **End auctions early:** In Market → Auction House → View bids, an auction with bids offers **Accept highest bid**. Confirm the exact leading bid and its net proceeds after the existing 5% sale fee. The funded winner receives the item, proceeds are credited once, and the listing is removed immediately rather than waiting 1–24 hours. Unbid auctions can still be cancelled without a fee.
+- **No phantom settlements:** Bids and bidder IDs are rechecked after offline/elapsed-time bidding advances, unfunded bids cannot be accepted, and confirmed sales cannot pay out twice on refresh. The transaction and notification use the same escrow and settlement accounting as normal expiration. Failed save attempts revert the in-memory transfer instead of reporting success.
+- **Sell several weapons at once:** Inventory → **Select weapons to sell**, select individual base weapons/skins or select all visible weapons under the chosen rarity filter. A persistent toolbar displays item count and a live total at the existing 78% condition-adjusted instant-sale rate. Confirm once to commit the complete sale and single save, or clear/cancel without changing inventory. Sealed cases and listings already in escrow cannot be selected.
+- Added deterministic core coverage for stale/unfunded bids, duplicate sale prevention, atomic multi-item sales, and save rollback. Extended mobile browser playthrough to exercise both flows with explicit confirmation, persistent credits, and the exclusion of unopened cases. Existing collection progress, case odds, values, and approved artwork are unchanged.
+
 ## Patch 0.7.4 — Navigation and Player-Focused Hierarchy
 
 - Replaced seven top-level destinations with **Cases, Inventory, Market and Collections**, including a four-button mobile bottom navigation. Home was redundant with the Cases shop and has been retired.
