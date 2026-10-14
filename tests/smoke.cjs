@@ -421,7 +421,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Displayed condition value must match pricing engine');
 
 
-    await page.getByRole('button', { name: /Instant sell/ }).click();
+    page.once('dialog',confirmation=>confirmation.accept());
+    await page.locator('.dialog').getByRole('button', { name: /Instant sell/ }).click();
     assert(await page.locator('.item').count() === 0, 'Sold item must leave inventory');
     const cash = Number((await page.locator('#wallet').textContent()).replace(/[^0-9]/g, ''));
     assert(cash > 0, 'Sale must credit wallet');
