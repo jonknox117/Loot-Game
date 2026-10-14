@@ -1,5 +1,14 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.7 — Bulk Reward Management
+
+- **Keep or sell on the reveal screen:** Multi-open results (2–5 cases) now include an individual, clearly labelled selection checkbox on every weapon or skin, its original condition-adjusted instant-sale value, and a continuously updated total. Nothing is selected or sold automatically.
+- **Fast cleanup without Inventory:** **Select Common & Uncommon** adds only those lower-tier prizes to the sale selection; Clear Selection and Keep All leave inventory unchanged. **Sell selected** asks for one irreversible-sale confirmation, credits the existing 78% condition-adjusted quotes exactly once, and retains every unselected reward.
+- **High-value safeguards:** Super Rare and Legendary prizes start with their sale checkboxes disabled. An explicit confirmation is required to unlock them for selection, and an additional warning is shown before a bulk sale containing either tier.
+- **Continue the loop:** After a partial sale, the same result screen shows the remaining owned prizes, the payout and an option to reopen the same number of cases if the previous bundle was a single collection. Mixed bundles offer a return to the case store rather than silently choosing another case.
+- **Preserve ownership and saves:** The feature delegates to the existing atomic inventory batch-sale engine. The original transaction snapshot is restored if persistence fails; progress is then protected by the existing save-recovery mechanism. Previously opened rewards remain permanently awarded, and duplicates cannot be paid out again.
+- Added core and iPhone smoke regression scenarios covering partial multi-open sales, high-tier lockouts, save failure, reload persistence, and mixed-case batches. Approved artwork, case prices, drop probabilities, condition pricing, collection rewards and weapon identifiers remain untouched.
+
 ## Patch 0.7.6 — Fast Case Loop
 
 - **Open directly from a case card:** Arsenal, Cartel, Spec Ops and Lavish each expose a compact 1–5 quantity picker and **Buy & Open**, alongside secondary case details. The selector displays live total cost. The last chosen case and quantity are stored with existing preferences and restored after reload.
