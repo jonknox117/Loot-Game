@@ -412,7 +412,7 @@ test('v0.7.9 selecting multiple auction bids settles combined net in one sale',(
  assert(panel.includes('Select bid for AK-47'));
  const before=g.state();
  assert.equal(g.run('window.LootHubAuctionUI.selectAllBids()'),true);
- assert.equal(g.run('window.LootHubAuctionUI.bidToolbar()').includes('2 bids selected'),true);
+ assert(g.byId('main').innerHTML.includes('2 bids selected'));
  assert.equal(g.run('window.LootHubAuctionUI.acceptSelectedBids()'),true);
  assert.equal(g.state().coins,before.coins+95+142);
  assert.equal(g.state().sales,before.sales+95+142);
