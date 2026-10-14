@@ -312,7 +312,8 @@ test('v0.7.8 12h quick auction lists directly, confirms, and respects existing e
  assert(!current.items.some(x=>x.id==='quick-auction'));
  assert.equal(g.run('window.LootHubAuctionUI.quickStart("quick-auction")'),false,
    'Already escrowed weapon may not be listed twice');
- assert.equal(boot(g.store).state().listings.length,1);
+ assert.equal(g.persisted().listings.length,1,
+   'Auction must be saved without opening a competing browser tab');
  if(!g.state().listings[0].bids.length){
   assert.equal(g.run('window.LootHubAuctionUI.cancel("listing-quick-auction")'),true);
   assert.equal(g.state().items.filter(x=>x.id==='quick-auction').length,1,
