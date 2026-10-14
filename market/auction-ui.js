@@ -132,18 +132,101 @@ function markRead(){
  if(!save()){s=JSON.parse(old);return}
  render();
 }
+// Bid selection is transient UI state. Quotes include the exact bidder and
+// amount the player selected, so a subsequent higher bid cannot be sold silently.
+const selectedBids=new Map();
+function bidQuotes(){
+ return [...selectedBids.values()];
+}
+function batchBidPreview(){
+ const quotes=bidQuotes();
+ if(!quotes.length)return null;
+ for(const q of quotes){
+  const l=s.listings.find(x=>x.id===q.id&&api.isAuction(x));
+  if(!l||l.highestBid!==q.amount||l.highestBidder!==q.buyer)return null;
+ }
+ const copy=JSON.parse(JSON.stringify(s));
+ return api.batchAcceptHighestBids(copy,quotes,Date.now());
+}
+function bidToolbar(){
+ const quotes=bidQuotes(),preview=batchBidPreview();
+ const amount=preview?preview.total:0;
+ return '<div class="batch-bid-status"><strong>'+quotes.length+' bid'+(quotes.length===1?'':'s')+
+  ' selected</strong><span class="muted tiny">'+(quotes.length&&!preview?
+   'A bid changed or a buyer cannot fund all selected bids. Review selections.':
+   money(amount)+' ◈ combined net payout')+'</span></div>'+
+  '<button class="primary" '+(preview?'':'disabled')+' onclick="window.LootHubAuctionUI.acceptSelectedBids()">'+
+   'Accept selected · '+money(amount)+' ◈</button>';
+}
+function refreshBidToolbar(){
+ const bar=document.getElementById('batchBidToolbar');
+ if(bar)bar.innerHTML=bidToolbar();
+}
+function selectBid(id,checked){
+ const l=s.listings.find(x=>x.id===id&&api.isAuction(x));
+ if(checked){
+  if(!l||!l.highestBid||!l.highestBidder)return false;
+  selectedBids.set(id,{id,amount:l.highestBid,buyer:l.highestBidder});
+ }else selectedBids.delete(id);
+ refreshBidToolbar();return true;
+}
+function selectAllBids(){
+ selectedBids.clear();
+ for(const l of s.listings.filter(api.isAuction)){
+  if(l.highestBid&&l.highestBidder)
+   selectedBids.set(l.id,{id:l.id,amount:l.highestBid,buyer:l.highestBidder});
+ }
+ render();return true;
+}
+function clearSelectedBids(){
+ selectedBids.clear();render();return true;
+}
+function acceptSelectedBids(){
+ if(!canMutate())return false;
+ const quotes=bidQuotes(),preview=batchBidPreview();
+ if(!preview||!quotes.length)return false;
+ if(!confirm('Accept '+quotes.length+' winning bid'+(quotes.length===1?'':'s')+
+   ' early for '+money(preview.total)+' coins combined AFTER the 5% auction fee? This cannot be undone.'))return false;
+ marketTick();
+ const rechecked=batchBidPreview();
+ if(!canMutate()||!rechecked||rechecked.total!==preview.total||
+    rechecked.count!==quotes.length){
+  selectedBids.clear();render();
+  alert('One or more bids changed or cannot be funded. Review active auctions.');
+  return false;
+ }
+ const snapshot=JSON.stringify(s);
+ const receipt=api.batchAcceptHighestBids(s,quotes,Date.now());
+ if(!receipt||receipt.count!==quotes.length||receipt.total!==preview.total)return false;
+ recordActivity(s,'Accepted '+receipt.count+' auction bids for '+
+   receipt.total+' coins net after fees');
+ if(!save()){
+  s=JSON.parse(snapshot);
+  alert('Auction settlement could not be saved. Your listings remain active.');
+  return false;
+ }
+ selectedBids.clear();closeDialog();render();return true;
+}
 function house(){
  const listings=s.listings.filter(api.isAuction);
  return '<section class="panel auction-house" id="market-auctions">'+
  '<div class="section-eyebrow">PASSIVE SALES · BIDDING OVER TIME</div>'+
  '<div class="row space"><h2>Auction House</h2><span class="muted tiny">'+listings.length+' active</span></div>'+
  '<p class="muted">Set a starting price and let independent NPC buyers compete. Your item sells automatically when the auction ends, or returns unsold.</p>'+
+ (listings.some(l=>l.highestBid)?'<div class="batch-bid-tools"><div class="row"><button onclick="window.LootHubAuctionUI.selectAllBids()">Select all active bids</button>'+
+ '<button onclick="window.LootHubAuctionUI.clearSelectedBids()">Clear</button></div>'+
+ '<div id="batchBidToolbar" class="batch-bid-toolbar">'+bidToolbar()+'</div></div>':'')+
  (listings.length?listings.map(l=>
  '<div class="listing-line auction-listing"><div class="listing-identity">'+visualArt(l.item)+
  '<div class="listing-identity-copy"><b>'+escapeHTML(listingItemName(l.item))+'</b>'+
  '<span class="muted tiny">Market '+money(marketEstimate(l.item))+' ◈ · Opening '+money(l.ask)+' ◈</span>'+
  '<span class="muted tiny">'+remaining(l)+' · '+l.bids.length+' bids</span></div></div>'+
- '<div class="market-listing-controls"><b>'+(l.highestBid?money(l.highestBid)+' ◈ highest':'Awaiting first bid')+'</b>'+
+ '<div class="market-listing-controls">'+(l.highestBid?
+  '<label class="auction-bid-select"><input type="checkbox" aria-label="Select bid for '+
+   escapeHTML(listingItemName(l.item))+'" '+(selectedBids.has(l.id)?'checked ':'')+
+   'onchange="window.LootHubAuctionUI.selectBid('+escapeHTML(JSON.stringify(String(l.id)))+
+   ',this.checked)"> Select bid</label>':'')+
+  '<b>'+(l.highestBid?money(l.highestBid)+' ◈ highest':'Awaiting first bid')+'</b>'+
  '<span class="muted tiny">Potential proceeds '+(l.highestBid?money(root.LootHubMarketCore.netProceeds(l.highestBid))+' ◈':'—')+'</span>'+
  '<div class="row"><button onclick="'+action('details',l.id)+'">View bids</button>'+
  (l.highestBid?'<button class="primary" onclick="window.LootHubAuctionUI.accept('+
@@ -154,5 +237,5 @@ function house(){
  '<p class="muted tiny">No auctions yet. Select a weapon below and choose Auction.</p>')+
  '<p class="muted tiny">Duration: 1, 6, 12 or 24 hours · Accept any highest funded bid early · 5% success fee · No bids means no sale.</p></section>';
 }
-root.LootHubAuctionUI=Object.freeze({openEditor,quickStart,start,remaining,details,accept,cancel,alerts,markRead,house});
+root.LootHubAuctionUI=Object.freeze({openEditor,quickStart,start,remaining,details,accept,cancel,alerts,markRead,house,selectBid,selectAllBids,clearSelectedBids,acceptSelectedBids});
 })(window);
