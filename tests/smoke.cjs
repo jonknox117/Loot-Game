@@ -1593,7 +1593,8 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
 
     // v0.8.0: large-inventory presentation keeps every individual ID accessible.
     await page.evaluate(()=>{
-      s.items=s.items.filter(x=>!['Tec-9','M134 Minigun'].includes(x.weapon));
+      // Isolate this end-of-flow UI fixture from previous case-opening drops.
+      s.items=s.items.filter(x=>x.kind==='case');
       s.items.push(
         {id:'smart-best',kind:'weapon',weapon:'Tec-9',tier:0,base:100,wearGrade:0},
         {id:'smart-mid',kind:'weapon',weapon:'Tec-9',tier:0,base:100,wearGrade:2},
