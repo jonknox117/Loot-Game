@@ -406,7 +406,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'Case reveal must explain the condition-adjusted value');
 
     await waitForVisible('text=Estimated market value');
-    await page.getByRole('button', { name: 'Inspect / sell' }).click();
+    await page.locator('.reward-fast-actions').getByRole('button', { name: 'Inspect' }).click();
     assert(await page.getByRole('button', { name: /Instant sell/ }).isVisible(), 'Opened base weapon must be sellable');
     const inspectedText=await page.locator('.dialog').textContent();
     assert(inspectedText.includes('Condition: '+wearName),'Weapon inspection must show saved wear');
@@ -1054,7 +1054,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       'The won Cartel weapon should appear above the opened chest');
     assert((await page.locator('.dialog').textContent()).includes(cartelSaved.weapon+' | Cartel'),
       'Cartel reveal must match the committed prize');
-    await page.getByRole('button',{name:'Keep item'}).click();
+    await page.locator('.reward-fast-actions').getByRole('button',{name:'Keep',exact:true}).click();
     await page.reload({waitUntil:'load'});
     assert((await page.evaluate((id)=>s.items.some(x=>x.kind==='skin'&&x.skin==='Cartel'&&x.id===id),cartelSaved.id))===true,
       'Cartel reward must persist through a full page reload');
