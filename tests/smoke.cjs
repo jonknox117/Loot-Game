@@ -1431,6 +1431,43 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert((await page.locator('#fast-total-cartel').textContent()).includes('225 coins total'),
       'Quick selector should immediately reflect quantity and price without another screen');
 
+
+    // v0.7.7 end-to-end: keep a protected rare reward, sell two common ones.
+    await page.evaluate(()=>{s.coins=Math.max(s.coins,1000);save();go('Cases')});
+    await page.locator('#fast-qty-arsenal').selectOption('3');
+    await page.locator('.case-choice-arsenal').getByRole('button',{name:'Buy & Open'}).click();
+    const rewardIds=await page.evaluate(()=>{
+      const ids=pending.rewards.map(x=>x.id);
+      for(let i=0;i<2;i++){pending.rewards[i].tier=0;pending.rewards[i].base=40}
+      pending.rewards[2].tier=4;pending.rewards[2].base=4200;
+      save();return ids;
+    });
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.multi-reward-pick:disabled').count()===1,
+      'Legendary rewards cannot be selected without an explicit unlock');
+    const quote=await page.evaluate(ids=>ids.slice(0,2).reduce((sum,id)=>
+      sum+window.LootHubMarketTransactions.instantSellPrice(s.items.find(x=>x.id===id)),0),rewardIds);
+    await page.getByRole('button',{name:'Select Common & Uncommon'}).click();
+    assert(await page.locator('.multi-reward-pick:checked').count()===2,
+      'Select Common must not include the protected Legendary');
+    const walletBefore=await page.evaluate(()=>s.coins);
+    page.once('dialog',d=>d.accept());
+    await page.locator('#multiRewardToolbar').getByRole('button',{name:/Sell selected/}).click();
+    const afterSale=await page.evaluate(ids=>({
+      coins:s.coins,remaining:ids.filter(id=>s.items.some(x=>x.id===id))
+    }),rewardIds);
+    assert(afterSale.coins===walletBefore+quote&&
+      JSON.stringify(afterSale.remaining)===JSON.stringify([rewardIds[2]]),
+      'Selling selected rewards must credit exact total and preserve unselected Legendary');
+    assert(await page.locator('.multi-reward-manager .multi-prize').count()===1,
+      'Sale stays in the reward screen with the protected item visible');
+    await page.getByRole('button',{name:'Keep all'}).click();
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(id=>s.items.some(x=>x.id===id),rewardIds[2]),
+      'Kept Legendary must still exist after reloading the browser');
+    assert(await page.evaluate(()=>s.coins)===afterSale.coins,
+      'Bulk sale proceeds must persist across reload');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
