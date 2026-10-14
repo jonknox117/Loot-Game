@@ -487,7 +487,8 @@ function bulkSellToolbar(){
  return '<strong>'+quote.items.length+' selected · '+money(quote.total)+' coins instant value</strong>'+
  '<div class="row"><button onclick="selectVisibleBulkSell()">Select visible weapons</button>'+
  '<button onclick="clearBulkSell()">Clear</button>'+
- '<button class="primary" '+(quote.items.length?'':'disabled')+' onclick="confirmBulkSell()">Sell selected · '+money(quote.total)+' ◈</button></div>'+
+ '<button class="primary" '+(quote.items.length?'':'disabled')+' onclick="confirmBulkSell()">Sell selected · '+money(quote.total)+' ◈</button>'+
+ '<button '+(quote.items.length&&quote.items.length<=40?'':'disabled')+' onclick="auctionSelectedWeapons()">Auction selected · 12h</button></div>'+
  '<p class="muted tiny">Weapons and skins only. Sealed cases and items listed for sale are excluded. Instant prices use the same condition-adjusted rate as individual sales.</p>';
 }
 function updateBulkSellToolbar(){
@@ -510,6 +511,35 @@ function confirmBulkSell(){
  }
  bulkSellIds.clear();bulkSellMode=false;
  window.LootHubFX.play('coin');render();
+ return true;
+}
+function auctionSelectedWeapons(){
+ if(!bulkSellMode||busy||!canMutate())return false;
+ const items=bulkSellItems();
+ if(!items.length||items.length>40||items.length!==bulkSellIds.size)return false;
+ const orders=items.map(item=>({
+  id:item.id,ask:Math.max(1,Math.round(marketEstimate(item)*.8)),hours:12
+ }));
+ const total=orders.reduce((sum,x)=>sum+x.ask,0);
+ if(!Number.isSafeInteger(total)||orders.some(x=>!window.LootHubMarketCore.validAsk(x.ask)))return false;
+ const risky=items.some(x=>x.tier>=3);
+ if(!confirm('Start '+items.length+' separate 12-hour auctions with a combined starting bid of '+
+    money(total)+' coins?'+(risky?' WARNING: Super Rare or Legendary items are included.':'')+
+    ' The selected weapons will enter escrow. Unbid auctions can be cancelled.'))return false;
+ if(!canMutate())return false;
+ // Revalidate quotes against live ownership after confirmation.
+ if(items.some((item,i)=>s.items.find(x=>x.id===item.id)!==item||
+    Math.max(1,Math.round(marketEstimate(item)*.8))!==orders[i].ask))return false;
+ const snapshot=JSON.stringify(s);
+ const receipt=window.LootHubAuctions.batchCreate(s,orders,Date.now());
+ if(!receipt||receipt.count!==items.length)return false;
+ recordActivity(s,'Started '+receipt.count+' 12-hour auctions from Inventory');
+ if(!save()){
+  s=JSON.parse(snapshot);alert('Auctions could not be saved. All selected weapons are still owned.');
+  return false;
+ }
+ bulkSellMode=false;bulkSellIds.clear();
+ utilityView=null;tab='Market';render();
  return true;
 }
 function market(){return enhancedMarket()}
