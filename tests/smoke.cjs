@@ -1239,7 +1239,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
         {id:'mobile-bulk-sale-case',kind:'case',caseId:'lavish',paid:75});
       save();go('Inventory');
     });
-    await page.getByRole('button',{name:'Select weapons to sell'}).click();
+    await page.getByRole('button',{name:'Select weapons to trade'}).click();
     const bulkBefore=await page.evaluate(()=>({coins:s.coins,sales:s.sales,rep:s.rep}));
     await page.locator('input[onchange*="mobile-bulk-sale-a"]').check();
     await page.locator('input[onchange*="mobile-bulk-sale-b"]').check();
@@ -1534,7 +1534,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
       );
       save();go('Inventory');
     });
-    await page.getByRole('button',{name:'Select weapons to sell'}).click();
+    await page.getByRole('button',{name:'Select weapons to trade'}).click();
     await page.locator('input[onchange*="batch-mobile-one"]').check();
     await page.locator('input[onchange*="batch-mobile-two"]').check();
     assert((await page.locator('#bulkSellToolbar').textContent()).includes('Auction selected · 12h'),
