@@ -90,6 +90,12 @@ def install(archive: Path) -> int:
             target.write_bytes(data)
     if DRAFT in current:
         ENTRY.write_text(current.replace(DRAFT, LIVE, 1), encoding="utf-8")
+    # Only announce the new version once the approved image set is installed.
+    index = ROOT / "index.html"
+    source = index.read_text(encoding="utf-8")
+    previous = "0.8.0 · Smart Inventory"
+    if previous in source:
+        index.write_text(source.replace(previous, "0.8.1 · Vintage Case", 1), encoding="utf-8")
     print(f"READY: Vintage enabled with {len(validated)} verified original WebP renders")
     return len(validated)
 
