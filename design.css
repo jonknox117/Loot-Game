@@ -1266,3 +1266,20 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .auction-listing .market-listing-controls .row{display:flex;flex-wrap:wrap}
  .auction-listing .market-listing-controls .row button{flex:1;min-width:120px}
 }
+
+/* v0.7.6 — fast case purchasing and immediate reward decisions */
+.case-choice-last{box-shadow:inset 0 0 0 1px rgba(241,190,113,.45)}
+.case-choice .quick-case-buy{display:grid;grid-template-columns:1fr 72px;align-items:center;gap:5px 8px;margin:10px 0 8px}
+.quick-case-buy label{font-size:12px;font-weight:700;color:#c5d3e4}
+.quick-case-buy select{min-width:0;padding:7px;font-size:14px}
+.quick-case-buy small{grid-column:1 / -1;font-size:11px}
+.case-choice .case-details-button{margin-top:7px;background:transparent;border-color:rgba(165,187,210,.4);color:#b8c8db}
+.reward-fast-actions{display:grid;gap:9px;margin-top:12px}
+.reward-fast-actions>.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.reward-fast-actions button{min-height:44px;white-space:normal}
+.reward-fast-actions .repeat-case-button{width:100%;border-color:#bd945e;background:linear-gradient(135deg,#3b2c21,#283041);color:#ffe0ad;font-weight:800}
+@media(max-width:700px){
+ .case-choice .quick-case-buy{grid-template-columns:1fr 64px;margin-top:8px}
+ .case-choice .quick-case-buy label{font-size:11px}
+ .reward-fast-actions button{font-size:13px;padding:10px 7px}
+}

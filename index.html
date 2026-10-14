@@ -539,6 +539,9 @@ function finishOpening(){
  const reward=pending.reward,caseId=pending.caseId||'arsenal';
  pending=null;busy=false;s.pendingReveal=null;save();render();
  window.LootHubFX.play('reveal',{tier:reward.tier});
+ showSingleReward(reward,caseId);
+}
+function showSingleReward(reward,caseId){
  const grade=tiers[reward.tier],tierClass=cls(grade);
  dialog('<div class="reward-reveal rarity-'+tierClass+'">'+
   '<div class="reward-sheen" aria-hidden="true"></div>'+
