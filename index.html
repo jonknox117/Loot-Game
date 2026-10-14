@@ -500,8 +500,8 @@ function filteredInventoryItems(){
  return sortedInventoryItems(s.items.filter(x=>{
   if(rarityFilter!=='all'&&rarity(x)!==rarityFilter)return false;
   if(quick==='duplicates')return x.kind!=='case'&&(counts.get(inventoryGroupKey(x))||0)>1;
-  if(quick==='common')return ['weapon','skin'].includes(x.kind)&&x.tier<=1;
-  if(quick==='valuable')return ['weapon','skin'].includes(x.kind)&&x.tier>=3;
+  if(quick==='common')return ['weapon','skin'].includes(x.kind)&&x.tier===0;
+  if(quick==='valuable')return ['weapon','skin'].includes(x.kind)&&marketEstimate(x)>=500;
   return true;
  }));
 }
@@ -599,7 +599,7 @@ function selectVisibleBulkSell(){
 }
 function selectCommonBulk(){
  if(!bulkSellMode)return false;
- filteredInventoryItems().filter(x=>isBulkSellEligible(x)&&x.tier<=1)
+ filteredInventoryItems().filter(x=>isBulkSellEligible(x)&&x.tier===0)
   .forEach(x=>bulkSellIds.add(x.id));
  filterInv();updateBulkSellToolbar();return true;
 }
