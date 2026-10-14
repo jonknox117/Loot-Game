@@ -39,7 +39,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           rm assets/vintage-release.zip
-          git add -A index.html assets/case-registry.js assets/cases assets/renders/lines/vintage assets/vintage-release.zip
+          git add -A README.md index.html assets/case-registry.js assets/cases assets/renders/lines/vintage assets/vintage-release.zip
           if ! git diff --cached --quiet; then
             git commit -m 'Publish Vintage collection with approved transparent artwork'
             git pull --rebase origin main
