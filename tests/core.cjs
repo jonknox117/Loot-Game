@@ -495,7 +495,7 @@ test('v0.8.0 duplicate selection keeps best condition and protects high-tier mas
  assert.equal(selected,'safe-mid,safe-worn');
  assert(!selected.includes('safe-best'));
  assert(!selected.includes('rare-worn'),'Legendary duplicates must not be auto-selected');
- assert(g.byId('main').innerHTML.includes('2 selected'));
+ assert(g.run('bulkSellToolbar()').includes('2 selected'));
  g.run('s.preferences.inventoryRarity="Common";save();render()');
  assert.equal(g.run('bulkSellIds.size'),2,'Filtering cannot clear a selected batch');
  assert.equal(g.run('selectCommonBulk()'),true);
