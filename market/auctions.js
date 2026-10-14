@@ -125,6 +125,45 @@ function acceptHighestBid(game,id,expectedAmount,expectedBuyer,now=Date.now()){
    ' coins. You received '+net+' after fees.',now);
  return {status:'sold',early:true,item:listing.item,price,net,fee:price-net,buyer:buyer.id};
 }
+// Build the entire batch against a detached copy. If one entry fails,
+// nothing on the live game (including traders or market history) changes.
+function commitBatch(game,shadow){
+ for(const key of Object.keys(shadow))game[key]=shadow[key];
+}
+function batchCreate(game,orders,now=Date.now()){
+ if(!game||!Array.isArray(orders)||orders.length<1||orders.length>40||
+    !Number.isFinite(now))return null;
+ const keys=orders.map(x=>x&&x.id);
+ if(keys.some(x=>typeof x!=='string')||new Set(keys).size!==keys.length)return null;
+ const shadow=JSON.parse(JSON.stringify(game)),created=[];
+ for(const order of orders){
+  if(!order||!core.validAsk(order.ask)||!DURATIONS.includes(order.hours))return null;
+  const item=shadow.items.find(x=>x.id===order.id);
+  if(!item||!['weapon','skin'].includes(item.kind))return null;
+  const listing=create(shadow,order.id,order.ask,order.hours,now);
+  if(!listing)return null;
+  created.push(listing);
+ }
+ commitBatch(game,shadow);
+ return {listings:created,count:created.length};
+}
+function batchAcceptHighestBids(game,quotes,now=Date.now()){
+ if(!game||!Array.isArray(quotes)||quotes.length<1||quotes.length>40||
+    !Number.isFinite(now))return null;
+ const ids=quotes.map(x=>x&&x.id);
+ if(ids.some(x=>typeof x!=='string')||new Set(ids).size!==ids.length)return null;
+ const shadow=JSON.parse(JSON.stringify(game)),receipts=[];
+ let total=0;
+ for(const q of quotes){
+  const receipt=acceptHighestBid(shadow,q.id,q.amount,q.buyer,now);
+  if(!receipt)return null;
+  total+=receipt.net;
+  if(!Number.isSafeInteger(total))return null;
+  receipts.push(receipt);
+ }
+ commitBatch(game,shadow);
+ return {receipts,count:receipts.length,total};
+}
 function advance(game,now=Date.now()){
  const outcome={changed:false,bids:0,sales:[],expired:0};
  if(!game||!Array.isArray(game.listings)||!Number.isFinite(now))return outcome;
@@ -175,5 +214,5 @@ function validate(game){
  return true;
 }
 root.LootHubAuctions=Object.freeze({DURATIONS,STEP,hash,notifications,isAuction,create,
- ceiling,increment,advance,cancel,validate,settle,acceptHighestBid});
+ ceiling,increment,advance,cancel,validate,settle,acceptHighestBid,batchCreate,batchAcceptHighestBids});
 })(window);
