@@ -1,5 +1,14 @@
 # LootHub — Curated Arsenal (25 neutral weapons; wear-only material maps)
 
+## Patch 0.7.4 — Navigation and Player-Focused Hierarchy
+
+- Replaced seven top-level destinations with **Cases, Inventory, Market and Collections**, including a four-button mobile bottom navigation. Home was redundant with the Cases shop and has been retired.
+- The Cases landing screen now presents the four original case artworks and prices first. Select one case to reveal its actual odds, contents, and buying controls; the long Arsenal weapon and skin catalogs are tucked into expandable sections. Previously purchased sealed cases have a direct opening shortcut.
+- The **Collection Book** is now its own primary destination. Inventory prioritizes owned sealed cases while retaining inspection, trade, and multi-open controls.
+- Moved MicroTasks/Earn, Portfolio, Activity History, Sound, How to Play and Save/Export/Import into a secondary Menu, with earning also accessible directly from the interactive wallet and empty-wallet shop prompt.
+- Legacy saved destinations map safely: Home/Earn/Saves → Cases, Portfolio → Market; Cases/Market/Inventory remain unchanged. Saves, coins, items, auction state, drop odds, rewards, and all approved art retain their existing identities. Save failure/recovery UI remains reachable from the general menu.
+- Added navigation regression coverage and updated the iPhone browser smoke flow to exercise secondary controls and selected case details. No economy or drop probability changes.
+
 ## Patch 0.7.3 — Artwork Integrity and Visual QA
 
 - Added `scripts/audit_artwork_integrity.py`, a **read-only** pixel audit for published Arsenal, Cartel, Spec Ops and Lavish art: all neutral masters, standalone case/skin WebPs, and the original embedded approved Arsenal/Cartel skins.

@@ -36,8 +36,8 @@ function isSaveCurrent(){
 function canMutate(){
   if(isSaveCurrent())return true;
   alert(saveConflict?'Another tab has newer progress. Reload LootHub before making changes.':
-    recoveryRequired?'Saved data needs recovery. Open Saves and restore or import a backup before playing.':
-    'Saving is unavailable. Export your progress from Saves and reload before further transactions.');
+    recoveryRequired?'Saved data needs recovery. Open Menu → Backups & saves to restore or import a backup before playing.':
+    'Saving is unavailable. Export your progress from Menu → Backups & saves and reload before further transactions.');
   return false;
 }
 function reloadLatestProgress(){location.reload();}
@@ -128,7 +128,7 @@ function loadGame(key) {
 function updateSaveIndicator(){
   const node=document.getElementById('saveStatus');
   if(!node)return;
-  node.textContent=recoveryRequired?'Recovery required — open Saves':
+  node.textContent=recoveryRequired?'Recovery required — open Menu → Backups':
     saveConflict?'Newer progress in another tab — reload':
     saveFailure?'Save unavailable — export now':'● Saved on this device';
   node.className='save-status'+(saveFailure||recoveryRequired||saveConflict?' save-error':'');
