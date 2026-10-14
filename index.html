@@ -505,6 +505,13 @@ function filteredInventoryItems(){
   return true;
  }));
 }
+const expandedInventoryGroups=new Set();
+function inventoryGroupToggled(details){
+ if(!details||!details.dataset)return;
+ const key=details.dataset.groupKey;
+ if(details.open)expandedInventoryGroups.add(key);
+ else expandedInventoryGroups.delete(key);
+}
 function inventoryGroupCard(group){
  if(group.items.length<2)return card(group.items[0]);
  const best=inventoryBestItem(group.items),copyCount=group.items.length;
@@ -512,7 +519,9 @@ function inventoryGroupCard(group){
  const selected=group.items.filter(x=>bulkSellIds.has(x.id)).length;
  const condition=best.wearGrade===undefined?'—':conditionTag(best);
  return '<details class="inventory-group" data-group-key="'+escapeHTML(group.key)+'"'+
-  (selected?' open':'')+'><summary class="inventory-group-head">'+
+  ' ontoggle="inventoryGroupToggled(this)"'+
+  (selected||expandedInventoryGroups.has(group.key)?' open':'')+
+  '><summary class="inventory-group-head">'+
   '<div class="inventory-group-art">'+visualArt(best,'inventory')+'</div>'+
   '<div class="inventory-group-info"><strong>'+escapeHTML(itemName(best))+'</strong>'+
   '<span class="muted tiny">'+copyCount+' owned · Best '+condition+'</span>'+
@@ -636,7 +645,10 @@ function confirmBulkSell(){
    s=JSON.parse(before);alert('Could not save the bulk sale. Your items were retained.');return false;
  }
  bulkSellIds.clear();bulkSellMode=false;
- window.LootHubFX.play('coin');render();
+ window.LootHubFX.play('coin');
+ const position=typeof window.scrollY==='number'?window.scrollY:0;
+ render();
+ if(typeof window.scrollTo==='function')window.scrollTo(0,position);
  return true;
 }
 function auctionSelectedWeapons(){
