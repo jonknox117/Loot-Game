@@ -332,7 +332,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await sealedArt.waitFor({state:'visible',timeout:15000});
     assert((await sealedArt.getAttribute('src')).includes('arsenal-case-closed-1254.webp'),
       'Inspect and inventory must use the original closed crate in its full native resolution');
-    await page.getByRole('button', { name: 'Open case' }).click();
+    await page.locator('.dialog').getByRole('button', { name: 'Open case' }).click();
     assert(await page.locator('.arsenal-opening-prop').count()===0,
       'Open crate must not obstruct the scrolling spin reel');
     assert(await page.locator('.reel-stage .arsenal-case-open').count()===0,
@@ -1031,7 +1031,7 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     await cartelInspect.waitFor({state:'visible',timeout:15000});
     assert((await cartelInspect.getAttribute('src')).includes('cartel-case-closed-1254.webp'),
       'Cartel inspect should show the full-resolution owner-supplied closed chest');
-    await page.getByRole('button',{name:'Open case'}).click();
+    await page.locator('.dialog').getByRole('button',{name:'Open case'}).click();
     assert(await page.locator('.arsenal-opening-prop,.cartel-opening-prop,.cartel-case-open').count()===0,
       'Cartel chest should never obstruct the spinning weapon reel');
     const cartelSaved=await page.evaluate(()=>s.items.find(x=>x.kind==='skin'&&x.skin==='Cartel'));

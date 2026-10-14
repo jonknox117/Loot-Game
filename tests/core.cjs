@@ -313,9 +313,15 @@ test('v0.7.8 12h quick auction lists directly, confirms, and respects existing e
  assert.equal(g.run('window.LootHubAuctionUI.quickStart("quick-auction")'),false,
    'Already escrowed weapon may not be listed twice');
  assert.equal(boot(g.store).state().listings.length,1);
- assert.equal(g.run('window.LootHubAuctionUI.cancel("listing-quick-auction")'),true);
- assert.equal(g.state().items.filter(x=>x.id==='quick-auction').length,1,
-   'Cancellation must return the same weapon identity');
+ if(!g.state().listings[0].bids.length){
+  assert.equal(g.run('window.LootHubAuctionUI.cancel("listing-quick-auction")'),true);
+  assert.equal(g.state().items.filter(x=>x.id==='quick-auction').length,1,
+   'Unbid cancellation must return the same weapon identity');
+ }else{
+  assert.equal(g.run('window.LootHubAuctionUI.cancel("listing-quick-auction")'),false,
+   'A quick auction that already has bidders cannot be cancelled');
+  assert(!g.state().items.some(x=>x.id==='quick-auction'),'Bid auction must stay escrowed');
+ }
 });
 test('v0.7.8 market shows a direct bound Accept bid button and settles once',()=>{
  const g=boot();
