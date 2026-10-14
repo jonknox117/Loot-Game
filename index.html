@@ -228,7 +228,7 @@ function openWallet(){
  '<button onclick="closeDialog();go(\'Inventory\')">View inventory</button><button onclick="closeDialog()">Close</button></div>');
 }
 function home(){return '<section class="panel hero"><div class="case-art">'+visualArt({kind:'case'})+'</div><div><div class="tag Legendary">COLLECTION 001</div><h1>Arsenal Case</h1><p class="muted">The original Arsenal collection: '+catalog.length+' base weapons and '+approvedSkins.length+' approved finishes. Explore the Cartel Case under Cases.</p><div class="price">25 coins</div><div class="row" style="margin-top:15px"><button class="primary" onclick="go(\'Cases\')">Shop 1–5 cases</button><button onclick="go(\'Inventory\')">My inventory</button></div></div></section><section class="panel"><h2>Make your first trade</h2><p class="muted">Start from zero. Earn coins, buy a sealed case, decide whether to open it or resell it, then negotiate for the best price. Every base weapon has its own market estimate.</p><button onclick="go(\'Earn\')">Earn starting coins →</button></section>'}
-function cases(){return '<section class="panel hero"><div class="case-art">'+visualArt({kind:'case'})+'</div><div><div class="tag Legendary">ARSENAL CASE · 001</div><h1>Arsenal Case</h1><p class="muted">Sealed case · '+catalog.length+' base weapons · '+approvedSkins.length+' approved skins</p><div class="price">25 coins</div><div class="row"><button onclick="go(\'Inventory\')">My inventory</button></div>'+multiPurchaseControl('arsenal')+'</div></section><section class="panel"><h3>Published drop odds</h3>'+tiers.map((t,i)=>'<div class="stat"><span class="'+cls(t)+'">'+t+' <small class="muted">('+labels[i]+')</small></span><b>'+odds[i]+'%</b></div>').join('')+'<p class="muted tiny">Each tier roll is independent. Only personally approved skins can be included; '+approvedSkins.length+' owner-approved skins are active.</p></section><section class="panel"><h3>Available base weapons</h3><div class="cards">'+catalog.map((x,i)=>'<div class="item">'+visualArt({kind:'weapon',weapon:x[0],tier:x[1],base:x[2]})+'<h4>'+escapeHTML(x[0])+'</h4><div class="tag '+cls(tiers[x[1]])+'">'+tiers[x[1]]+'</div><button onclick="previewCatalogWeapon('+i+')">View weapon</button></div>').join('')+'</div></section><section class="panel"><h3>Approved skin finishes</h3><p class="muted">Each released skin is chosen and approved by the game owner.</p><div class="cards">'+approvedSkins.map((x,i)=>'<div class="item">'+visualArt({kind:'skin',weapon:x[0],skin:x[1],tier:x[2],base:x[3]})+'<h4>'+escapeHTML(x[0]+' | '+x[1])+'</h4><div class="tag '+cls(tiers[x[2]])+'">'+tiers[x[2]]+'</div><button onclick="previewApprovedSkin('+i+')">View skin</button></div>').join('')+'</div></section>'}
+function cases(){return '<section class="panel hero"><div class="case-art">'+visualArt({kind:'case'})+'</div><div><div class="tag Legendary">ARSENAL CASE · 001</div><h1>Arsenal Case</h1><p class="muted">Sealed case · '+catalog.length+' base weapons · '+approvedSkins.length+' approved skins</p><div class="price">25 coins</div><div class="row"><button onclick="go(\'Inventory\')">My inventory</button></div>'+multiPurchaseControl('arsenal')+'</div></section><section class="panel"><h3>Published drop odds</h3>'+tiers.map((t,i)=>'<div class="stat"><span class="'+cls(t)+'">'+t+' <small class="muted">('+labels[i]+')</small></span><b>'+odds[i]+'%</b></div>').join('')+'<p class="muted tiny">Each tier roll is independent. Only personally approved skins can be included; '+approvedSkins.length+' owner-approved skins are active.</p></section><details class="panel case-catalog-details"><summary>Browse '+catalog.length+' base weapons</summary><div class="cards">'+catalog.map((x,i)=>'<div class="item">'+visualArt({kind:'weapon',weapon:x[0],tier:x[1],base:x[2]})+'<h4>'+escapeHTML(x[0])+'</h4><div class="tag '+cls(tiers[x[1]])+'">'+tiers[x[1]]+'</div><button onclick="previewCatalogWeapon('+i+')">View weapon</button></div>').join('')+'</div></details><details class="panel case-catalog-details"><summary>Browse '+approvedSkins.length+' approved skins</summary><p class="muted">Each released skin is chosen and approved by the game owner.</p><div class="cards">'+approvedSkins.map((x,i)=>'<div class="item">'+visualArt({kind:'skin',weapon:x[0],skin:x[1],tier:x[2],base:x[3]})+'<h4>'+escapeHTML(x[0]+' | '+x[1])+'</h4><div class="tag '+cls(tiers[x[2]])+'">'+tiers[x[2]]+'</div><button onclick="previewApprovedSkin('+i+')">View skin</button></div>').join('')+'</div></details>'}
 
 /* Registry-driven themed case shop: no case-specific UI code required. */
 function themedCaseSection(def,index){
@@ -270,25 +270,33 @@ function specOpsSection(){return themedCaseSection(curatedCases.get('spec-ops'),
 function previewSpecOpsCase(){return previewThemedCase('spec-ops')}
 
 function universalCases(){
-  const themedShop=curatedCases.releasedThemed().map(themedCaseSection).join('');
-  if(!allSkinLines.length)return collectionEntry()+multiOpenEntry()+themedShop+cases();
-  const extra=allSkinLines.map(line=>{
-    const variants=lineCatalogs[line.id]||[];
-    if(!variants.length)return '';
-    const sample=variants.find(x=>x.weapon==='FN FAL')||variants[0];
-    const isPreview=line.preview===true&&line.released!==true;
-    return '<div class="item">'+visualArt(sample)+
-      '<h4>'+escapeHTML(line.name)+' Case'+(isPreview?' · TEST':'')+'</h4><p class="muted tiny">'+
-      escapeHTML(line.description)+'</p><p class="muted tiny">'+variants.length+
-      ' weapon variants · '+(isPreview?'free visual test · nothing added to inventory':line.casePrice+' coins')+
-      '</p><button onclick="previewSkinLine(\''+line.id+'\')">View collection</button>'+
-      (isPreview?'<button class="primary" onclick="openPreviewCase(\''+line.id+'\')">Open free test case</button>':
-      multiPurchaseControl(line.id))+
-      '</div>';
-  }).join('');
-  return collectionEntry()+multiOpenEntry()+themedShop+cases()+'<section class="panel"><h2>'+ (universalSkinLines.lines.length?'Universal skin-line cases':'Procedural skin-line preview cases')+
-    '</h2><p class="muted">Buy a sealed themed case to collect its skins. Drop chances follow the published rarity weights, normalized over rarities available in that case.</p>'+
-    '<div class="cards">'+extra+'</div></section>';
+ const released=curatedCases.all().filter(def=>def.released);
+ const sealed=s.items.filter(x=>x.kind==='case').length;
+ const chosen=selectedStoreCaseId&&released.find(x=>x.id===selectedStoreCaseId);
+ const cards=released.map(def=>
+  '<article class="case-choice case-choice-'+escapeHTML(def.id)+'">'+
+   '<div class="case-choice-art">'+visualArt({kind:'case',caseId:def.id},'inventory')+'</div>'+
+   '<div class="case-choice-info"><h3>'+escapeHTML(def.name)+' Case</h3>'+
+   '<strong class="case-choice-price">◈ '+money(def.casePrice)+' coins</strong>'+
+   '<p class="muted">'+escapeHTML(def.description||'Original collectible weapons and skins.')+'</p>'+
+   '<button class="primary" onclick="selectStoreCase(\''+def.id+'\')">View '+escapeHTML(def.name)+' Case</button></div></article>'
+ ).join('');
+ return '<section class="case-shop-heading"><div class="section-eyebrow">THE CASE SHOP</div>'+
+  '<h1>Choose your collection</h1><p class="muted">Select a case to see the rewards, odds and purchase options.</p></section>'+
+  (sealed?'<section class="panel owned-case-shortcut"><div><strong>'+sealed+' sealed case'+(sealed===1?'':'s')+' ready</strong>'+
+     '<p class="muted tiny">Open cases you already own without buying more.</p></div>'+
+     '<button class="primary" onclick="showMultiPicker()">Open owned cases</button></section>':'')+
+  (s.coins<25?'<div class="starter-earn"><span>Need coins to get started?</span><button onclick="openUtility(\'Earn\')">Earn coins</button></div>':'')+
+  '<section class="case-choice-grid" aria-label="Available cases">'+cards+'</section>'+
+  (chosen?'<div class="selected-case-anchor"><div class="row space"><h2>'+escapeHTML(chosen.name)+' Case</h2>'+
+   '<button onclick="selectedStoreCaseId=null;render()">Close details</button></div></div>'+
+   (chosen.id==='arsenal'?cases():themedCaseSection(chosen,Math.max(0,released.indexOf(chosen)-1))):'');
+}
+function selectStoreCase(caseId){
+ if(busy||!curatedCases.isReleased(caseId))return;
+ selectedStoreCaseId=caseId;utilityView=null;tab='Cases';render();
+ const target=document.querySelector&&document.querySelector('.selected-case-anchor');
+ if(target&&target.scrollIntoView)target.scrollIntoView({block:'start',behavior:'auto'});
 }
 function previewSkinLine(lineId){
   const line=universalSkinLines.getLine(lineId);
