@@ -2425,7 +2425,7 @@ test('Original closed and opened Arsenal photos replace placeholder crate withou
   assert(art.includes('data-case-pose="'+pose+'"'));
   assert(!art.includes('<svg'),'Arsenal must use supplied real case assets');
  }
- assert(g.run('home()').includes('arsenal-case-closed-800.webp'));
+ assert(g.run('universalCases()').includes('arsenal-case-closed-800.webp'));
  assert(g.run('cases()').includes('arsenal-case-closed-800.webp'));
  const css=fs.readFileSync(path.join(root,'design.css'),'utf8');
  assert(css.includes('.hero .case-art:has(.arsenal-case-image)'),
