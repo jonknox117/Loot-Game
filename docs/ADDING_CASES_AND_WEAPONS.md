@@ -4,7 +4,7 @@ The single source of truth for themed cases is **assets/case-registry.js**.
 Do not add individual case branches to the renderer, shop, inventory, market,
 multi-open, roll engine or Collection Book.
 
-The registry currently supports Arsenal, Cartel, Spec Ops and Lavish. Add new cases to the
+The registry includes Arsenal, Cartel, Spec Ops, Lavish and a Vintage draft. Add new cases to the
 EXTRA_CASES array. Existing save IDs and historic collections remain unchanged.
 Cartel uses its original embedded approved skins; Spec Ops and new cases use
 transparent WebP images.
@@ -123,3 +123,20 @@ create a new version instead. Cartel and Spec Ops remain unmodified.
 - Reload preserves the rolled item, condition, market listing and paid coins.
 - No missing WebP assets and no silent fallback to a generic weapon rendering.
 - NPC budgets remain independent of asking price for any newly added skin.
+
+## Vintage artwork release
+
+Vintage's five owner-selected models are already registered as a hidden draft:
+Colt .45 Revolver, FN FAL, M60, M1 Garand and Butterfly Knife.
+The fifth case is only activated once all approved files pass verification.
+The complete lossless WebP export pack is distributed as **vintage-release.zip**,
+which contains 21 renders and their SHA-256 manifest.
+
+Upload that single archive into the repository at `assets/vintage-release.zip`
+(on `main`). The dedicated Install approved Vintage case artwork workflow
+checks every image, installs the cases and weapon files, enables the registry
+entry, verifies the regression suite, removes the temporary ZIP, and pushes
+the playable release to GitHub Pages. This avoids shipping placeholders or
+forcing players to download missing art. The installed case uses a 75-coin
+price and the existing 70/20/7.5/2/0.5 rarity odds, and joins the Collection
+Book with a 25-coin completion reward.

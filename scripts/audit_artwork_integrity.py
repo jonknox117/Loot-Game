@@ -182,9 +182,9 @@ def audit(output_dir):
             bbox, transparent, margins = bounds_and_alpha(image)
             if max(image.size) != size:
                 raise ValueError(f"Size {image.size} does not match {size}px long edge")
-            if name.startswith("assets/cases/") or "/lines/lavish/" in name:
+            if name.startswith("assets/cases/") or "/lines/lavish/" in name or "/lines/vintage/" in name:
                 if image.size != (size, size):
-                    raise ValueError("Case chests and Lavish exports use square contain-sized canvases")
+                    raise ValueError("Case chests and curated Vintage/Lavish exports use square contain-sized canvases")
             # Existing rectangular Spec Ops skins must retain their original
             # proportions: browser CSS uses object-fit:contain.
             if name.startswith("assets/cases/") or "/lines/" in name:

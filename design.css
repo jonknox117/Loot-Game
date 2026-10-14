@@ -1371,3 +1371,11 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .inventory-group-count{font-size:14px}
  .inventory-quick-filters button{flex:1 1 21%;font-size:11px;padding:8px 6px}
 }
+
+/* Vintage case — owner-approved copper, leather, antique wood identity. */
+.case-choice-vintage{border-color:#ae7751;background:linear-gradient(140deg,#39271d,#201a1b 66%,#161924)}
+.case-choice-vintage .case-choice-price{color:#f2bc7d}
+.case-choice-vintage .case-details-button{color:#f1c69b;border-color:#987353}
+.vintage-section.curated-case-section{border-color:#926a49;background:linear-gradient(165deg,#2a1e1a,#161923 74%)}
+.vintage-section .price{color:#edbd85}
+.vintage-section .cartel-reward{border-color:#74543e}
