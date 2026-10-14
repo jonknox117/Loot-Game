@@ -2793,7 +2793,8 @@ test('0.6.1 Cartel 5/5 grants 25 cartel cases valued at 75 each and opens five s
  g.run('finishMultiOpening()');
  assert.equal(g.run('claimCollection("cartel-v1")'),false);
  assert(g.run('collectionBook()').includes('Collections'));
- assert(g.run('inventory()').includes('Collection Book'));
+ assert(!g.run('inventory()').includes('openCollectionBook()'),
+   'Collections already has its own primary navigation destination');
 });
 test('0.6.1 failed local storage write rolls back entire reward and claim receipt',()=>{
  const store=new LocalStore(),g=boot(store);
