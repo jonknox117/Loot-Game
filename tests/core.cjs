@@ -455,6 +455,108 @@ test('v0.7.9 failed saves restore every weapon or auction in a multi-action',()=
  assert.equal(JSON.stringify(g.state()),before);
  assert.equal(boot(g.store).state().items.length,2);
 });
+test('v0.8.0 groups duplicate weapons by model and finish without merging wear or IDs',()=>{
+ const g=boot();
+ g.run('s.items.push('+JSON.stringify([
+  {id:'group-fn',kind:'weapon',weapon:'AK-47',tier:0,base:100,wearGrade:0},
+  {id:'group-worn',kind:'weapon',weapon:'AK-47',tier:0,base:100,wearGrade:4},
+  {id:'group-skin',kind:'skin',weapon:'AK-47',skin:'Cartel',tier:2,base:350,wearGrade:1},
+  {id:'group-case',kind:'case',paid:25}
+ ]).slice(1,-1)+');save();go("Inventory")');
+ const page=g.byId('main').innerHTML;
+ assert.equal((page.match(/<details class="inventory-group"/g)||[]).length,1,
+   'Duplicate base weapons should display as a single expandable group');
+ assert(page.includes('2 owned'));
+ assert(page.includes('group-fn')&&page.includes('group-worn'),
+   'Individual copies must keep their unique ownership IDs');
+ assert(page.includes('Condition:')&&page.includes('Best '));
+ assert(page.includes('Cartel')&&page.includes('group-case'));
+ assert.equal(g.run('inventoryGroups(s.items).length'),3);
+ const groups=JSON.parse(g.run('JSON.stringify(inventoryGroups(s.items).map(g=>({key:g.key,ids:g.items.map(x=>x.id)})))'));
+ assert(groups.some(x=>x.ids.includes('group-fn')&&x.ids.includes('group-worn')));
+ assert(!groups.some(x=>x.ids.includes('group-skin')&&x.ids.includes('group-fn')),
+   'Skinned versions are distinct collections');
+ assert.equal(g.run('inventoryBestItem(s.items.slice(0,2)).id'),'group-fn',
+   'Best condition copy must be preserved first');
+ assert.equal(g.state().items.length,4,'Grouping never mutates inventory');
+});
+test('v0.8.0 duplicate selection keeps best condition and protects high-tier mass selection',()=>{
+ const g=boot();
+ g.run('s.items.push('+JSON.stringify([
+  {id:'safe-best',kind:'weapon',weapon:'AK-47',tier:0,base:100,wearGrade:0},
+  {id:'safe-worn',kind:'weapon',weapon:'AK-47',tier:0,base:100,wearGrade:4},
+  {id:'safe-mid',kind:'weapon',weapon:'AK-47',tier:0,base:100,wearGrade:2},
+  {id:'rare-best',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:4,base:4200,wearGrade:0},
+  {id:'rare-worn',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:4,base:4200,wearGrade:4},
+  {id:'safe-case',kind:'case',paid:25}
+ ]).slice(1,-1)+');save();go("Inventory");toggleBulkSellMode();');
+ assert.equal(g.run('selectDuplicateBulk()'),true);
+ const selected=g.run('[...bulkSellIds].sort().join(",")');
+ assert.equal(selected,'safe-mid,safe-worn');
+ assert(!selected.includes('safe-best'));
+ assert(!selected.includes('rare-worn'),'Legendary duplicates must not be auto-selected');
+ assert(g.byId('main').innerHTML.includes('2 selected'));
+ g.run('s.preferences.inventoryRarity="Common";save();render()');
+ assert.equal(g.run('bulkSellIds.size'),2,'Filtering cannot clear a selected batch');
+ assert.equal(g.run('selectCommonBulk()'),true);
+ assert.equal(g.run('bulkSellIds.size'),3,'Select Commons adds the retained copy only on request');
+ g.run('s.preferences.inventoryQuick="valuable";save();render()');
+ assert.equal(g.run('bulkSellIds.size'),3,'Changing quick filters preserves selections');
+ g.run('clearBulkSell()');
+ assert.equal(g.run('bulkSellIds.size'),0);
+ assert.equal(g.state().items.length,6);
+});
+test('v0.8.0 inventory sorting and filters are stable and retain previous preferences',()=>{
+ const g=boot();
+ g.run('s.items.push('+JSON.stringify([
+  {id:'sort-low',kind:'weapon',weapon:'AK-47',tier:0,base:25,wearGrade:4},
+  {id:'sort-high',kind:'weapon',weapon:'MP5',tier:3,base:700,wearGrade:0},
+  {id:'sort-mid',kind:'weapon',weapon:'SPAS-12',tier:1,base:110,wearGrade:2}
+ ]).slice(1,-1)+');save();go("Inventory")');
+ g.run('s.preferences.inventorySort="value";save()');
+ assert.equal(g.run('sortedInventoryItems(s.items)[0].id'),'sort-high');
+ g.run('s.preferences.inventorySort="condition"');
+ assert.equal(g.run('sortedInventoryItems(s.items)[0].id'),'sort-high');
+ g.run('s.preferences.inventorySort="newest"');
+ assert.equal(g.run('sortedInventoryItems(s.items)[0].id'),'sort-mid');
+ g.run('setInventoryQuickFilter("valuable")');
+ assert.equal(g.run('filteredInventoryItems().length'),1);
+ assert.equal(g.run('filteredInventoryItems()[0].id'),'sort-high');
+ g.run('s.preferences.inventorySort="duplicates";s.preferences.inventoryRarity="Super Rare";save()');
+ const restored=boot(g.store);
+ assert.equal(restored.state().preferences.inventorySort,'duplicates');
+ assert.equal(restored.state().preferences.inventoryRarity,'Super Rare');
+ assert.equal(restored.state().preferences.inventoryQuick,'valuable');
+ assert(restored.byId('main').innerHTML.includes('Highest value')||restored.byId('main').innerHTML.includes('Most duplicates'));
+});
+test('v0.8.0 actionable auctions sort ahead of expiring no-bid and waiting listings',()=>{
+ const g=boot();
+ g.run('s.items.push('+JSON.stringify([
+  {id:'priority-waiting',kind:'weapon',weapon:'AK-47',tier:1,base:100,wearGrade:0},
+  {id:'priority-ending',kind:'weapon',weapon:'MP5',tier:1,base:110,wearGrade:0},
+  {id:'priority-ready',kind:'skin',weapon:'SPAS-12',skin:'Spec Ops',tier:2,base:350,wearGrade:0}
+ ]).slice(1,-1)+');'+
+ 'window.LootHubAuctions.create(s,"priority-waiting",50,12,Date.now());'+
+ 'window.LootHubAuctions.create(s,"priority-ending",50,12,Date.now());'+
+ 'window.LootHubAuctions.create(s,"priority-ready",50,12,Date.now());'+
+ 's.listings.find(x=>x.item.id==="priority-ending").endsAt=Date.now()+15*60*1000;'+
+ 'const ready=s.listings.find(x=>x.item.id==="priority-ready");'+
+ 'const buyer=window.LootHubTraders.ensure(s).find(x=>x.role==="buyer");'+
+ 'buyer.wallet=5000;ready.highestBid=100;ready.highestBidder=buyer.id;'+
+ 'ready.bids=[{bidder:buyer.id,amount:100,at:ready.createdAt}];save()');
+ const html=g.run('window.LootHubAuctionUI.house()');
+ assert(html.includes('1 ready to accept'));
+ assert(html.includes('1 ending soon'));
+ assert(html.includes('1 waiting for bids'));
+ const ready=html.indexOf('data-auction-priority="0"'),
+       ending=html.indexOf('data-auction-priority="1"'),
+       waiting=html.indexOf('data-auction-priority="2"');
+ assert(ready>0&&ending>ready&&waiting>ending,
+   'Ready bids must appear first, then ending soon, then waiting');
+ assert(html.includes('Bid ready to accept')&&html.includes('Ending soon'));
+ assert.equal(g.state().listings[0].item.id,'priority-waiting',
+   'Presentation sorting must not re-order saved auctions');
+});
 test('Procedural cases are retired and material maps remain wear-only',()=>{
   const g=boot();
   assert.equal(g.run('window.LootHubSkinLines.lines.length'),0);
