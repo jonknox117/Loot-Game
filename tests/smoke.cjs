@@ -1578,6 +1578,49 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.evaluate(()=>s.coins)===settled.coins,
       'Bulk auction settlement must survive reload without double payment');
 
+    // v0.8.0: large-inventory presentation keeps every individual ID accessible.
+    await page.evaluate(()=>{
+      s.items=s.items.filter(x=>!['Tec-9','M134 Minigun'].includes(x.weapon));
+      s.items.push(
+        {id:'smart-best',kind:'weapon',weapon:'Tec-9',tier:0,base:100,wearGrade:0},
+        {id:'smart-mid',kind:'weapon',weapon:'Tec-9',tier:0,base:100,wearGrade:2},
+        {id:'smart-worn',kind:'weapon',weapon:'Tec-9',tier:0,base:100,wearGrade:4},
+        {id:'smart-rare-best',kind:'weapon',weapon:'M134 Minigun',tier:4,base:1700,wearGrade:0},
+        {id:'smart-rare-worn',kind:'weapon',weapon:'M134 Minigun',tier:4,base:1700,wearGrade:4}
+      );
+      s.preferences.inventoryRarity='all';
+      s.preferences.inventorySort='newest';
+      s.preferences.inventoryQuick='all';
+      save();go('Inventory');
+    });
+    const lowGroup=page.locator('.inventory-group').filter({hasText:'Tec-9'});
+    assert(await lowGroup.count()===1,
+      'Duplicate base weapons must occupy one compact expandable group');
+    assert((await lowGroup.locator('summary').textContent()).includes('3 owned'));
+    await lowGroup.locator('summary').click();
+    assert(await lowGroup.locator('.item:visible').count()===3,
+      'Expanding a group must expose each individually tradable copy');
+    assert(await page.locator('.inventory-group').filter({hasText:'M134 Minigun'}).count()===1,
+      'Rare duplicate weapons should also group without being sold');
+    await page.getByRole('button',{name:'Select weapons to trade'}).click();
+    await page.getByRole('button',{name:'Select Duplicates'}).click();
+    const safeSelected=await page.evaluate(()=>[...bulkSellIds].sort());
+    assert(JSON.stringify(safeSelected)===JSON.stringify(['smart-mid','smart-worn']),
+      'Duplicate shortcut must retain best-condition weapon and avoid Legendary mass selection');
+    await page.locator('#inventorySort').selectOption('value');
+    assert(await page.evaluate(()=>bulkSellIds.size)===2,
+      'Changing sort must retain the current batch selection');
+    await page.getByRole('button',{name:'Duplicates',exact:true}).click();
+    assert(await page.evaluate(()=>bulkSellIds.size)===2,
+      'Changing inventory filter must not lose already selected weapons');
+    await page.reload({waitUntil:'load'});
+    assert(await page.evaluate(()=>s.preferences.inventorySort)==='value'&&
+      await page.evaluate(()=>s.preferences.inventoryQuick)==='duplicates',
+      'Last-used sort and quick filter must persist across reload');
+    assert(await page.evaluate(()=>s.items.filter(x=>['smart-best','smart-mid','smart-worn',
+      'smart-rare-best','smart-rare-worn'].includes(x.id)).length)===5,
+      'Sorting and grouping may not merge or remove any owned copies');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
