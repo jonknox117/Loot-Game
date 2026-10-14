@@ -1377,6 +1377,49 @@ const mimes={'.html':'text/html','.js':'application/javascript','.css':'text/css
     assert(await page.evaluate(()=>s.listings.some(x=>x.id==='listing-mobile-desk-spas')),
       'Pending Trading Desk escrow and rejection history survive reload');
 
+    // v0.7.6 — Buy & Open without case details, then repeat and sell from the reward screen.
+    await page.evaluate(()=>{s.coins=Math.max(s.coins,500);save();go('Cases')});
+    const fastCard=page.locator('.case-choice-lavish');
+    assert(await fastCard.getByRole('button',{name:'Buy & Open'}).count()===1,
+      'Each case card needs one direct purchase/open button');
+    await fastCard.locator('#fast-qty-lavish').selectOption('1');
+    const beforeFast=await page.evaluate(()=>({coins:s.coins,openings:s.openings,items:s.items.length}));
+    await fastCard.getByRole('button',{name:'Buy & Open'}).click();
+    assert(await page.locator('.multi-spin-screen').count()===1,
+      'Direct opening should not enter case details or inventory');
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    assert(await page.locator('.dialog .reward-fast-actions').count()===1,
+      'One-case reveal must offer Keep, Sell, and Open Again directly');
+    const firstFast=await page.evaluate(()=>({
+      coins:s.coins,openings:s.openings,item:s.items[s.items.length-1],
+      last:s.preferences.lastCaseId,qty:s.preferences.fastCaseQuantity
+    }));
+    assert(firstFast.coins===beforeFast.coins-75&&firstFast.openings===beforeFast.openings+1&&
+      firstFast.item.skin==='Lavish'&&firstFast.qty===1&&firstFast.last==='lavish',
+      'One tap must debit once, create one permanent reward, and remember case choice');
+    await page.locator('.dialog .repeat-case-button').click();
+    await page.getByRole('button',{name:'Reveal all'}).click();
+    const repeated=await page.evaluate(()=>({coins:s.coins,openings:s.openings,items:s.items.length}));
+    assert(repeated.coins===firstFast.coins-75&&repeated.openings===firstFast.openings+1&&
+      repeated.items===beforeFast.items+2,'Open Again must buy and reveal another of the same case');
+    const sellQuote=await page.evaluate(()=>
+      window.LootHubMarketTransactions.instantSellPrice(s.items[s.items.length-1]));
+    page.once('dialog',confirmation=>confirmation.accept());
+    await page.locator('.dialog').getByRole('button',{name:/Instant sell/}).click();
+    const soldFast=await page.evaluate(()=>({coins:s.coins,items:s.items.length}));
+    assert(soldFast.coins===repeated.coins+sellQuote&&soldFast.items===repeated.items-1,
+      'Reward screen instant sale credits exact existing quote only once');
+    assert((await page.locator('.dialog').textContent()).includes('Open same case again'));
+    await page.reload({waitUntil:'load'});
+    const persistedFast=await page.evaluate(()=>({
+      coins:s.coins,qty:s.preferences.fastCaseQuantity,last:s.preferences.lastCaseId
+    }));
+    assert(persistedFast.coins===soldFast.coins&&persistedFast.qty===1&&persistedFast.last==='lavish',
+      'Wallet and recent case preference must survive reload');
+    await page.locator('#fast-qty-cartel').selectOption('3');
+    assert((await page.locator('#fast-total-cartel').textContent()).includes('225 coins total'),
+      'Quick selector should immediately reflect quantity and price without another screen');
+
     await page.screenshot({ path: path.resolve(__dirname, 'mobile-smoke.png'), fullPage: true });
     console.log('PASS: Mobile earning → case purchase → saved inventory → case opening → sale → saved wallet');
   } finally {
