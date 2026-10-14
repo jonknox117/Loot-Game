@@ -212,17 +212,5 @@ function finishMultiOpening(){
  pending=null;busy=false;s.pendingReveal=null;save();render();
  window.LootHubFX.play('reveal',{tier:Math.max(...rewards.map(x=>x.tier))});
  if(rewards.length===1){showSingleReward(rewards[0],cases[0].caseId||'arsenal');return}
- dialog('<div class="multi-winnings"><div class="section-eyebrow">MULTI-OPEN COMPLETE</div>'+
-  '<h2>'+rewards.length+' new items acquired</h2>'+
-  '<p class="muted">All rewards have been added to your inventory.</p>'+
-  '<div class="multi-prize-grid">'+rewards.map((x,i)=>
-   '<div class="multi-prize rarity-'+cls(tiers[x.tier])+'">'+
-   '<div class="tag '+cls(tiers[x.tier])+'">'+tiers[x.tier]+'</div>'+
-   '<div class="multi-prize-art"><div class="multi-prize-weapon">'+visualArt(x,'inventory')+'</div>'+
-   '<div class="multi-prize-chest">'+visualArt({kind:'case',caseId:cases[i].caseId||'arsenal'},'open-small')+'</div></div>'+
-   '<strong>'+escapeHTML(itemName(x))+'</strong>'+
-   '<div class="muted tiny">'+conditionTag(x)+' · ≈ '+money(marketEstimate(x))+' coins</div>'+
-   '<button onclick="inspect(\''+x.id+'\')">Inspect</button></div>').join('')+'</div>'+
-  '<div class="row"><button class="primary" onclick="closeDialog();go(\'Inventory\')">View inventory</button>'+
-  '<button onclick="closeDialog()">Keep all</button></div></div>');
+ showMultiRewardManager(rewards,cases);
 }

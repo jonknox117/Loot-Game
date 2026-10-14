@@ -1283,3 +1283,29 @@ footer { font-size: 11px; text-align: center; color: #72859b; }
  .case-choice .quick-case-buy label{font-size:11px}
  .reward-fast-actions button{font-size:13px;padding:10px 7px}
 }
+
+/* v0.7.7 — in-place multi-open reward triage, visible quotes and protected rarities */
+.multi-reward-manager{display:grid;gap:11px}
+.multi-reward-manager h2{margin:0}
+.multi-reward-manager .multi-prize-grid{margin:3px 0}
+.multi-reward-manager .multi-prize{min-width:0;transition:background .12s,border-color .12s}
+.multi-reward-manager .multi-prize.multi-reward-selected{border-color:#e9bd77;background:#243849;box-shadow:inset 0 0 0 1px #d5a866}
+.multi-reward-manager .multi-reward-select{display:flex;align-items:center;gap:8px;padding:10px 8px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:750;background:#21334a;color:#f1d0a4;min-height:44px}
+.multi-reward-manager .multi-reward-select input{width:20px;height:20px;accent-color:#e0b476;flex:0 0 auto}
+.multi-reward-manager .multi-reward-select.multi-reward-protected{background:#2e2735;color:#d9c0dc}
+.multi-reward-manager .multi-reward-select:has(input:disabled){cursor:not-allowed;opacity:.78}
+.multi-reward-tools,.multi-reward-next{display:flex;gap:8px;flex-wrap:wrap}
+.multi-reward-tools button,.multi-reward-next button{min-height:43px;flex:1 1 auto;font-size:12px;padding:9px}
+.multi-reward-tools .multi-reward-unlock{border-color:#a88b57;color:#f5dcaf}
+.multi-reward-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #997a55;border-radius:11px;padding:12px;background:#1a2a3b;position:sticky;bottom:0;z-index:3}
+.multi-reward-toolbar .multi-reward-total{display:flex;flex-direction:column;gap:3px;min-width:0}
+.multi-reward-toolbar button{min-height:46px;flex:0 0 auto}
+.multi-reward-success{background:#233d35;border:1px solid #5e9e77;border-radius:9px;padding:10px 12px;margin:2px 0}
+.multi-reward-next .repeat-case-button{border-color:#ba905b;color:#ffe3ba}
+@media(max-width:700px){
+ .multi-reward-toolbar{flex-wrap:wrap;padding:10px}
+ .multi-reward-toolbar button{flex:1 1 100%}
+ .multi-reward-tools button{flex:1 1 40%}
+ .multi-reward-next button{flex:1 1 42%}
+ .multi-reward-manager .multi-prize{padding:10px 7px}
+}
