@@ -101,7 +101,8 @@ function renderMultiRewardManager(){
  }).join('');
  dialog('<div class="multi-winnings multi-reward-manager">'+
   '<div class="section-eyebrow">MULTI-OPEN COMPLETE</div>'+
-  '<h2>'+items.length+' reward'+(items.length===1?'':'s')+' remaining</h2>'+
+  '<h2>'+multiRewardReview.rewards.length+' new items acquired</h2>'+
+  '<p class="muted tiny">'+items.length+' rewards remaining</p>'+
   (multiRewardSaleNotice?'<p class="multi-reward-success" role="status">'+escapeHTML(multiRewardSaleNotice)+'</p>':'')+
   '<p class="muted">All rewards are already yours. Select only the ones you want to sell.</p>'+
   (items.length?'<div class="multi-reward-tools">'+

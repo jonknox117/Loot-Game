@@ -255,9 +255,12 @@ test('v0.7.7 rejected persistence does not partially sell multi-open rewards',()
  assert.equal(JSON.stringify(g.state()),original);
  assert.equal(g.run('multiRewardSelected.size'),3,'Selections retained to retry after save failure');
  store.setItem=set;
- assert.equal(boot(store).state().items.length,3);
- assert.equal(g.run('sellSelectedMultiRewards()'),true);
- assert.equal(g.state().items.length,0);
+ assert.equal(g.run('sellSelectedMultiRewards()'),false,
+   'Save failure must block further transactions until reload or recovery');
+ const recovered=boot(store);
+ assert.equal(recovered.state().items.length,3);
+ assert.equal(recovered.state().coins,75);
+ assert.deepEqual(recovered.state().items.map(x=>x.id),g.state().items.map(x=>x.id));
 });
 test('v0.7.7 mixed batch does not misrepresent a repeat purchase',()=>{
  const g=boot();
